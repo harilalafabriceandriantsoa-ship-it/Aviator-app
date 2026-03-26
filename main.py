@@ -1,5 +1,4 @@
-
-        import streamlit as st
+import streamlit as st
 import hashlib
 import time
 from datetime import datetime
@@ -10,13 +9,13 @@ if 'history' not in st.session_state:
 
 st.set_page_config(page_title="Aviator Sniper Pro v16.0", layout="wide")
 
-# 2. Style Premium (Mavo sy Mainty + Modern Design)
+# 2. Style Premium (Mavo sy Mainty)
 st.markdown("""
     <style>
     .main { background-color: #000000; }
     .stButton>button { background-color: #ffcc00; color: black; font-weight: bold; border-radius: 10px; height: 55px; width: 100%; font-size: 18px; }
     .prediction-box { padding: 30px; border: 4px solid #ffcc00; border-radius: 20px; text-align: center; background-color: #111; color: white; }
-    .history-box { padding: 15px; border: 1px solid #444; border-radius: 10px; background-color: #111; margin-bottom: 10px; }
+    .history-box { padding: 10px; border: 1px solid #444; border-radius: 10px; background-color: #111; margin-bottom: 10px; text-align: center; }
     h1, h2, h3 { color: #ffcc00 !important; text-align: center; }
     .telegram-btn { background-color: #0088cc; color: white !important; padding: 15px; text-align: center; border-radius: 10px; text-decoration: none; display: block; font-weight: bold; margin-top: 20px; }
     </style>
@@ -70,22 +69,15 @@ if st.sidebar.button("🚀 RUN AI CALCULATION"):
     else:
         st.error("Please enter a valid HEX Seed.")
 
-# 4. HISTORIQUE (Ireo 5 farany)
+# 4. HISTORIQUE
 st.write("---")
 st.subheader("📜 RECENT PREDICTIONS")
 if st.session_state.history:
     cols = st.columns(len(st.session_state.history))
     for i, item in enumerate(st.session_state.history):
         with cols[i]:
-            st.markdown(f"""
-                <div class="history-box" style="text-align: center;">
-                    <b style="color:#ffcc00;">{item['val']}x</b><br>
-                    <small style="color:#888;">{item['time']}</small>
-                </div>
-            """, unsafe_allow_html=True)
-else:
-    st.write("No history yet. Start a calculation!")
+            st.markdown(f"""<div class="history-box"><b style="color:#ffcc00;">{item['val']}x</b><br><small style="color:#888;">{item['time']}</small></div>""", unsafe_allow_html=True)
 
-# 5. BOKOTRA TELEGRAM
+# 5. TELEGRAM
 st.sidebar.markdown('---')
 st.sidebar.markdown('<a href="https://t.me/your_channel" class="telegram-btn">📢 JOIN TELEGRAM PRO</a>', unsafe_allow_html=True)

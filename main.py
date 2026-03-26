@@ -51,7 +51,7 @@ if st.session_state.history:
         if st.button("START 210s COUNTDOWN"):
             p = st.empty()
             for s in range(210, 0, -1):
-                p.markdown(f"<h1 style='text-align:center;'>{s}s</h1>", unsafe_allow_index=True)
+                p.markdown(f"<h1 style='text-align:center;'>{s}s</h1>", unsafe_allow_html=True)
                 time.sleep(1)
             st.balloons()
             st.error("🚀 FIRE! TARGET x3.05")

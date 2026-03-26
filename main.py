@@ -14,7 +14,7 @@ st.markdown("""
     div[data-testid="stMetricValue"] { color: #ffcc00; font-size: 45px; }
     .stButton>button { background-color: #ffcc00; color: black; font-weight: bold; width: 100%; border-radius: 10px; }
     </style>
-    """, unsafe_allow_index=True)
+    """, unsafe_allow_html=True)
 
 if 'history' not in st.session_state:
     st.session_state.history = []

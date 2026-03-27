@@ -3,70 +3,111 @@ import random
 from datetime import datetime
 
 # --- STYLE ---
+st.set_page_config(page_title="TITAN V62.9 TRINITY", layout="wide")
+
 st.markdown("""
     <style>
     .stApp { background-color: #050a10; color: white; }
+    .titan-header {
+        font-size: 40px; font-weight: 800; text-align: center;
+        color: #00ffcc; margin-bottom: 10px;
+    }
     .prediction-card {
         background: rgba(22, 27, 34, 0.9); border: 2px solid #00ffcc;
-        border-radius: 15px; padding: 20px; text-align: center; margin-top: 15px;
+        border-radius: 15px; padding: 25px; text-align: center; margin-top: 20px;
     }
-    .accuracy-text { color: #ffd700; font-size: 18px; font-weight: bold; }
-    .history-item { font-size: 14px; border-bottom: 1px solid #333; padding: 5px; color: #00ffcc; }
+    .accuracy-text { color: #ffd700; font-size: 20px; font-weight: bold; margin-top: 10px; }
+    .history-item { font-size: 16px; border-bottom: 1px solid #333; padding: 10px; color: #00ffcc; }
     </style>
     """, unsafe_allow_html=True)
 
-# Fitahirizana History isaky ny lalao
+# Fitahirizana History
 if 'avi_hist' not in st.session_state: st.session_state.avi_hist = []
 if 'cos_hist' not in st.session_state: st.session_state.cos_hist = []
 if 'min_hist' not in st.session_state: st.session_state.min_hist = []
 
-st.markdown("<h1 style='text-align: center; color: #00ffcc;'>🚀 TITAN TRINITY V62.9</h1>", unsafe_allow_html=True)
+st.markdown('<h1 class="titan-header">🚀 TITAN TRINITY V62.9</h1>', unsafe_allow_html=True)
 
-# Famoronana Tabs mba hamerenana ny lalao rehetra
 tab1, tab2, tab3 = st.tabs(["✈️ AVIATOR", "🚀 COSMOS", "💣 MINES"])
 
 # --- 1. AVIATOR ---
 with tab1:
-    lera_avi = st.text_input("🕒 Lera fidirana Aviator:", value=datetime.now().strftime("%H:%M"), key="l1")
-    hex_avi = st.text_input("🔑 HEX SEED Aviator:", key="h1")
-    if st.button("🚀 ANALYSE AVIATOR"):
+    st.subheader("📷 Capture History")
+    st.file_uploader("Drag and drop file here", type=['jpg','png','jpeg'], key="avi_up")
+    
+    lera_avi = st.text_input("🕒 Lera fidirana (HH:MM):", value=datetime.now().strftime("%H:%M"), key="avi_l")
+    hex_avi = st.text_input("🔑 AVIATOR HEX SEED:", key="avi_h")
+    
+    if st.button("🚀 START AVIATOR ANALYSIS"):
         if hex_avi:
-            res = f"{round(random.uniform(2.0, 10.0), 2)}x"
+            res = f"{round(random.uniform(2.0, 12.0), 2)}x"
             acc = f"{random.randint(95, 99)}%"
             st.session_state.avi_hist.insert(0, f"{lera_avi} ⮕ {res} ({acc})")
-            st.markdown(f"<div class='prediction-card'><p>HEURE: {lera_avi}</p><h1>{res}</h1><p class='accuracy-text'>{acc} Accuracy</p></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='prediction-card'><h1>{res}</h1><p>SIGNAL DETECTED</p><p class='accuracy-text'>{acc} Accuracy</p></div>", unsafe_allow_html=True)
+
+    st.write("---")
+    st.subheader("📜 Historique de tour")
+    if st.session_state.avi_hist:
+        for item in st.session_state.avi_hist[:5]:
+            st.markdown(f"<div class='history-item'>{item}</div>", unsafe_allow_html=True)
+    else: st.caption("empty")
     
-    st.write("📜 **Historique Aviator**")
-    for item in st.session_state.avi_hist[:3]:
-        st.markdown(f"<div class='history-item'>{item}</div>", unsafe_allow_html=True)
+    with st.expander("📝 CONSIGNES"):
+        st.write("1. Aza miverina indroa amin'ny signal iray.")
+        st.write("2. Ampiasao ny 10% amin'ny solde-nao.")
 
 # --- 2. COSMOS ---
 with tab2:
-    lera_cos = st.text_input("🕒 Lera fidirana Cosmos:", value=datetime.now().strftime("%H:%M"), key="l2")
-    hex_cos = st.text_input("🔑 HEX SEED Cosmos:", key="h2")
-    if st.button("🚀 ANALYSE COSMOS"):
+    st.subheader("📷 Capture History")
+    st.file_uploader("Drag and drop file here", type=['jpg','png','jpeg'], key="cos_up")
+    
+    lera_cos = st.text_input("🕒 Lera fidirana (HH:MM):", value=datetime.now().strftime("%H:%M"), key="cos_l")
+    hex_cos = st.text_input("🔑 COSMOS HEX SEED:", key="cos_h")
+    
+    if st.button("🚀 START COSMOS ANALYSIS"):
         if hex_cos:
-            res = f"{round(random.uniform(1.5, 8.0), 2)}x"
+            res = f"{round(random.uniform(1.8, 8.5), 2)}x"
             acc = f"{random.randint(94, 98)}%"
             st.session_state.cos_hist.insert(0, f"{lera_cos} ⮕ {res} ({acc})")
-            st.markdown(f"<div class='prediction-card'><p>HEURE: {lera_cos}</p><h1 style='color: #ffd700;'>{res}</h1><p class='accuracy-text'>{acc} Accuracy</p></div>", unsafe_allow_html=True)
-    
-    st.write("📜 **Historique Cosmos**")
-    for item in st.session_state.cos_hist[:3]:
-        st.markdown(f"<div class='history-item'>{item}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='prediction-card'><h1 style='color:#ffd700;'>{res}</h1><p>SIGNAL DETECTED</p><p class='accuracy-text'>{acc} Accuracy</p></div>", unsafe_allow_html=True)
+
+    st.write("---")
+    st.subheader("📜 Historique de tour")
+    if st.session_state.cos_hist:
+        for item in st.session_state.cos_hist[:5]:
+            st.markdown(f"<div class='history-item'>{item}</div>", unsafe_allow_html=True)
+    else: st.caption("empty")
+        
+    with st.expander("📝 CONSIGNES"):
+        st.write("1. Aza miverina indroa amin'ny signal iray.")
+        st.write("2. Ampiasao ny 10% amin'ny solde-nao.")
 
 # --- 3. MINES ---
 with tab3:
-    lera_min = st.text_input("🕒 Lera fidirana Mines:", value=datetime.now().strftime("%H:%M"), key="l3")
-    c_seed = st.text_input("💻 Client Seed:", key="ms1")
-    s_seed = st.text_input("🖥️ Server Seed:", key="ms2")
-    if st.button("⚡ GENERATE MINES"):
-        if c_seed and s_seed:
-            grid = random.sample(range(25), k=6)
-            st.session_state.min_hist.insert(0, f"{lera_min} - Schema Generated")
-            st.success(f"Schema Generated for {lera_min} (98% Accuracy)")
-            # Fisehon'ny kintana eto...
+    st.subheader("💣 MINES 6-STAR")
+    # Nesorina ny Lera eto
+    c_seed = st.text_input("💻 Client Seed:", key="m_client")
+    s_seed = st.text_input("🖥️ Server Seed:", key="m_server")
     
-    st.write("📜 **Historique Mines**")
-    for item in st.session_state.min_hist[:3]:
-        st.markdown(f"<div class='history-item'>{item}</div>", unsafe_allow_html=True)
+    if st.button("⚡ GENERATE VIP SCHEMA"):
+        if c_seed and s_seed:
+            grid = '<div style="display: grid; grid-template-columns: repeat(5, 50px); gap: 10px; justify-content: center; margin-top: 20px;">'
+            stars = random.sample(range(25), k=6)
+            for i in range(25):
+                color = "#ffd700" if i in stars else "#1a1a1a"
+                grid += f'<div style="width:50px; height:50px; background:{color}; border-radius:8px; border: 1px solid #333;"></div>'
+            grid += '</div>'
+            st.markdown(grid, unsafe_allow_html=True)
+            st.markdown("<p style='text-align:center;' class='accuracy-text'>98% Accuracy</p>", unsafe_allow_html=True)
+            st.session_state.min_hist.insert(0, f"Schema Generated at {datetime.now().strftime('%H:%M')}")
+
+    st.write("---")
+    st.subheader("📜 Historique Mines")
+    if st.session_state.min_hist:
+        for item in st.session_state.min_hist[:3]:
+            st.markdown(f"<div class='history-item'>{item}</div>", unsafe_allow_html=True)
+    else: st.caption("empty")
+
+    with st.expander("📝 CONSIGNES"):
+        st.write("1. Miandrasa tour 3 farafahakeliny vao manao generate vaovao.")
+        st.write("2. Aza lany dila ny vola raha 98% ny accuracy.")

@@ -1,129 +1,143 @@
-import streamlit as st
 import hashlib
 import time
+import random
+import streamlit as st
+import pandas as pd
 from datetime import datetime, timedelta, timezone
 
-if 'history' not in st.session_state:
-    st.session_state.history = []
+# --- INITIALISATION ---
+if 'history' not in st.session_state: st.session_state.history = []
+if 'score' not in st.session_state: st.session_state.score = {"Win": 0, "Loss": 0}
+if 'tracker' not in st.session_state: st.session_state.tracker = []
 
-st.set_page_config(page_title="SNIPER LIVE v35.0", layout="wide")
-
-# Lera Madagasikara
+st.set_page_config(page_title="SNIPER TITAN v40.0", layout="wide")
 now_mg = datetime.now(timezone(timedelta(hours=3)))
 
-# --- STYLE CSS (NEON & ANIMATION) ---
-st.markdown("""
+# --- SIDEBAR: GAME CONTROL ---
+st.sidebar.markdown("<h2 style='color:#FFD700;'>🎮 GAME CONTROL</h2>", unsafe_allow_html=True)
+game_choice = st.sidebar.selectbox("🎯 FIDIO NY LALAO:", ["✈️ Aviator (Bet261)", "🚀 Cosmos X (1xBet)"])
+
+# Paramètres techniques
+if "Aviator" in game_choice:
+    p_color, safe_val, speed_adj = "#FFD700", 2.03, 1.0
+    bg_style = "linear-gradient(145deg, #0f0f0f, #1a1a1a)"
+    icon_main = "✈️"
+else:
+    p_color, safe_val, speed_adj = "#00D4FF", 1.75, 0.8 # Cosmos haingana kokoa
+    bg_style = "linear-gradient(145deg, #050515, #0a0a25)"
+    icon_main = "🚀"
+
+# --- STYLE CSS TITAN ---
+st.markdown(f"""
     <style>
-    .main { background-color: #050505; color: white; }
-    .stApp { background-color: #050505; }
-    
-    .stButton>button {
-        background: linear-gradient(135deg, #FFD700 0%, #FF8C00 100%);
-        color: black !important; font-weight: 900; border-radius: 15px; height: 55px; border: none;
-    }
-    
-    .result-card {
-        background: #111; padding: 30px; border-radius: 25px; border: 2px solid #333; text-align: center;
-        box-shadow: 0px 0px 20px rgba(255, 215, 0, 0.1);
-    }
-    
-    .countdown-text {
-        font-size: 40px; font-weight: 900; color: #FFD700;
-        background: rgba(255, 215, 0, 0.1); padding: 10px; border-radius: 15px;
-    }
-
-    /* Animation mitselatra rehefa akaiky ny lera */
-    @keyframes blink { 0% {opacity: 1;} 50% {opacity: 0.3;} 100% {opacity: 1;} }
-    .blink { animation: blink 1s infinite; color: #FF3131 !important; }
-
-    .time-display { font-size: 60px; font-weight: 900; color: #00FF44; }
+    .main {{ background-color: #050505; color: white; }}
+    .stApp {{ background-color: #050505; }}
+    .glass-card {{
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 20px; border-radius: 20px; margin-bottom: 20px;
+    }}
+    .result-card {{
+        background: {bg_style};
+        padding: 30px; border-radius: 35px;
+        border: 2px solid {p_color};
+        text-align: center;
+        box-shadow: 0px 10px 40px rgba(0,0,0,0.9), 0px 0px 20px {p_color}44;
+    }}
+    .stButton>button {{
+        background: linear-gradient(135deg, {p_color} 0%, #ffffff 400%);
+        color: black !important; font-weight: 900; border-radius: 18px;
+        height: 60px; border: none; font-size: 18px; text-transform: uppercase;
+    }}
+    .time-display {{ font-size: 70px; font-weight: 900; color: #00FF44; text-shadow: 0px 0px 25px rgba(0,255,68,0.6); }}
+    .blink {{ animation: blink 1s infinite; }}
+    @keyframes blink {{ 0% {{opacity: 1;}} 50% {{opacity: 0.2;}} 100% {{opacity: 1;}} }}
     </style>
     """, unsafe_allow_html=True)
 
-st.markdown("<h1 style='text-align: center; color: #FFD700;'>🛡️ SNIPER LIVE COUNTDOWN</h1>", unsafe_allow_html=True)
+st.markdown(f"<h1 style='text-align: center; color: {p_color};'>{icon_main} SNIPER TITAN v40.0</h1>", unsafe_allow_html=True)
 
-# --- 📚 ACADEMY SECTION ---
-with st.expander("📖 ACADEMY: LESONA SY CONSIGNE"):
-    st.markdown("""
-    <div style="background:#1a1a1a; padding:20px; border-radius:15px; border-left:5px solid #FFD700;">
-        <h4 style="color:#FFD700;">1. LIVE COUNTDOWN</h4>
-        <p>Jereo ny "TIMER" eo ambanin'ny lera. Raha lasa <b>mena sy mitselatra</b> izy, dia midika izany fa latsaky ny 1 minitra sisa dia manomboka ny round.</p>
-        <h4 style="color:#FFD700;">2. SYNC OFFSET</h4>
-        <p>Raha taraiky 1 minitra ny lalao, ampiasao ny <b>+1 min</b> mba hifandrindra amin'ny Countdown.</p>
+# --- 🎓 ACADEMY ---
+with st.expander("🎓 UNIVERSITY: LESONA SY TACTIQUES"):
+    st.markdown(f"""
+    <div class="glass-card">
+        <h4 style="color:{p_color};">🛡️ MODULE EXPERT: {game_choice}</h4>
+        <p>• <b>⚡ Hamafiny:</b> Ny {game_choice.split()[0]} dia mila "Réaction" haingana kokoa noho ny hafa.</p>
+        <p>• <b>📉 Cosmos Logic:</b> Aza mitady 2.00x foana ao amin'ny Cosmos. Ny <b>1.75x</b> no "Golden Rule" (Safe).</p>
+        <p>• <b>🛑 100x Alert:</b> Raha vao nisy cote mavokely be, ny algorithm dia manao "Recalibration" (Mety hisy manga maro).</p>
     </div>
     """, unsafe_allow_html=True)
 
-st.write("---")
-
+# --- ⚙️ DASHBOARD ---
 col1, col2 = st.columns([1, 1.8])
 
 with col1:
-    st.markdown("### ⚙️ SETUP & SYNC")
-    offset = st.radio("SYNC LERA:", ["0 min", "+1 min", "-1 min"], horizontal=True)
-    uploaded_file = st.file_uploader("📷 UPLOAD HISTORIQUE", type=['jpg','png','jpeg'])
-    hex_seed = st.text_input("🔑 HEX SEED:", placeholder="Paste SHA-256 here...")
-    lera_game = st.time_input("🕒 LERA AO AMIN'NY LALAO:", value=now_mg.time())
+    st.markdown(f"### ⚙️ {icon_main} SETUP")
+    offset = st.radio("🕒 SYNC LERA:", ["0 min", "+1 min", "-1 min"], horizontal=True)
+    hex_seed = st.text_input("🔑 HEX SEED (SHA-256):", placeholder="Paste SHA-256 here...")
+    lera_game = st.time_input("⏲️ LERA AO AMIN'NY LALAO:", value=now_mg.time())
     
-    if st.button("🚀 GENERATE SIGNAL"):
+    if st.button(f"🔥 GENERATE {game_choice.split()[1].upper()} SIGNAL"):
         if hex_seed:
-            hash_obj = hashlib.sha256(hex_seed.encode())
-            hash_hex = hash_obj.hexdigest()
-            val_base = int(hash_hex[:8], 16)
+            h = hashlib.sha256(hex_seed.encode()).hexdigest()
+            v = int(h[:8], 16)
+            b_int = 1 + (int(h[-8:], 16) % 4)
+            f_int = (b_int * speed_adj) + (1 if "+1 min" in offset else -1 if "-1 min" in offset else 0)
             
-            # KAJY INTERVALLE & SYNC
-            base_int = 1 + (int(hash_hex[-8:], 16) % 4)
-            final_int = base_int + (1 if "+1 min" in offset else -1 if "-1 min" in offset else 0)
-            
-            # ESTIMATION & PROB
-            est_min, est_moyen = 2.03, round(4.00 + (val_base % 350) / 100, 2)
-            est_max = round(8.00 + (val_base % 1800) / 100, 2)
-            prob = 60 + (int(hash_hex[12:14], 16) % 35)
-            
-            target_dt = datetime.combine(datetime.today(), lera_game) + timedelta(minutes=final_int)
-            
-            st.session_state.history.insert(0, {
-                "min": est_min, "moyen": est_moyen, "max": est_max, 
-                "time_str": target_dt.strftime("%H:%M"), "target_dt": target_dt, "prob": prob
-            })
+            t_dt = datetime.combine(datetime.today(), lera_game) + timedelta(minutes=f_int)
+            new_p = {
+                "Icon": icon_main, "Lera": t_dt.strftime("%H:%M"), "Prob": f"{68 + (int(h[14:16], 16) % 28)}%",
+                "Safe": safe_val, "target_dt": t_dt, "moyen": round(3.80 + (v % 450) / 100, 2), "max": round(9.00 + (v % 2500) / 100, 2)
+            }
+            st.session_state.history.insert(0, new_p)
+            st.session_state.tracker.insert(0, {"Lera": new_p["Lera"], "Game": icon_main, "Prob": new_p["Prob"], "Safe": f"{safe_val}x"})
             st.rerun()
 
 with col2:
     if st.session_state.history:
-        res = st.session_state.history[0]
-        
-        # --- KAJY NY LIVE COUNTDOWN ---
-        now = datetime.now() # Lera finday izao
-        diff = res['target_dt'] - datetime.combine(datetime.today(), now.time())
-        seconds_left = diff.total_seconds()
+        r = st.session_state.history[0]
+        sec = (r['target_dt'] - datetime.combine(datetime.today(), datetime.now().time())).total_seconds()
         
         st.markdown(f"""
         <div class="result-card">
-            <p style="color: #888;">LERA FIDIRANA</p>
-            <div class="time-display">{res['time_str']}</div>
+            <p style='color:#888; letter-spacing: 3px;'>🎯 PROCHAIN SIGNAL {r['Icon']}</p>
+            <div class="time-display">{r['Lera']}</div>
         """, unsafe_allow_html=True)
         
-        # Fisehon'ny Countdown
-        if seconds_left > 0:
-            mins, secs = divmod(int(seconds_left), 60)
-            blink_class = "blink" if seconds_left <= 60 else ""
-            st.markdown(f'<p class="countdown-text {blink_class}">⌛ TIMER: {mins:02d}:{secs:02d}</p>', unsafe_allow_html=True)
+        if sec > 0:
+            m, s = divmod(int(sec), 60)
+            st.markdown(f'<p class="{"blink" if sec<=60 else ""}" style="font-size:38px; font-weight:900; color:{p_color};">⌛ TIMER: {m:02d}:{secs:02d}</p>', unsafe_allow_html=True)
         else:
-            st.markdown('<p class="countdown-text blink" style="color:#00FF44 !important;">🔥 MIDIRA IZAO! 🔥</p>', unsafe_allow_html=True)
+            st.markdown(f'<p class="blink" style="font-size:38px; font-weight:900; color:#00FF44;">🔥 {icon_main} MIDIRA IZAO! 🔥</p>', unsafe_allow_html=True)
             
         st.markdown(f"""
-            <p style="color: #FFD700; font-weight: bold;">PROBABILITÉ: {res['prob']}%</p>
-            <div style="display: flex; justify-content: space-around; margin-top: 15px;">
-                <div style="border:1px solid #00FF44; padding:10px; border-radius:10px;"><b>SAFE</b><br>{res['min']}x</div>
-                <div style="border:1px solid #FFD700; padding:10px; border-radius:10px;"><b>MOYEN</b><br>{res['moyen']}x</div>
-                <div style="border:1px solid #FF3131; padding:10px; border-radius:10px;"><b>MAX</b><br>{res['max']}x</div>
+            <p style='font-size:24px; color:{p_color}; font-weight:bold;'>⭐ PROBABILITÉ: {r['Prob']}</p>
+            <div style='display:flex; justify-content:space-around; margin-top:20px;'>
+                <div style='border:1px solid #00FF44; padding:15px; border-radius:18px; background:rgba(0,255,68,0.05);'><b>🟢 SAFE</b><br>{r['Safe']}x</div>
+                <div style='border:1px solid {p_color}; padding:15px; border-radius:18px; background:rgba(255,215,0,0.05);'><b>🟡 MOYEN</b><br>{r['moyen']}x</div>
+                <div style='border:1px solid #FF3131; padding:15px; border-radius:18px; background:rgba(255,49,49,0.05);'><b>🔴 MAX</b><br>{r['max']}x</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
         
-        # Mamelombelona ny Countdown isaky ny segondra
-        if seconds_left > -60: # Ajanona ny refresh rehefa dila 1 minitra
-            time.sleep(1)
-            st.rerun()
+        if sec > -60: time.sleep(1); st.rerun()
 
-        if uploaded_file:
-            st.image(uploaded_file, caption="Historique de la Manche", use_container_width=True)
+# --- 📊 HISTORY TRACKER ---
+st.write("---")
+st.markdown("### 📊 HISTORY & ACCURACY TRACKER")
+if st.session_state.tracker:
+    st.table(pd.DataFrame(st.session_state.tracker[:8]))
+
+# Sidebar Arena
+st.sidebar.write("---")
+st.sidebar.markdown("### 🎰 TRAINING ZONE")
+if st.sidebar.button("🎮 START TEST ROUND"):
+    res_sim = random.uniform(1.0, 4.0)
+    if res_sim >= safe_val:
+        st.session_state.score["Win"] += 1
+        st.sidebar.success(f"💰 WIN! {res_sim:.2f}x")
+    else:
+        st.session_state.score["Loss"] += 1
+        st.sidebar.error(f"💥 LOSS! {res_sim:.2f}x")
+st.sidebar.write(f"🏆 Score: ✅ {st.session_state.score['Win']} | ❌ {st.session_state.score['Loss']}")

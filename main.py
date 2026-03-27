@@ -2,7 +2,7 @@ import streamlit as st
 import random
 from datetime import datetime
 
-# --- STYLE ---
+# --- CONFIGURATION STYLE ---
 st.set_page_config(page_title="TITAN V62.9 TRINITY", layout="wide")
 
 st.markdown("""
@@ -17,7 +17,8 @@ st.markdown("""
         border-radius: 15px; padding: 25px; text-align: center; margin-top: 20px;
     }
     .accuracy-text { color: #ffd700; font-size: 20px; font-weight: bold; margin-top: 10px; }
-    .history-item { font-size: 16px; border-bottom: 1px solid #333; padding: 10px; color: #00ffcc; }
+    .range-text { color: #888; font-size: 16px; margin-bottom: 5px; }
+    .history-item { font-size: 15px; border-bottom: 1px solid #333; padding: 8px; color: #00ffcc; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -40,10 +41,23 @@ with tab1:
     
     if st.button("🚀 START AVIATOR ANALYSIS"):
         if hex_avi:
-            res = f"{round(random.uniform(2.0, 12.0), 2)}x"
+            # Logic Prediction Range (Min, Moyen, Max)
+            base = random.uniform(2.0, 8.0)
+            v_min = round(base * 0.85, 2)
+            v_moy = round(base, 2)
+            v_max = round(base * 1.3, 2)
             acc = f"{random.randint(95, 99)}%"
-            st.session_state.avi_hist.insert(0, f"{lera_avi} ⮕ {res} ({acc})")
-            st.markdown(f"<div class='prediction-card'><h1>{res}</h1><p>SIGNAL DETECTED</p><p class='accuracy-text'>{acc} Accuracy</p></div>", unsafe_allow_html=True)
+            
+            st.session_state.avi_hist.insert(0, f"{lera_avi} ⮕ {v_moy}x ({acc})")
+            
+            st.markdown(f"""
+                <div class='prediction-card'>
+                    <div class='range-text'>MIN: {v_min}x | MAX: {v_max}x</div>
+                    <h1>{v_moy}x</h1>
+                    <p>SIGNAL DETECTED</p>
+                    <p class='accuracy-text'>{acc} Accuracy</p>
+                </div>
+            """, unsafe_allow_html=True)
 
     st.write("---")
     st.subheader("📜 Historique de tour")
@@ -54,7 +68,7 @@ with tab1:
     
     with st.expander("📝 CONSIGNES"):
         st.write("1. Aza miverina indroa amin'ny signal iray.")
-        st.write("2. Ampiasao ny 10% amin'ny solde-nao.")
+        st.write("2. Ampiasao ny 10% amin'ny solde-nao fotsiny.")
 
 # --- 2. COSMOS ---
 with tab2:
@@ -66,10 +80,22 @@ with tab2:
     
     if st.button("🚀 START COSMOS ANALYSIS"):
         if hex_cos:
-            res = f"{round(random.uniform(1.8, 8.5), 2)}x"
+            base = random.uniform(1.8, 6.0)
+            v_min = round(base * 0.8, 2)
+            v_moy = round(base, 2)
+            v_max = round(base * 1.25, 2)
             acc = f"{random.randint(94, 98)}%"
-            st.session_state.cos_hist.insert(0, f"{lera_cos} ⮕ {res} ({acc})")
-            st.markdown(f"<div class='prediction-card'><h1 style='color:#ffd700;'>{res}</h1><p>SIGNAL DETECTED</p><p class='accuracy-text'>{acc} Accuracy</p></div>", unsafe_allow_html=True)
+            
+            st.session_state.cos_hist.insert(0, f"{lera_cos} ⮕ {v_moy}x ({acc})")
+            
+            st.markdown(f"""
+                <div class='prediction-card'>
+                    <div class='range-text'>MIN: {v_min}x | MAX: {v_max}x</div>
+                    <h1 style='color: #ffd700;'>{v_moy}x</h1>
+                    <p>SIGNAL DETECTED</p>
+                    <p class='accuracy-text'>{acc} Accuracy</p>
+                </div>
+            """, unsafe_allow_html=True)
 
     st.write("---")
     st.subheader("📜 Historique de tour")
@@ -99,15 +125,13 @@ with tab3:
             grid += '</div>'
             st.markdown(grid, unsafe_allow_html=True)
             st.markdown("<p style='text-align:center;' class='accuracy-text'>98% Accuracy</p>", unsafe_allow_html=True)
-            st.session_state.min_hist.insert(0, f"Schema Generated at {datetime.now().strftime('%H:%M')}")
+            st.session_state.min_hist.insert(0, f"Schema VIP Generated ({datetime.now().strftime('%H:%M')})")
 
     st.write("---")
     st.subheader("📜 Historique Mines")
-    if st.session_state.min_hist:
-        for item in st.session_state.min_hist[:3]:
-            st.markdown(f"<div class='history-item'>{item}</div>", unsafe_allow_html=True)
-    else: st.caption("empty")
+    for item in st.session_state.min_hist[:3]:
+        st.markdown(f"<div class='history-item'>{item}</div>", unsafe_allow_html=True)
 
     with st.expander("📝 CONSIGNES"):
         st.write("1. Miandrasa tour 3 farafahakeliny vao manao generate vaovao.")
-        st.write("2. Aza lany dila ny vola raha 98% ny accuracy.")
+        st.write("2. Aza mampiasa an'ity schema ity raha efa mihoatra ny 5 minitra ny nampidirana ny seed.")

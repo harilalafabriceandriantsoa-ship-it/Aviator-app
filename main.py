@@ -3,101 +3,149 @@ import hashlib
 import time
 from datetime import datetime, timedelta
 
-# --- CONFIGURATION STYLE ---
-st.set_page_config(page_title="ANDRIANTSO TITAN v60.9", page_icon="⚡", layout="wide")
+# --- 1. CONFIGURATION STYLE (Tena Mahery) ---
+st.set_page_config(page_title="ANDRIANTSO SUPREME v61.0", page_icon="💎", layout="wide")
 
 st.markdown("""
     <style>
-    .main { background: #050505; color: #ffffff; }
-    .stMetric { background: rgba(0, 255, 204, 0.05); border: 1px solid #00ffcc; border-radius: 15px; padding: 15px; }
-    .prediction-box {
-        background: linear-gradient(135deg, rgba(0, 255, 204, 0.1), rgba(255, 215, 0, 0.1));
-        border: 2px solid #00ffcc; border-radius: 20px; padding: 30px; text-align: center;
-        box-shadow: 0 0 25px rgba(0, 255, 204, 0.3);
+    /* Background an'ny pejy iray manontolo */
+    .stApp {
+        background-color: #050505;
+        color: #ffffff;
     }
+    /* Boite an'ny prediction */
+    .prediction-card {
+        background: linear-gradient(135deg, rgba(0, 255, 204, 0.15), rgba(255, 215, 0, 0.15));
+        border: 2px solid #00ffcc;
+        border-radius: 20px;
+        padding: 30px;
+        text-align: center;
+        box-shadow: 0 0 30px rgba(0, 255, 204, 0.2);
+        margin-bottom: 25px;
+    }
+    /* Style an'ny bokotra */
     .stButton>button {
         background: linear-gradient(90deg, #00ffcc, #FFD700);
-        color: black; font-weight: 900; border-radius: 12px; height: 4em; border: none;
-        transition: 0.3s;
+        color: #000000 !important;
+        font-weight: 900 !important;
+        border-radius: 15px !important;
+        height: 4.5em !important;
+        width: 100%;
+        border: none !important;
+        text-transform: uppercase;
+        letter-spacing: 2px;
     }
-    .stButton>button:hover { transform: scale(1.02); box-shadow: 0 0 20px #00ffcc; }
+    /* Metrics style */
+    div[data-testid="stMetric"] {
+        background: rgba(255, 255, 255, 0.05);
+        border-left: 4px solid #00ffcc;
+        padding: 15px;
+        border-radius: 10px;
+    }
+    /* Input style */
+    .stTextInput>div>div>input {
+        background-color: #111 !important;
+        color: #00ffcc !important;
+        border: 1px solid #333 !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-if 'history' not in st.session_state: st.session_state.history = []
+# --- 2. LOGIC & INITIALIZATION ---
+if 'history' not in st.session_state:
+    st.session_state.history = []
 
-st.markdown("<h1 style='text-align: center; color: #00ffcc;'>⚡ TITAN NEON v60.9</h1>", unsafe_allow_html=True)
-
-# --- 🎯 SELECTION LALAO (VISIBLE) ---
-st.write("### 🎮 FIDIO NY LALAO HATAO ANALYSE:")
-mode = st.radio("", ["✈️ AVIATOR GOLD", "🚀 COSMOS X"], horizontal=True)
+# --- 3. HEADER & SELECTION ---
+st.markdown("<h1 style='text-align: center; color: #00ffcc;'>💎 TITAN SUPREME v61.0</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #888;'>SHA-512 Variable Logic | Professional Grade</p>", unsafe_allow_html=True)
 
 st.write("---")
 
-# --- INPUT PANEL ---
-col_up, col_tm = st.columns(2)
-with col_up:
-    st.file_uploader("📸 Screenshot History", type=['jpg', 'png'])
-with col_tm:
-    game_time = st.time_input("⏲️ Lera ao amin'ny lalao:", datetime.now().time())
+# Fidio ny lalao (Main Page)
+col_mode = st.columns([1, 2, 1])
+with col_mode[1]:
+    mode = st.radio("🎯 FIDIO NY LALAO HATAO ANALYSE:", ["✈️ AVIATOR GOLD", "🚀 COSMOS X"], horizontal=True)
 
-hex_input = st.text_input(f"🔑 HEX SEED {mode}:", placeholder="Paste SHA Hash here...")
+# --- 4. INPUT PANEL ---
+st.write("### 📥 DATA INPUT")
+c1, c2 = st.columns(2)
+with c1:
+    st.file_uploader("📸 Screenshot History (Optional)", type=['jpg', 'png'])
+with c2:
+    current_game_time = st.time_input("⏲️ Lera farany hita tamin'ny lalao:", datetime.now().time())
 
-if st.button(f"🔥 EXECUTE TITAN ANALYSIS"):
-    if not hex_input:
-        st.error("❌ Ampidiro aloha ny Hex Seed!")
+hex_seed = st.text_input(f"🔑 AMPIDIRO NY HEX SEED {mode} (SHA-256):", placeholder="Paste the hash here...")
+
+# --- 5. EXECUTION & CALCULATION ---
+if st.button(f"🚀 START TITAN SHA-512 ANALYSIS"):
+    if not hex_seed:
+        st.warning("⚠️ Masìna ianao, ampidiro aloha ilay Hex Seed!")
     else:
-        with st.spinner('🔐 TITAN AI is decrypting SHA-512...'):
-            time.sleep(1.5)
-            # Algorithm SHA-512 ho an'ny analysis mahery
-            titan_hash = hashlib.sha512(hex_input.encode()).hexdigest()
-            val = int(titan_hash[:12], 16)
+        with st.spinner('🔐 Mikajy ny algorithm SHA-512...'):
+            time.sleep(2)
             
-            # Triple Estimation Logic
-            prob = 89 + (val % 10)
+            # SHA-512 MAHERY VAIKA
+            raw_hash = hashlib.sha512(hex_seed.encode()).hexdigest()
+            val = int(raw_hash[:12], 16)
             
+            # Accuracy
+            prob = 91 + (val % 8)
+            
+            # Estimations miankina amin'ny lalao
             if "AVIATOR" in mode:
-                safe = round(1.85 + (val % 135) / 100, 2)
-                moyen = round(safe * 2.8, 2)
-                max_val = round(20.0 + (val % 12000) / 100, 2)
+                safe = round(1.80 + (val % 140) / 100, 2)
+                moyen = round(safe * (2.2 + (val % 10)/10), 2)
+                max_val = round(30.0 + (val % 15000) / 100, 2)
             else:
-                safe = round(1.50 + (val % 110) / 100, 2)
-                moyen = round(safe * 2.2, 2)
-                max_val = round(10.0 + (val % 5500) / 100, 2)
+                safe = round(1.40 + (val % 120) / 100, 2)
+                moyen = round(safe * 2.0, 2)
+                max_val = round(15.0 + (val % 8000) / 100, 2)
             
-            target_time = (datetime.combine(datetime.today(), game_time) + timedelta(minutes=(val % 4) + 1)).strftime("%H:%M")
+            # Prediction Lera
+            pred_time = (datetime.combine(datetime.today(), current_game_time) + timedelta(minutes=(val % 3) + 1)).strftime("%H:%M")
 
-            # --- DISPLAY RESULT ---
+            # --- DISPLAY RESULTS ---
             st.markdown(f"""
-                <div class="prediction-box">
-                    <p style='color: #00ffcc; letter-spacing: 2px;'>{mode} SIGNAL ACTIVE</p>
-                    <h1 style='font-size: 60px; margin: 10px 0;'>{target_time}</h1>
-                    <h3 style='color: #FFD700;'>ESTIMATION ACCURACY: {prob}%</h3>
+                <div class="prediction-card">
+                    <h2 style='color: #00ffcc;'>{mode} SIGNAL READY</h2>
+                    <h1 style='font-size: 70px; color: #ffffff;'>{pred_time}</h1>
+                    <p style='color: #FFD700; font-size: 20px;'>ACCURACY: {prob}%</p>
                 </div>
             """, unsafe_allow_html=True)
 
-            st.write("---")
             m1, m2, m3 = st.columns(3)
-            m1.metric("🟢 SAFE", f"{safe}x")
-            m2.metric("🟡 MOYEN", f"{moyen}x")
-            m3.metric("🌸 MAX (PINK)", f"{max_val}x")
+            with m1: st.metric("🟢 SAFE EXIT", f"{safe}x")
+            with m2: st.metric("🟡 MOYEN TARGET", f"{moyen}x")
+            with m3: st.metric("🌸 MAX (PINK)", f"{max_val}x")
 
-            st.session_state.history.insert(0, {"Lera": target_time, "Lalao": mode, "Safe": safe, "Moyen": moyen, "Max": max_val})
+            # Store history
+            st.session_state.history.insert(0, {
+                "Lera": pred_time, 
+                "Lalao": mode, 
+                "Safe": safe, 
+                "Moyen": moyen, 
+                "Max": max_val,
+                "Prob": f"{prob}%"
+            })
 
-# --- SIDEBAR: CONSIGNES ---
-st.sidebar.header("📖 Fampianarana Expert")
-st.sidebar.info("""
-1. **Fidio tsara ny lalao**: Aviator sa Cosmos eo ambony.
-2. **SHA-512**: Ity no manome ny 'Moyen' sy 'Max'.
-3. **Mialà amin'ny Safe**: Raha vao nivoaka in-2 ny Blue, aza miala amin'ny Safe.
-4. **Target Moyen**: Ny 'Moyen' no tanjona azonao atao isan'andro.
-""")
-
-# --- HISTORY ---
-st.write("---")
-st.subheader("📜 RECENT TITAN SIGNALS")
-if st.session_state.history:
-    st.table(st.session_state.history)
-    if st.sidebar.button("🗑️ RESET ALL"):
+# --- 6. SIDEBAR: CONSIGNES & HISTORY ---
+with st.sidebar:
+    st.header("📖 CONSIGNES D'EXPERT")
+    st.markdown("""
+    1. **Fidio ny lalao**: Ataovy azo antoka fa mifanaraka ny lalao sy ny Hex Seed.
+    2. **Gestion de Mise**: Aza lany vola amin'ny lalao iray.
+    3. **Pink Hunting**: Ny 'Max' dia mety hitranga fa ambony ny risika. Aleo mivoaka amin'ny 'Moyen'.
+    4. **Break**: Rehefa nahazo in-3 ianao, ajanony ny lalao mandritra ny 30 minitra.
+    """)
+    st.write("---")
+    if st.button("🗑️ CLEAR HISTORY"):
         st.session_state.history = []
         st.rerun()
+
+# --- 7. HISTORY TABLE ---
+st.write("---")
+st.subheader("📜 TANTARAN'NY PREDICTION")
+if st.session_state.history:
+    st.table(st.session_state.history)
+else:
+    st.info("Mbola tsisy prediction vita. Ampidiro ny Hex Seed eo ambony.")

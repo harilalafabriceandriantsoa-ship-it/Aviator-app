@@ -6,137 +6,144 @@ from datetime import datetime, timedelta, timezone
 
 # --- INITIALISATION ---
 if 'history' not in st.session_state: st.session_state.history = []
+if 'stats' not in st.session_state: st.session_state.stats = {"Win": 0, "Loss": 0}
 
-st.set_page_config(page_title="ANDRIANTSO | APEX v50", layout="wide")
+st.set_page_config(page_title="ANDRIANTSO | SUPREME v60", layout="wide")
 now_mg = datetime.now(timezone(timedelta(hours=3)))
 
-# --- STYLE DESIGN UNIFORME ---
+# --- STYLE PREMIUM STYLE ---
 st.markdown("""
     <style>
     .main { background-color: #000000; color: #FFFFFF; }
     .stApp { background-color: #000000; }
     
-    .apex-title {
-        text-align: center; font-size: 40px; font-weight: 900;
-        color: #FFD700; text-shadow: 0 0 20px #FFD700;
+    .title-premium {
+        text-align: center; font-size: 45px; font-weight: 900;
+        background: linear-gradient(90deg, #FFD700, #FFFFFF, #FFD700);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        text-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
     }
     
-    .res-card {
-        background: #0a0a0a; padding: 30px; border-radius: 35px;
-        border: 3px solid; text-align: center;
-        box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+    .card-signal {
+        background: rgba(15, 15, 15, 0.95); padding: 30px; border-radius: 30px;
+        border: 2px solid; text-align: center; margin-bottom: 20px;
+        box-shadow: 0 10px 50px rgba(0,0,0,0.5);
     }
     
-    .time-display { font-size: 85px; font-weight: 900; line-height: 1; margin: 15px 0; }
+    .big-timer { font-size: 110px; font-weight: 900; line-height: 1; margin: 10px 0; }
     
-    /* Style ho an'ny tabs */
-    .stTabs [data-baseweb="tab-list"] { display: flex; justify-content: center; }
-    .stTabs [data-baseweb="tab"] {
-        font-size: 18px; font-weight: 900; width: 200px; height: 50px;
-        border-radius: 10px 10px 0 0;
+    .stTabs [data-baseweb="tab-list"] { background-color: #111; border-radius: 20px; padding: 5px; }
+    .stTabs [data-baseweb="tab"] { font-weight: bold; font-size: 16px; width: 100%; }
+    
+    .tracker-box {
+        background: #111; padding: 15px; border-radius: 15px;
+        display: flex; justify-content: space-around; align-items: center;
+        border-bottom: 3px solid #FFD700;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- HEADER ---
-st.markdown('<p class="apex-title">💎 ANDRIANTSO | APEX v50</p>', unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#555;'>UNIVERSAL DUAL-ENGINE SYSTEM</p>", unsafe_allow_html=True)
+# --- HEADER & TRACKER ---
+st.markdown('<p class="title-premium">💎 SUPREME TITAN v60.0</p>', unsafe_allow_html=True)
 
-# --- 📜 UNIVERSITY & CONSIGNES (Mitambatra) ---
-with st.expander("🎓 UNIVERSITY & CONSIGNES (Samy mitovy)"):
-    col_c1, col_c2 = st.columns(2)
-    with col_c1:
-        st.markdown("""
-        **📍 BANKROLL MANAGEMENT:**
-        - Mise: 2% hatramin'ny 5% ny capital.
-        - Objectif: +20% isan'andro dia mijanona.
-        """)
-    with col_c2:
-        st.markdown("""
-        **📍 FOMBA FAMPIASANA:**
-        - Adika ny **Hex Seed** avy ao amin'ny lalao.
-        - Apetaka eo amin'ny vata, dia tsindrio ny **Generate**.
-        - Araho ny **Timer** mandra-pahatongan'ny 00:00.
-        """)
+col_t1, col_t2 = st.columns([2, 1])
+with col_t1:
+    st.markdown(f"""
+    <div class="tracker-box">
+        <span>🏆 <b>ACCURACY TRACKER</b></span>
+        <span style="color:#00FF66;">✅ GAGNÉ: {st.session_state.stats['Win']}</span>
+        <span style="color:#FF4B4B;">❌ PERDU: {st.session_state.stats['Loss']}</span>
+    </div>
+    """, unsafe_allow_html=True)
+with col_t2:
+    if st.button("🔄 RESET STATS"):
+        st.session_state.stats = {"Win": 0, "Loss": 0}
+        st.rerun()
 
-# --- NAVIGATION ---
-tab1, tab2 = st.tabs(["✈️ AVIATOR MODE", "🚀 COSMOS MODE"])
+# --- MODES ---
+tab_avi, tab_cos = st.tabs(["✈️ MODE AVIATOR (GOLD)", "🚀 MODE COSMOS X (NEON)"])
 
-def build_engine(name, color, safe, offset):
-    c1, c2 = st.columns([1, 1.3])
+def engine_premium(name, color, safe, speed):
+    c1, c2 = st.columns([1, 1.2])
+    
     with c1:
-        st.markdown(f"### ⚙️ {name} INPUT")
-        # Donnée tokana (Hex Seed)
-        hex_val = st.text_input(f"🔑 {name} HEX SEED:", placeholder="Paste Hex Code here...", key=f"hex_{name}")
+        st.markdown(f"### 🛠️ {name} SETTINGS")
         
-        # Ny AI no mikajy ny lera automatique
-        st.write(f"⏰ Lera Finday: **{now_mg.strftime('%H:%M:%S')}**")
+        # 1. Sync
+        sync = st.select_slider("🕒 SYNC LERA:", options=["-1m", "Normal", "+1m"], value="Normal", key=f"s_{name}")
+        
+        # 2. Hex Seed
+        hex_in = st.text_input("🔑 HEX SEED (SHA-256):", placeholder="Paste Hex here...", key=f"h_{name}")
+        
+        # 3. Lera Lalao (Naverina)
+        lera_lalao = st.time_input("⏲️ LERA AO AMIN'NY LALAO:", value=now_mg.time(), key=f"t_{name}")
+        
+        # 4. Sary Analyse (Naverina)
+        st.file_uploader("📷 ANALYSE HISTORIQUE (Screenshot)", type=['jpg','png','jpeg'], key=f"f_{name}")
 
-        if st.button(f"🔥 GENERATE {name} SIGNAL", key=f"btn_{name}"):
-            if hex_val:
-                h = hashlib.sha256(hex_val.encode()).hexdigest()
-                v = int(h[:8], 16)
+        if st.button(f"🔥 GENERATE {name} SIGNAL", key=f"b_{name}"):
+            if hex_in:
+                h = hashlib.sha256(hex_in.encode()).hexdigest()
+                v = int(h[:10], 16)
                 
-                # Sync automatique arakaraka ny lalao
-                target = now_mg + timedelta(minutes=offset)
+                # Calculation avec Lera sy Sync
+                off = 1 if "+1m" in sync else -1 if "-1m" in sync else 0
+                target = datetime.combine(datetime.today(), lera_lalao) + timedelta(minutes=(speed + off))
                 
                 st.session_state.history.insert(0, {
                     "Lera": target.strftime("%H:%M"),
-                    "Prob": f"{90 + (v % 9)}%",
-                    "Safe": safe,
-                    "Moyen": round(4.2 + (v % 380)/100, 2),
-                    "Max": round(20.0 + (v % 4000)/100, 2),
                     "Game": name,
-                    "target_dt": target
+                    "Safe": safe,
+                    "Moyen": round(4.5 + (v % 500)/100, 2),
+                    "Max": round(25.0 + (v % 8000)/100, 2),
+                    "target_dt": target,
+                    "color": color
                 })
                 st.rerun()
-            else:
-                st.error("Ampidiro aloha ny Hex Seed!")
 
     with c2:
         if st.session_state.history and st.session_state.history[0]["Game"] == name:
             res = st.session_state.history[0]
-            diff = (res['target_dt'] - now_mg).total_seconds()
+            diff = (res['target_dt'] - datetime.combine(datetime.today(), datetime.now().time())).total_seconds()
             
             st.markdown(f"""
-            <div class="res-card" style="border-color: {color};">
-                <p style="color: {color}; font-weight: bold; letter-spacing: 3px;">{name} PREDICTION</p>
-                <div class="time-display" style="color: {'#00FF66' if diff > 0 else color};">{res['Lera']}</div>
+            <div class="card-signal" style="border-color: {color};">
+                <p style="color: {color}; font-weight: bold; letter-spacing: 5px;">{name} SIGNAL ACTIVE</p>
+                <div class="big-timer" style="color: {'#00FF66' if diff > 0 else color};">{res['Lera']}</div>
             """, unsafe_allow_html=True)
             
             if diff > 0:
                 m, s = divmod(int(diff), 60)
                 st.markdown(f"<h2 style='color:#FFD700;'>⌛ TIMER: {m:02d}:{s:02d}</h2>", unsafe_allow_html=True)
             else:
-                st.markdown(f"<h2 class='blink' style='color:{color};'>🔥 MIDIRA IZAO! 🔥</h2>", unsafe_allow_html=True)
+                st.markdown(f"<h1 class='blink' style='color:{color};'>🚀 MIDIRA IZAO!</h1>", unsafe_allow_html=True)
+                # Bokotra Validation (Gagné / Perdu)
+                col_w, col_l = st.columns(2)
+                if col_w.button("✅ GAGNÉ", key=f"win_{time.time()}"):
+                    st.session_state.stats["Win"] += 1
+                    st.rerun()
+                if col_l.button("❌ PERDU", key=f"loss_{time.time()}"):
+                    st.session_state.stats["Loss"] += 1
+                    st.rerun()
             
             st.markdown(f"""
-                <div style="display: flex; justify-content: space-around; margin-top: 20px; border-top: 1px solid #333; padding-top: 15px;">
-                    <div><b>SAFE</b><br><span style="color:#00FF66; font-size:20px;">{res['Safe']}x</span></div>
-                    <div><b>MOYEN</b><br><span style="color:#FFD700; font-size:20px;">{res['Moyen']}x</span></div>
-                    <div><b>MAX (PINK)</b><br><span style="color:{color}; font-size:22px; font-weight:900;">{res['Max']}x</span></div>
+                <div style="display: flex; justify-content: space-around; margin-top: 25px; border-top: 1px solid #333; padding-top: 20px;">
+                    <div><b style="color:#888;">SAFE</b><br><span style="color:#00FF66; font-size:22px;">{res['Safe']}x</span></div>
+                    <div><b style="color:#888;">MOYEN</b><br><span style="color:#FFD700; font-size:22px;">{res['Moyen']}x</span></div>
+                    <div><b style="color:#888;">MAX</b><br><span style="color:{color}; font-size:28px; font-weight:900;">{res['Max']}x</span></div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
             
             if diff > -60: time.sleep(1); st.rerun()
         else:
-            st.info(f"Andrasana ny Hex Seed ho an'ny {name}...")
+            st.info(f"Vakio ny screenshot dia ampidiro ny Hex Seed ho an'ny {name}...")
 
-# --- EXECUTION ---
-with tab1:
-    build_engine("AVIATOR", "#FFD700", 2.03, 1.5)
-
-with tab2:
-    build_engine("COSMOS", "#00D4FF", 1.75, 1.0)
+with tab_avi: engine_premium("AVIATOR", "#FFD700", 2.03, 2)
+with tab_cos: engine_premium("COSMOS", "#00D4FF", 1.75, 1)
 
 # --- HISTORY ---
 if st.session_state.history:
     st.write("---")
-    st.markdown("### 📜 HISTORY (Last 3)")
-    st.table(pd.DataFrame(st.session_state.history[:3])[["Lera", "Game", "Safe", "Max"]])
-
-# --- RESET ---
-if st.button("🗑️ RESET ALL"):
-    st.session_state.history = []
-    st.rerun()
+    st.markdown("### 📜 PREVIOUS SIGNALS")
+    st.table(pd.DataFrame(st.session_state.history[:5])[["Lera", "Game", "Safe", "Max"]])

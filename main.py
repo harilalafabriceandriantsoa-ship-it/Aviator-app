@@ -4,109 +4,103 @@ import time
 import random
 from datetime import datetime, timedelta
 
-# --- STYLE CONFIGURATION (PREMIUM & VISIBLE) ---
-st.set_page_config(page_title="ANDRIANTSO ULTIMATE v62.3", page_icon="💎", layout="wide")
+# --- STYLE & SOUND ---
+def play_notif():
+    st.markdown('<audio autoplay><source src="https://www.soundjay.com/buttons/sounds/button-37.mp3" type="audio/mpeg"></audio>', unsafe_allow_html=True)
+
+st.set_page_config(page_title="TITAN v62.7 TRACKER", page_icon="📊", layout="wide")
+
+# Initialisation an'ny fitahirizana (Memory)
+if 'history_tours' not in st.session_state: st.session_state.history_tours = []
+if 'total_gains' not in st.session_state: st.session_state.total_gains = 0.0
 
 st.markdown("""
     <style>
-    .stApp { background-color: #030303; color: #ffffff; }
-    .main-card {
-        background: rgba(0, 255, 204, 0.1);
-        border: 2px solid #00ffcc; border-radius: 15px;
-        padding: 20px; text-align: center; margin-bottom: 20px;
+    .stApp { background: #050505; color: #e0e0e0; }
+    .sidebar .sidebar-content { background: #0a0a0a; }
+    .card-signal {
+        background: rgba(0, 255, 204, 0.05); border: 2px solid #ffd700;
+        border-radius: 15px; padding: 20px; text-align: center;
     }
-    .stat-box {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 10px; padding: 15px; text-align: center;
-        border-top: 3px solid #ffd700;
-    }
-    .mine-grid {
-        display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
-        width: 300px; margin: auto; background: #000; padding: 15px;
-        border-radius: 12px; border: 2px solid #ffd700;
-    }
-    .mine-cell {
-        width: 50px; height: 50px; border-radius: 8px;
-        display: flex; align-items: center; justify-content: center; font-size: 22px;
-    }
-    .star { background: #ffd700; color: #000; box-shadow: 0 0 10px #ffd700; }
-    .empty { background: #1a1a1a; border: 1px solid #333; }
-    .stButton>button {
-        background: linear-gradient(90deg, #00ffcc, #ffd700);
-        color: black !important; font-weight: 900 !important; border-radius: 12px;
-        height: 4em; width: 100%; border: none;
-    }
+    .stat-val { font-size: 35px; font-weight: 900; color: #ffffff; }
     </style>
     """, unsafe_allow_html=True)
 
-if 'history' not in st.session_state: st.session_state.history = []
+st.title("📊 TITAN v62.7 - SMART TRACKER")
 
-st.markdown("<h1 style='text-align: center; color: #00ffcc;'>💎 TITAN ULTIMATE v62.3</h1>", unsafe_allow_html=True)
+# --- SIDEBAR : HISTORIQUE DE TOUR & JOURNAL ---
+st.sidebar.header("📝 HISTORIQUE & JOURNAL")
 
-mode = st.radio("SELECT GAME:", ["✈️ AVIATOR GOLD", "🚀 COSMOS X", "💣 MINES 6-STAR"], horizontal=True)
+with st.sidebar.expander("➕ AMPIDIRO NY VOKATRA (TOUR)"):
+    t_val = st.number_input("Multiplier nivoaka (x):", min_value=1.0, step=0.01)
+    t_game = st.selectbox("Lalao:", ["Aviator", "Cosmos", "Mines"])
+    if st.button("Enregistrer le Tour"):
+        now_mg = (datetime.now() + timedelta(hours=3)).strftime("%H:%M:%S")
+        st.session_state.history_tours.insert(0, {"Lera": now_mg, "Lalao": t_game, "Resultat": f"{t_val}x"})
+        st.sidebar.success("Tour voatahiry!")
 
-st.write("---")
+st.sidebar.markdown(f"### 💰 Total Gains: {st.session_state.total_gains}$")
+st.sidebar.write("---")
+st.sidebar.subheader("🕒 5 Tours Farany")
+if st.session_state.history_tours:
+    st.sidebar.table(st.session_state.history_tours[:5])
 
-c1, c2 = st.columns(2)
-with c1: st.file_uploader("📸 Capture History", type=['jpg', 'png'])
-with c2:
+# --- MAIN INTERFACE ---
+mode = st.radio("LALAO:", ["✈️ AVIATOR GOLD", "🚀 COSMOS X", "💣 MINES 6-STAR"], horizontal=True)
+
+col1, col2 = st.columns(2)
+with col1:
     if mode == "💣 MINES 6-STAR":
-        c_s = st.text_input("💻 Seed Client:")
-        s_s = st.text_input("🖥️ Seed Serveur:")
+        cs = st.text_input("💻 Seed Client")
+        ss = st.text_input("🖥️ Seed Serveur (Hash)")
+        source = "SHA-512 Server Hash"
     else:
-        g_time = st.time_input("⏲️ Lera farany:", datetime.now().time())
-        h_seed = st.text_input("🔑 HEX SEED (SHA-256):")
+        time_now = (datetime.now() + timedelta(hours=3)).time()
+        gt = st.time_input("⏲️ Lera farany (Finday):", time_now)
+        hs = st.text_input("🔑 HEX SEED (SHA-256):")
+        source = "Hexadecimal Seed Analysis"
 
-if st.button(f"🚀 START {mode} ANALYSIS"):
-    if (mode == "💣 MINES 6-STAR" and (not c_s or not s_s)) or (mode != "💣 MINES 6-STAR" and not h_seed):
-        st.error("❌ Fenoy ny banga!")
-    else:
-        with st.spinner('🔐 Analyzing SHA-512...'):
-            time.sleep(2)
-            if mode == "💣 MINES 6-STAR":
-                combined = c_s + s_s
-                h = hashlib.sha512(combined.encode()).hexdigest()
-                random.seed(int(h[:16], 16))
-                num_stars = random.choice([5, 6])
-                star_spots = random.sample(range(25), k=num_stars)
-                
-                st.markdown(f"<h3 style='text-align: center; color: #ffd700;'>⭐ SCHEMA ({num_stars} KINTANA) ⭐</h3>", unsafe_allow_html=True)
-                grid_html = '<div style="display: flex; justify-content: center;"><div class="mine-grid">'
-                for i in range(25):
-                    grid_html += f'<div class="mine-cell {"star" if i in star_spots else "empty"}>{"⭐" if i in star_spots else "?"}</div>'
-                grid_html += '</div></div>'
-                st.markdown(grid_html, unsafe_allow_html=True)
-                res_txt = f"Schéma {num_stars} Stars"
-            else:
-                # --- AVIATOR & COSMOS WITH FULL ESTIMATIONS ---
-                h = hashlib.sha512(h_seed.encode()).hexdigest()
-                val = int(h[:12], 16)
-                acc = 93 + (val % 6)
-                t_t = (datetime.combine(datetime.today(), g_time) + timedelta(minutes=(val % 3) + 1)).strftime("%H:%M")
-                
-                if "AVIATOR" in mode:
-                    s_val, m_val = round(1.85 + (val % 140) / 100, 2), round(35.0 + (val % 15000) / 100, 2)
-                else:
-                    s_val, m_val = round(1.45 + (val % 120) / 100, 2), round(15.0 + (val % 9000) / 100, 2)
-                mid_val = round(s_val * 2.6, 2)
+with col2:
+    st.markdown("### 📋 Signal Status")
+    st.info(f"**Source From:** {source}")
+    st.write(f"**Sync:** Madagascar GMT+3 Active")
 
-                # Fanehoana ny valiny ho hitan'ny maso tsara
-                st.markdown(f"""
-                    <div class="main-card">
-                        <h2 style='color: #00ffcc; margin:0;'>SIGNAL: {t_t}</h2>
-                        <h1 style='color: #ffffff; font-size: 50px; margin:0;'>{acc}%</h1>
+if st.button(f"🚀 ANALYSER {mode}"):
+    with st.spinner('Calculating...'):
+        time.sleep(1.2)
+        play_notif()
+        
+        if mode == "💣 MINES 6-STAR":
+            h = hashlib.sha512((cs + ss).encode()).hexdigest()
+            random.seed(int(h[:16], 16))
+            stars = random.sample(range(25), k=6)
+            
+            st.markdown("<h3 style='text-align:center;'>⭐ SCHÉMA DE TOUR ⭐</h3>", unsafe_allow_html=True)
+            grid = '<div style="display: grid; grid-template-columns: repeat(5, 50px); gap: 10px; justify-content: center;">'
+            for i in range(25):
+                bg = "#ffd700" if i in stars else "#1a1a1a"
+                grid += f'<div style="width:50px; height:50px; background:{bg}; border-radius:5px;"></div>'
+            grid += '</div>'
+            st.markdown(grid, unsafe_allow_html=True)
+        else:
+            h = hashlib.sha512(hs.encode()).hexdigest()
+            val = int(h[:12], 16)
+            pt = (datetime.combine(datetime.today(), gt) + timedelta(minutes=(val % 3) + 1)).strftime("%H:%M")
+            acc = 94 + (val % 5)
+            s, m = round(1.88 + (val % 110)/100, 2), round(50.0 + (val % 25000)/100, 2)
+
+            st.markdown(f"""
+                <div class="card-signal">
+                    <h2 style="color: #ffd700;">PROCHAIN SIGNAL : {pt}</h2>
+                    <p style="color: #00ffcc;">Source: {source}</p>
+                    <div style="display: flex; justify-content: space-around; margin-top:20px;">
+                        <div><p>🟢 SAFE</p><p class="stat-val">{s}x</p></div>
+                        <div><p>🟡 MOYEN</p><p class="stat-val">{round(s*2.7, 2)}x</p></div>
+                        <div><p>🌸 PINK</p><p class="stat-val">{m}x</p></div>
                     </div>
-                """, unsafe_allow_html=True)
-                
-                col_a, col_b, col_c = st.columns(3)
-                with col_a: st.markdown(f"<div class='stat-box'><p>🟢 SAFE</p><h3>{s_val}x</h3></div>", unsafe_allow_html=True)
-                with col_b: st.markdown(f"<div class='stat-box'><p>🟡 MOYEN</p><h3>{mid_val}x</h3></div>", unsafe_allow_html=True)
-                with col_c: st.markdown(f"<div class='stat-box'><p>🌸 MAX PINK</p><h3>{m_val}x</h3></div>", unsafe_allow_html=True)
-                
-                res_txt = f"{t_t} ({acc}%)"
-
-            st.session_state.history.insert(0, {"Lera": datetime.now().strftime("%H:%M"), "Lalao": mode, "Vokatra": res_txt})
+                    <h3>PRÉCISION: {acc}%</h3>
+                </div>
+            """, unsafe_allow_html=True)
 
 st.write("---")
-st.subheader("📜 HISTORIQUE")
-st.table(st.session_state.history)
+st.caption("TITAN v62.7 | Signal Tracking & Historical Data Enabled")

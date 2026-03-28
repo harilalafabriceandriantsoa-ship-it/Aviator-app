@@ -69,3 +69,4 @@ with tab1:
     st.subheader("✈️ AVIATOR PREDICTOR")
     if st.button("🚀 GET SIGNAL"):
         st.success(f"Signal: {round(random.uniform(1.5, 10.0), 2)}x")
+    

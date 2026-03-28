@@ -10,11 +10,11 @@ if 'authenticated' not in st.session_state:
 if 'master_password' not in st.session_state:
     st.session_state.master_password = "PATRICIA_BEAST"
 
-# Fitahirizana Historique (Tsy miova)
+# Fitahirizana Historique
 for key in ['hist_aviator', 'hist_cosmos', 'hist_mines', 'hist_penalty']:
     if key not in st.session_state: st.session_state[key] = []
 
-# --- 2. LOGIN (Nohajaina ny sary nalefanao) ---
+# --- 2. LOGIN ---
 def login():
     if not st.session_state.authenticated:
         st.markdown("<h1 style='text-align:center; color:#00ffcc;'>🔐 TITAN SECURE LOGIN</h1>", unsafe_allow_html=True)
@@ -29,8 +29,8 @@ def login():
 
 login()
 
-# --- 3. STYLE PREMIUM (Symmetric with Screenshots) ---
-st.set_page_config(page_title="TITAN V85.0 OMNI-STRIKE BY PATRICIA", layout="wide")
+# --- 3. STYLE PREMIUM ---
+st.set_page_config(page_title="TITAN V85.0 OMNI-STRIKE", layout="wide")
 st.markdown("""
     <style>
     .stApp { background: #010a12; color: #ffffff; }
@@ -38,11 +38,14 @@ st.markdown("""
     .card-beast { background: #040e17; border: 2px solid #00ffcc; border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 0 15px rgba(0,255,204,0.3); margin-bottom: 20px; }
     .hist-container { background: rgba(0,0,0,0.6); border-radius: 10px; padding: 15px; font-family: monospace; height: 180px; overflow-y: auto; border: 1px solid #333; color: #00ffcc; }
     .stButton>button { background: linear-gradient(90deg, #00ffcc, #0077ff); color: #010a12; font-weight: 900; border-radius: 10px; height: 50px; border: none; }
-    .footer-brand { text-align: center; color: #555; font-size: 12px; margin-top: 50px; border-top: 1px solid #222; padding-top: 10px; }
+    .btn-contact { display: inline-block; padding: 10px 20px; margin: 5px; border-radius: 8px; text-decoration: none; font-weight: bold; color: white; }
+    .whatsapp { background-color: #25D366; }
+    .telegram { background-color: #0088cc; }
+    .footer-brand { text-align: center; color: #888; font-size: 14px; margin-top: 50px; border-top: 1px solid #333; padding-top: 20px; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. ENGINE (Tsy misy fiovana) ---
+# --- 4. ENGINE (Tsy niova) ---
 def get_prediction_engine(seed, h_ora):
     raw = f"{seed}{h_ora}{time.time()}".encode()
     hash_res = hashlib.sha512(raw).hexdigest()
@@ -56,7 +59,7 @@ def get_prediction_engine(seed, h_ora):
 st.markdown('<div class="main-title">TITAN V85.0 OMNI-STRIKE ⚔️</div>', unsafe_allow_html=True)
 tabs = st.tabs(["✈️ AVIATOR", "🚀 COSMOS X", "💣 MINES VIP", "⚽ PENALTY", "⚙️ ADMIN"])
 
-# (Aviator & Cosmos & Mines - Mitovy amin'ny teo aloha foana)
+# (Votoatin'ny AVIATOR, COSMOS, MINES, PENALTY - Tsy misy fiovana)
 with tabs[0]:
     st.file_uploader("📸 Capture Historique (Aviator):", key="cap_av")
     c1, c2 = st.columns(2)
@@ -99,13 +102,16 @@ with tabs[3]:
         st.markdown('</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="hist-container">{"<br>".join(st.session_state.hist_penalty)}</div>', unsafe_allow_html=True)
 
-# --- ⚙️ ADMIN (BRAND & CONTACT) ---
+# --- ⚙️ ADMIN & CONTACT ---
 with tabs[4]:
-    st.markdown("### 🛠️ PANEL ADMIN & BRANDING")
-    st.info(f"Developed by: Patricia | Contact: andriantsoakelly@gmail.com")
+    st.markdown("### 🛠️ PANEL ADMIN & CONTACT")
+    st.markdown(f"""
+        <a href="https://wa.me/261346249701" class="btn-contact whatsapp" target="_blank">💬 WhatsApp Patricia</a>
+        <a href="https://t.me/+261346249701" class="btn-contact telegram" target="_blank">✈️ Telegram Patricia</a>
+    """, unsafe_allow_html=True)
     
     new_p = st.text_input("Password vaovao:", type="password")
-    if st.button("OK"):
+    if st.button("CONFIRM PASSWORD UPDATE"):
         st.session_state.master_password = new_p
         st.success("Updated!")
     
@@ -113,9 +119,11 @@ with tabs[4]:
         for k in ['hist_aviator', 'hist_cosmos', 'hist_mines', 'hist_penalty']: st.session_state[k] = []
         st.rerun()
 
-# --- FOOTER BRAND ---
+# --- FOOTER ---
 st.markdown(f"""
     <div class="footer-brand">
-        © 2026 TITAN OMNI-STRIKE | Propriété de Patricia | Support: andriantsoakelly@gmail.com
+        <b>TITAN OMNI-STRIKE BY PATRICIA</b><br>
+        Contact Support: 0346249701<br>
+        andriantsoakelly@gmail.com
     </div>
 """, unsafe_allow_html=True)

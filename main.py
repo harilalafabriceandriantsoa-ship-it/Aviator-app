@@ -38,7 +38,7 @@ st.markdown('<h1 class="titan-header">🚀 TITAN TRINITY V62.9</h1>', unsafe_all
 
 tab1, tab2, tab3 = st.tabs(["✈️ AVIATOR", "🚀 COSMOS", "💣 MINES"])
 
-# --- 1. AVIATOR (TSY NOKITIHOINA) ---
+# --- 1. AVIATOR ---
 with tab1:
     st.subheader("📷 Capture History")
     st.file_uploader("Upload previous rounds", type=['jpg','png','jpeg'], key="avi_up")
@@ -57,7 +57,7 @@ with tab1:
     for item in st.session_state.avi_hist[:5]:
         st.markdown(f"<div class='history-card'><span>{item['time']}</span><span style='color:#00ffcc;'>{item['val']}</span><span style='color:#ffd700;'>{item['acc']}</span></div>", unsafe_allow_html=True)
 
-# --- 2. COSMOS (TSY NOKITIHOINA) ---
+# --- 2. COSMOS ---
 with tab2:
     st.subheader("📷 Capture History")
     st.file_uploader("Upload previous rounds", type=['jpg','png','jpeg'], key="cos_up")
@@ -76,7 +76,7 @@ with tab2:
     for item in st.session_state.cos_hist[:5]:
         st.markdown(f"<div class='history-card'><span>{item['time']}</span><span style='color:#00ffcc;'>{item['val']}</span><span style='color:#ffd700;'>{item['acc']}</span></div>", unsafe_allow_html=True)
 
-# --- 3. MINES (FANITSIANA ISAN'NY MINES) ---
+# --- 3. MINES ---
 with tab3:
     st.subheader("💣 MINES VIP PREDICTOR")
     st.file_uploader("📷 Capture Mines History", type=['jpg','png','jpeg'], key="min_up")
@@ -87,7 +87,6 @@ with tab3:
     
     if st.button("⚡ GENERATE VIP SCHEMA"):
         if c_seed and s_seed:
-            # Algorithm manitsy ny schema arakaraka ny isan'ny baomba nofidina
             nb_stars = 6 if nb_mines >= 3 else 3
             stars = random.sample(range(25), k=nb_stars)
             grid = '<div style="display: grid; grid-template-columns: repeat(5, 50px); gap: 10px; justify-content: center; margin-top: 20px;">'

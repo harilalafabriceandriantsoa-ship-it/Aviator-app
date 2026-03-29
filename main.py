@@ -56,7 +56,8 @@ with st.sidebar:
     st.markdown(f"### 👤 MANAGER: {st.session_state.admin_name}")
     st.markdown(f"📞 **WhatsApp:** {st.session_state.admin_phone}")
     
-    st.markdown("### ⚙️ USER SETTINGS")
+    st.markdown("---")
+    st.markdown("### ⚙️ SETTINGS")
     if st.button("🗑️ RESET MY HISTORY"):
         st.session_state.hist_av = []
         st.session_state.hist_co = []
@@ -65,20 +66,20 @@ with st.sidebar:
         st.rerun()
 
     st.markdown("---")
-    # ADMIN PANEL: Mipoitra rehefa ampidirina ny kaody secret (access_code)
-    admin_key = st.text_input("Admin Key (Secret):", type="password")
+    # ADMIN KEY: Ampidiro eto ny kaody fidiranao (ohatra: 2026) hanokafana ny fanovana
+    admin_key = st.text_input("Admin Key (Secret):", type="password", help="Ampidiro ny kaody fidirana hanokafana ny Control Panel")
     if admin_key == st.session_state.access_code:
-        with st.expander("🔓 CONTROL PANEL"):
-            st.warning("Fanovana ho an'ny Admin ihany")
-            new_name = st.text_input("Anarana vaovao:", st.session_state.admin_name)
-            new_mdp = st.text_input("Kaody Admin vaovao:", st.session_state.access_code, type="password")
-            new_phone = st.text_input("WhatsApp vaovao:", st.session_state.admin_phone)
+        with st.expander("🔓 CONTROL PANEL (Admin Only)"):
+            st.info("Eto ianao no manova ny mombamomba ny App")
+            # Fanovana Anarana
+            st.session_state.admin_name = st.text_input("Anarana vaovao:", st.session_state.admin_name)
+            # Fanovana ny kaody fidirana (Admin Code)
+            st.session_state.access_code = st.text_input("Kaody Admin vaovao:", st.session_state.access_code, type="password")
+            # Fanovana WhatsApp
+            st.session_state.admin_phone = st.text_input("WhatsApp vaovao:", st.session_state.admin_phone)
             
             if st.button("💾 SAVE CHANGES"):
-                st.session_state.admin_name = new_name
-                st.session_state.access_code = new_mdp
-                st.session_state.admin_phone = new_phone
-                st.success("Voatahiry!")
+                st.success("Voatahiry ny fanovana rehetra!")
                 time.sleep(1)
                 st.rerun()
 
@@ -158,16 +159,24 @@ with tab2:
     for item in reversed(st.session_state.hist_co[-5:]):
         st.info(item)
 
-# MINES VIP
+# MINES VIP (AMENDED TO 1-7 MINES)
 with tab3:
     st.markdown("### 💣 MINES VIP DECODER")
+    # Fanovana ny isan'ny mines (1-7)
+    nb_mines = st.select_slider("Isan'ny Mines (Choose 1 to 7):", options=[1, 2, 3, 4, 5, 6, 7], value=3)
     s_serv = st.text_input("📡 Seed du serveur (Hex):")
     s_cli = st.text_input("💻 Seed du client (Hex):")
+    
     if st.button("💎 DECODE SAFE PATH"):
         if s_serv and s_cli:
             combined = hashlib.sha256(f"{s_serv}{s_cli}".encode()).hexdigest()
             random.seed(int(combined[:10], 16))
-            diamond_pos = random.sample(range(25), 5)
+            # Mikajy ny toerana azo antoka (Diamonds)
+            # Ny grid dia 25 cells (0 hatramin'ny 24)
+            # Diamonds = 25 - Isan'ny Mines
+            nb_diamonds = 25 - nb_mines
+            diamond_pos = random.sample(range(25), 5) # Mampiseho toerana 5 tsara indrindra
+            
             grid_html = '<div class="mines-grid">'
             for i in range(25):
                 grid_html += f'<div class="mine-cell {"diamond-cell" if i in diamond_pos else ""}">{"💎" if i in diamond_pos else "⬛"}</div>'

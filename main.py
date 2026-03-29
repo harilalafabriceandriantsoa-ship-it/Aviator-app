@@ -9,67 +9,45 @@ st.set_page_config(page_title="TITAN V85.0 OMNI-STRIKE", layout="wide")
 
 st.markdown("""
     <style>
-    /* Hiding elements for professional look */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     .stDeployButton {display:none;}
     [data-testid="stStatusWidget"] {display:none;}
     
-    /* Global Background */
     .stApp { 
         background: radial-gradient(circle at center, #0a192f 0%, #010a12 100%); 
-        color: #e6f1ff; 
+        color: #eee; 
     }
     
-    /* Futuristic Header */
     .main-header { 
-        font-size: 40px; font-weight: 900; text-align: center; color: #00ffcc; 
-        border: 2px solid #00ffcc; padding: 25px; border-radius: 20px; 
-        background: rgba(0, 255, 204, 0.05); margin-bottom: 30px;
-        box-shadow: 0 0 20px rgba(0, 255, 204, 0.3), inset 0 0 10px rgba(0, 255, 204, 0.1);
-        text-transform: uppercase; letter-spacing: 3px;
+        font-size: 35px; font-weight: 900; text-align: center; color: #00ffcc; 
+        border: 2px solid #00ffcc; padding: 20px; border-radius: 15px; 
+        background: rgba(0, 255, 204, 0.05); margin-bottom: 25px;
+        box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
     }
     
-    /* Neon Cards */
     .card { 
-        background: rgba(255, 255, 255, 0.02); border-radius: 20px; 
-        border: 1px solid rgba(0, 255, 204, 0.2); padding: 25px; margin-bottom: 20px;
-        backdrop-filter: blur(10px); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-        transition: 0.3s ease-in-out;
+        background: rgba(255, 255, 255, 0.02); border-radius: 15px; 
+        border: 1px solid rgba(0, 255, 204, 0.2); padding: 20px; margin-bottom: 15px;
+        backdrop-filter: blur(5px);
     }
-    .card:hover { border-color: #00ffcc; box-shadow: 0 0 15px rgba(0, 255, 204, 0.2); }
     
-    /* Prediction Values */
     .target-val { 
-        font-size: 55px; color: #00ffcc; font-weight: 900; 
-        text-shadow: 0 0 15px #00ffcc; margin: 10px 0;
+        font-size: 45px; color: #00ffcc; font-weight: 800; 
+        text-shadow: 0 0 10px #00ffcc; 
     }
     
-    /* Buttons Styling */
     .stButton>button {
         background: linear-gradient(45deg, #00ffcc, #0088ff) !important;
-        color: #010a12 !important; font-weight: 800 !important;
-        border: none !important; border-radius: 12px !important;
-        padding: 12px 30px !important; transition: 0.3s !important;
-        text-transform: uppercase; letter-spacing: 1px;
+        color: #010a12 !important; font-weight: bold !important;
+        border: none !important; border-radius: 10px !important;
     }
-    .stButton>button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 255, 204, 0.4); }
-    
-    /* History Boxes */
+
     .hist-box { 
-        padding: 15px; border-left: 5px solid #ffcc00; 
-        background: rgba(255, 204, 0, 0.03); margin-bottom: 10px; 
-        border-radius: 0 15px 15px 0; font-size: 15px;
+        padding: 12px; border-left: 4px solid #ffcc00; 
+        background: rgba(255, 204, 0, 0.05); margin-bottom: 8px; font-size: 14px;
     }
-    
-    /* Tabs custom color */
-    .stTabs [data-baseweb="tab-list"] { gap: 10px; }
-    .stTabs [data-baseweb="tab"] {
-        background-color: rgba(255,255,255,0.05);
-        border-radius: 10px 10px 0 0; color: #eee;
-    }
-    .stTabs [aria-selected="true"] { background-color: rgba(0,255,204,0.2) !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -79,7 +57,7 @@ if 'authenticated' not in st.session_state:
 if 'prediction_history' not in st.session_state:
     st.session_state.prediction_history = {"aviator": [], "cosmos": [], "mines": []}
 
-# --- 3. CORE ALGORITHM (Tsy nikitika litera) ---
+# --- 3. CORE ALGORITHM (Tsy nisy nokitihina) ---
 def get_titan_prediction(server_hex, base_ora, game_type):
     time.sleep(1.2) # Anti-bot delay
     results = []
@@ -116,10 +94,9 @@ def get_titan_prediction(server_hex, base_ora, game_type):
 
 # --- 4. LOGIN SYSTEM ---
 if not st.session_state.authenticated:
-    st.markdown("<br><br><h1 style='text-align:center; color:#00ffcc; text-shadow: 0 0 10px #00ffcc;'>🛡️ TITAN ACCESS CONTROL</h1>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1,1.5,1])
+    st.markdown("<br><br><h1 style='text-align:center; color:#00ffcc;'>🛡️ TITAN ACCESS CONTROL</h1>", unsafe_allow_html=True)
+    _, col2, _ = st.columns([1,2,1])
     with col2:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
         user_key = st.text_input("ENTER ADMIN KEY:", type="password")
         if st.button("UNLOCK SYSTEM", use_container_width=True):
             if user_key == "ADMIN_TITAN":
@@ -127,7 +104,6 @@ if not st.session_state.authenticated:
                 st.rerun()
             else:
                 st.error("Invalid Key. Access Denied.")
-        st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
 
 # --- 5. MAIN INTERFACE ---
@@ -138,11 +114,61 @@ tab1, tab2, tab3, tab4 = st.tabs(["✈️ AVIATOR", "🚀 COSMOS X", "💣 MINES
 # --- SECTORS: AVIATOR & COSMOS ---
 for tab, g_name in zip([tab1, tab2], ["aviator", "cosmos"]):
     with tab:
-        st.markdown(f"### 🛰️ {g_name.upper()} DECODER")
-        
-        with st.expander("📸 UPLOAD SCANNER"):
+        st.markdown(f"### ⚡ SCANNER {g_name.upper()}")
+        with st.expander("📸 UPLOAD SCREENSHOT"):
             img = st.file_uploader(f"Capture {g_name}", type=['png', 'jpg', 'jpeg'], key=f"img_{g_name}")
-            if img: st.image(img)
             
         c1, c2 = st.columns(2)
-        hex_val = c1.text_input("🔑 SERVER SEED (Hex):", placeholder="Paste seed here...", key=f"h_{g_name
+        hex_val = c1.text_input("🔑 SERVER SEED (Hex):", key=f"h_{g_name}")
+        ora_val = c2.text_input("🕒 ORA IZAO (HH:MM):", value=datetime.now().strftime("%H:%M"), key=f"o_{g_name}")
+        
+        if st.button(f"🔥 EXECUTE {g_name.upper()} ANALYSIS", use_container_width=True, key=f"b_{g_name}"):
+            if hex_val:
+                with st.spinner("Decoding..."):
+                    preds = get_titan_prediction(hex_val, ora_val, g_name)
+                    for p in preds:
+                        html_card = f"""
+                        <div class="card">
+                            <div style="display:flex; justify-content: space-between;">
+                                <span style="font-size:20px; color:#ffcc00; font-weight:bold;">⏰ Lera: {p['lera']}</span>
+                                <span style="background:#00ffcc; color:#010a12; padding:3px 10px; border-radius:15px; font-weight:bold;">{p['prob']}%</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-around; margin-top:15px; text-align:center;">
+                                <div><small>MIN</small><br><b>{p['min']}x</b></div>
+                                <div><small style="color:#00ffcc;">TARGET</small><br><div class="target-val">{p['moyen']}x</div></div>
+                                <div><small>MAX</small><br><b>{p['max']}x</b></div>
+                            </div>
+                        </div>
+                        """
+                        st.markdown(html_card, unsafe_allow_html=True)
+
+        st.markdown("#### 📜 TANTARA")
+        for item in st.session_state.prediction_history[g_name]:
+            st.markdown(f'<div class="hist-box">🕒 <b>{item["lera"]}</b> | Target: <span style="color:#00ffcc;">{item["moyen"]}x</span></div>', unsafe_allow_html=True)
+
+# --- MINES VIP ---
+with tab3:
+    st.markdown("### 💣 MINES VIP DECODER")
+    m_hex = st.text_input("🔑 SERVER SEED (Hex):", key="mine_h")
+    m_cli = st.text_input("👤 CLIENT SEED:", key="mine_c")
+    m_num = st.select_slider("Isan'ny Mines:", options=[1,2,3,4,5,6,7], value=3)
+    
+    if st.button("💎 DECODE SAFE PATH", use_container_width=True):
+        if m_hex and m_cli:
+            random.seed(int(hashlib.md5(f"{m_hex}{m_cli}{m_num}".encode()).hexdigest()[:10], 16))
+            safe_tiles = random.sample(range(25), 5)
+            grid = '<div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; max-width: 300px; margin: auto;">'
+            for idx in range(25):
+                char, bg = ("💎", "#00ffcc") if idx in safe_tiles else ("⬛", "#1a1a1a")
+                grid += f'<div style="background:{bg}; height:50px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:25px;">{char}</div>'
+            st.markdown(grid + '</div>', unsafe_allow_html=True)
+
+# --- SETTINGS ---
+with tab4:
+    st.markdown("### ⚙️ SYSTEM INFO")
+    st.info("Developer: Patricia | Contact: 0346249701")
+    if st.button("🔴 CLEAR ALL DATA"):
+        st.session_state.prediction_history = {"aviator": [], "cosmos": [], "mines": []}
+        st.rerun()
+
+st.markdown('<br><div style="text-align:center; color:#444; font-size:12px;">TITAN OMNI-STRIKE BY PATRICIA © 2026</div>', unsafe_allow_html=True)

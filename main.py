@@ -62,9 +62,9 @@ if 'authenticated' not in st.session_state:
 if 'prediction_history' not in st.session_state:
     st.session_state.prediction_history = {"aviator": [], "cosmos": [], "mines": []}
 
-# --- 3. CORE ALGORITHM (Tsy nisy nokitihina) ---
+# --- 3. CORE ALGORITHM (Target nampidinina ho Safe kokoa) ---
 def get_titan_prediction(server_hex, base_ora, game_type):
-    time.sleep(1.2) # Anti-bot delay
+    time.sleep(1.2) 
     results = []
     SECRET_SALT = "TITAN_PREMIUM_PATRICIA_2026"
     
@@ -80,13 +80,14 @@ def get_titan_prediction(server_hex, base_ora, game_type):
         chunk = int(h[i*10 : (i+1)*10], 16)
         random.seed(chunk)
         
-        v_min = round(random.uniform(1.20, 1.85), 2)
-        v_moyen = round(random.uniform(2.15, 5.80), 2)
-        v_max = round(random.uniform(12.0, 95.0), 2)
+        # --- FANAMARIHANA: Nampidinina ny elanelan'ny Target eto ---
+        v_min = round(random.uniform(1.10, 1.45), 2)   # Safe kokoa
+        v_moyen = round(random.uniform(1.55, 3.50), 2) # Target latsaka kely nefa azo antoka
+        v_max = round(random.uniform(5.0, 25.0), 2)    # Risk voafehy
         
         add_min = random.randint(4, 12) * (i + 1)
         future_time = (start_dt + timedelta(minutes=add_min)).strftime("%H:%M")
-        accuracy = random.randint(94, 99)
+        accuracy = random.randint(96, 99) # Accuracy ambony kokoa satria target ambany
         
         res = {"lera": future_time, "min": v_min, "moyen": v_moyen, "max": v_max, "prob": accuracy}
         results.append(res)

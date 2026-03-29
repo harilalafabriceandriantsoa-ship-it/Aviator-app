@@ -38,12 +38,23 @@ st.markdown("""
     .card-opp { background: #1a1a00; border: 2px dashed #ffcc00; border-radius: 15px; padding: 15px; text-align: center; color: #ffcc00; margin-top: 10px; }
     .hist-container { background: rgba(0,0,0,0.6); border-radius: 10px; padding: 15px; font-family: monospace; height: 180px; overflow-y: auto; border: 1px solid #333; color: #00ffcc; }
     .consigne-box { background: #001a1a; border-left: 5px solid #00ffcc; padding: 12px; margin-bottom: 20px; font-size: 14px; color: #e0e0e0; }
+    .motivation-text { background: linear-gradient(90deg, #004444, #001a1a); color: #00ffcc; padding: 10px; border-radius: 10px; text-align: center; font-style: italic; font-weight: bold; margin-bottom: 15px; border: 1px solid #00ffcc; }
     .stButton>button { background: linear-gradient(90deg, #00ffcc, #0077ff); color: #010a12; font-weight: 900; border-radius: 10px; height: 50px; border: none; }
     .footer-brand { text-align: center; color: #888; font-size: 13px; margin-top: 40px; border-top: 1px solid #222; padding-top: 15px; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. ENGINE ---
+# --- 4. ENGINE & MOTIVATION ---
+def get_motivation():
+    quotes = [
+        "💪 Matokia ny tenanao, ny faharetana no lakilen'ny fahombiazana!",
+        "🎯 Mifantoha tsara, aza taitaitra fa ho azonao io!",
+        "🚀 Ny TITAN dia eto hanampy anao handresy. Miandrasa ny fotoana mety!",
+        "💎 Ny fahaizana mifehy tena no mampiavaka ny mpandresy amin'ny resy.",
+        "🔥 Androany no andro hanehoanao ny herinao. Go for it!"
+    ]
+    return random.choice(quotes)
+
 def get_advanced_predictions(seed, h_ora):
     base = datetime.strptime(h_ora, "%H:%M")
     results = []
@@ -68,21 +79,16 @@ tabs = st.tabs(["✈️ AVIATOR", "🚀 COSMOS X", "💣 MINES VIP", "⚽ PENALT
 for i, name in enumerate(["AVIATOR", "COSMOS X"]):
     game_key = "aviator" if i == 0 else "cosmos"
     with tabs[i]:
-        # CONSIGNE AVIATOR/COSMOS
-        st.markdown(f"""<div class="consigne-box">
-            <b>📝 CONSIGNE {name}:</b><br>
-            1. Makà sary ny historique farany (tsy voatery).<br>
-            2. Ampidiro ny <b>HEX SEED</b> farany hita ao amin'ny "Provably Fair" an'ny lalao.<br>
-            3. Hamarino fa mifanaraka ny <b>HEURE</b> (Ora izao).<br>
-            4. Tsindrio ny bokotra "Execute" hahazoana prediction 3 samy hafa.
-        </div>""", unsafe_allow_html=True)
+        st.markdown(f'<div class="consigne-box"><b>📝 TOROLALANA:</b> Ampidiro ny Hex Seed sy ny Ora, avy eo tsindrio ny Execute.</div>', unsafe_allow_html=True)
         
-        st.file_uploader(f"📸 Capture Historique ({name}):", key=f"cap_{game_key}")
         col1, col2 = st.columns(2)
         u_hex = col1.text_input(f"🔑 HEX SEED ({name}):", key=f"hex_{game_key}")
         u_ora = col2.text_input("🕒 HEURE (HH:MM):", value=datetime.now().strftime("%H:%M"), key=f"ora_{game_key}")
         
-        if st.button(f"🔥 EXECUTE {name} ENGINE"):
+        if st.button(f"🔥 EXECUTE {name}"):
+            # Asehontsika ny fampaherezana
+            st.markdown(f'<div class="motivation-text">{get_motivation()}</div>', unsafe_allow_html=True)
+            
             preds = get_advanced_predictions(u_hex, u_ora)
             st.markdown(f"""<div class="card-result">
                 <div style="display: flex; justify-content: space-around; font-size: 18px; font-weight: bold;">
@@ -94,78 +100,38 @@ for i, name in enumerate(["AVIATOR", "COSMOS X"]):
             
             st.markdown('<div class="card-opp">🎯 PROCHAINES OPPORTUNITÉS:', unsafe_allow_html=True)
             for p in preds:
-                st.markdown(f"⏰ <b>{p['lera']}</b> | Côte: <b>{p['moyen']}x</b> | Fiabilité: <b>{p['prob']}%</b>", unsafe_allow_html=True)
+                st.markdown(f"⏰ <b>{p['lera']}</b> | Côte: <b>{p['moyen']}x</b> | ✅ <b>{p['prob']}%</b>", unsafe_allow_html=True)
                 st.session_state[f'hist_{game_key}'].insert(0, f"🕒 {p['lera']} | 🎯 {p['moyen']}x | ✅ {p['prob']}%")
             st.markdown('</div>', unsafe_allow_html=True)
 
-        st.markdown('### 📜 HISTORIQUE DES PRÉDICTIONS')
+        st.markdown('### 📜 HISTORIQUE')
         st.markdown(f'<div class="hist-container">{"<br>".join(st.session_state[f"hist_{game_key}"])}</div>', unsafe_allow_html=True)
 
 # --- MINES VIP ---
 with tabs[2]:
-    # CONSIGNE MINES
-    st.markdown("""<div class="consigne-box">
-        <b>📝 CONSIGNE MINES VIP:</b><br>
-        1. Adikao ny <b>Server Seed</b> sy <b>Client Seed</b> avy ao amin'ny lalao Mines.<br>
-        2. Tsindrio ny "Generate Schema" hamoronana ny lalana (map) misy diamondra.<br>
-        3. <i>Torohevitra:</i> Mialà rehefa mahazo Diamondra 5 mba hitandrovana ny volanao.
-    </div>""", unsafe_allow_html=True)
-    
+    st.markdown('<div class="consigne-box"><b>📝 MINES:</b> Ampiasao ny Server Seed sy Client Seed hahitana ny diamondra.</div>', unsafe_allow_html=True)
     m1, m2 = st.columns(2)
-    m_serv = m1.text_input("🖥️ SERVER SEED (Mines):")
-    m_clie = m2.text_input("💻 CLIENT SEED (Mines):")
+    m_serv = m1.text_input("🖥️ SERVER SEED:")
+    m_clie = m2.text_input("💻 CLIENT SEED:")
     if st.button("💎 GENERATE SCHEMA"):
-        st.session_state.hist_mines.insert(0, f"🕒 {datetime.now().strftime('%H:%M')} | Schema Created")
-        st.success("Mines Mode Active! Schema Ready.")
-    st.markdown(f'<div class="hist-container">{"<br>".join(st.session_state.hist_mines)}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="motivation-text">{get_motivation()}</div>', unsafe_allow_html=True)
+        st.success("Mines Mode Active!")
 
 # --- PENALTY ---
 with tabs[3]:
-    # CONSIGNE PENALTY
-    st.markdown("""<div class="consigne-box">
-        <b>📝 CONSIGNE PENALTY:</b><br>
-        1. Ity dia manome toerana 5 tokony dakaona (Shoot).<br>
-        2. Tsindrio ny bokotra hahazoana schema vaovao isaky ny daka vaovao.
-    </div>""", unsafe_allow_html=True)
-    
-    if st.button("🥅 GENERATE 5 SHOT PREDICTIONS"):
-        targets = ["ANKAVIA AMBONY", "ANKAVANANA AMBANY", "AFOVOANY", "ANKAVIA AMBANY", "ANKAVANANA AMBONY"]
-        random.shuffle(targets)
-        st.markdown('<div class="card-result">', unsafe_allow_html=True)
-        for i, t in enumerate(targets, 1):
-            st.write(f"Daka {i}: {t}")
-            st.session_state.hist_penalty.insert(0, f"[{datetime.now().strftime('%H:%M')}] Daka {i}: {t}")
-        st.markdown('</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="hist-container">{"<br>".join(st.session_state.hist_penalty)}</div>', unsafe_allow_html=True)
+    if st.button("🥅 GENERATE SHOTS"):
+        st.markdown(f'<div class="motivation-text">{get_motivation()}</div>', unsafe_allow_html=True)
+        st.info("Targets Ready!")
 
 # --- ADMIN & CONTACT ---
 with tabs[4]:
-    # CONSIGNE ADMIN
-    st.markdown("""<div class="consigne-box">
-        <b>🛠️ ADMIN PANEL:</b><br>
-        - Eto no hanovanao ny password idirana.<br>
-        - Azonao fafana daholo ny historique raha efa feno be.<br>
-        - Ampiasao ny bokotra WhatsApp/Telegram raha misy olana.
-    </div>""", unsafe_allow_html=True)
-    
     st.markdown(f"""
-        <a href="https://wa.me/261346249701" style="background:#25D366; color:white; padding:10px; border-radius:5px; text-decoration:none; display:inline-block; margin-bottom:10px;">💬 WhatsApp Patricia</a>
+        <a href="https://wa.me/261346249701" style="background:#25D366; color:white; padding:10px; border-radius:5px; text-decoration:none; display:inline-block;">💬 WhatsApp Patricia</a>
         <a href="https://t.me/+261346249701" style="background:#0088cc; color:white; padding:10px; border-radius:5px; text-decoration:none; display:inline-block; margin-left:10px;">✈️ Telegram</a>
     """, unsafe_allow_html=True)
-    
-    new_p = st.text_input("Password vaovao:", type="password")
-    if st.button("CONFIRM UPDATE"):
-        st.session_state.master_password = new_p
-        st.success("Password Updated!")
-    
-    if st.button("🔴 EFFACER TOUT L'HISTORIQUE"):
+    if st.button("🔴 EFFACER L'HISTORIQUE"):
         for k in ['hist_aviator', 'hist_cosmos', 'hist_mines', 'hist_penalty']: st.session_state[k] = []
         st.rerun()
 
 # --- FOOTER ---
-st.markdown(f"""
-    <div class="footer-brand">
-        <b>TITAN OMNI-STRIKE BY PATRICIA</b><br>
-        Contact: 0346249701 | andriantsoakelly@gmail.com
-    </div>
-""", unsafe_allow_html=True)
+st.markdown(f'<div class="footer-brand"><b>TITAN OMNI-STRIKE BY PATRICIA</b><br>0346249701 | andriantsoakelly@gmail.com</div>', unsafe_allow_html=True)

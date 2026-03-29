@@ -48,6 +48,11 @@ st.markdown("""
         padding: 12px; border-left: 4px solid #ffcc00; 
         background: rgba(255, 204, 0, 0.05); margin-bottom: 8px; font-size: 14px;
     }
+
+    .good-luck {
+        text-align: center; color: #ffcc00; font-weight: bold; 
+        font-size: 20px; margin-top: 10px; text-shadow: 0 0 5px #ffcc00;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -126,6 +131,7 @@ for tab, g_name in zip([tab1, tab2], ["aviator", "cosmos"]):
             if hex_val:
                 with st.spinner("Decoding..."):
                     preds = get_titan_prediction(hex_val, ora_val, g_name)
+                    st.markdown('<p class="good-luck">🍀 BONNE CHANCE À TOUS</p>', unsafe_allow_html=True)
                     for p in preds:
                         html_card = f"""
                         <div class="card">
@@ -157,6 +163,7 @@ with tab3:
         if m_hex and m_cli:
             random.seed(int(hashlib.md5(f"{m_hex}{m_cli}{m_num}".encode()).hexdigest()[:10], 16))
             safe_tiles = random.sample(range(25), 5)
+            st.markdown('<p class="good-luck">🍀 BONNE CHANCE À TOUS</p>', unsafe_allow_html=True)
             grid = '<div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; max-width: 300px; margin: auto;">'
             for idx in range(25):
                 char, bg = ("💎", "#00ffcc") if idx in safe_tiles else ("⬛", "#1a1a1a")

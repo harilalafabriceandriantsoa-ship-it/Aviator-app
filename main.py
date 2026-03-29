@@ -3,122 +3,102 @@ import hashlib
 import random
 from datetime import datetime, timedelta
 
-# --- 1. STYLE "CYBER-CHARME" ---
+# --- 1. SETTINGS & STYLE ---
 st.set_page_config(page_title="TITAN V85.0 ULTRA-SYNC", layout="wide")
+if 'history' not in st.session_state: st.session_state.history = []
+if 'manche_screenshots' not in st.session_state: st.session_state.manche_screenshots = []
+if 'admin_pwd' not in st.session_state: st.session_state.admin_pwd = "2026"
 
 st.markdown("""
     <style>
-    /* Loko fototra maizina */
-    .stApp { background-color: #050505; color: #00ffcc; }
-    
-    /* Tabs style */
-    .stTabs [data-baseweb="tab-list"] { background-color: #050505; }
-    .stTabs [data-baseweb="tab"] { color: #ffffff; font-weight: bold; }
-    .stTabs [aria-selected="true"] { color: #00ffcc !important; border-bottom: 2px solid #00ffcc !important; }
-
-    /* Prediction Cards miaraka amin'ny Glow */
+    .stApp { background-color: #000000; color: #00ffcc; }
     .prediction-card {
         background: rgba(0, 255, 204, 0.05);
         border: 2px solid #00ffcc;
-        padding: 20px;
-        border-radius: 20px;
-        text-align: center;
-        box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
-        margin-bottom: 15px;
+        padding: 15px; border-radius: 15px; text-align: center;
+        box-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
     }
-    
-    /* Hafatra Bonne Chance */
-    .luck-msg {
-        color: #00ffcc;
-        font-size: 24px;
-        font-weight: bold;
-        text-align: center;
-        text-shadow: 0 0 10px #00ffcc;
-        margin-top: 20px;
-    }
+    .luck-msg { color: #00ffcc; font-size: 20px; font-weight: bold; text-align: center; margin-top: 20px; }
     </style>
     """, unsafe_allow_html=True)
 
-# Fitahirizana data
-if 'history' not in st.session_state: st.session_state.history = []
-if 'admin_pwd' not in st.session_state: st.session_state.admin_pwd = "2026"
-
-# --- 2. SETTINGS MANAGER (SIDEBAR) ---
+# --- 2. SIDEBAR ADMIN (Reset & MDP) ---
 with st.sidebar:
-    st.markdown("### ⚙️ SETTINGS")
-    auth = st.text_input("Admin Key Access:", type="password")
+    st.title("⚙️ ADMIN PANEL")
+    auth = st.text_input("Access Key:", type="password")
     if auth == st.session_state.admin_pwd:
-        st.success("Manager Authenticated")
-        new_p = st.text_input("Hanova MDP vaovao:", type="password")
-        if st.button("Hamafiso ny MDP"):
-            st.session_state.admin_pwd = new_p
-            st.success("MDP Voatahiry!")
-        if st.button("🗑️ RESET APP"):
+        if st.button("🗑️ RESET ALL DATA"):
             st.session_state.history = []
+            st.session_state.manche_screenshots = []
             st.rerun()
+    st.markdown("---")
+    st.info("TITAN V85.0 - Version Ultra Sync")
 
-# --- 3. ALGORITHM ---
-def process_prediction(srv, clt, game):
-    seed_hash = hashlib.sha256(f"{srv}{clt}".encode()).hexdigest()
-    random.seed(int(seed_hash[:8], 16))
+# --- 3. MAIN INTERFACE ---
+st.markdown("<h1 style='text-align:center;'>🛰️ TITAN V85.0 ULTRA-SYNC</h1>", unsafe_allow_html=True)
+
+tab1, tab2, tab3, tab4 = st.tabs(["✈️ AVIATOR", "🚀 COSMOS X", "💣 MINES VIP", "📸 HISTORIQUE MANCHE"])
+
+# --- Lojika iraisana ho an'ny Aviator & Cosmos ---
+def run_analysis(game):
+    st.markdown(f"### ⚡ {game} ANALYZER")
+    c1, c2 = st.columns(2)
+    seed = c1.text_input("🔑 SERVER SEED (HEX):", key=f"s_{game}")
+    time_val = c2.text_input("🕒 LERA (HH:mm):", key=f"t_{game}")
     
-    now = datetime.now()
-    results = []
-    for i in range(1, 4):
-        val = round(random.uniform(1.65, 4.25), 2)
-        p = {
-            "game": game,
-            "time": (now + timedelta(minutes=i*2)).strftime("%H:%M:%S" if game == "COSMOS X" else "%H:%M"),
-            "moyen": val,
-            "min": round(val * 0.85, 2),
-            "max": round(val * 1.30, 2)
-        }
-        results.append(p)
-        st.session_state.history.insert(0, p)
-    return results
+    if st.button(f"🔥 EXECUTE {game}"):
+        now = datetime.now()
+        cols = st.columns(3)
+        for i in range(1, 4):
+            moyen = round(random.uniform(1.65, 4.50), 2)
+            t_str = (now + timedelta(minutes=i*2)).strftime("%H:%M:%S" if game == "COSMOS X" else "%H:%M")
+            with cols[i-1]:
+                st.markdown(f"""<div class="prediction-card">
+                    <b>TOUR {i}</b><br>{t_str}<br>
+                    <span style="font-size:30px; color:#00ffcc;">{moyen}x</span><br>
+                    <small>85%: {round(moyen*0.85,2)} | 130%: {round(moyen*1.3,2)}</small>
+                </div>""", unsafe_allow_html=True)
+            st.session_state.history.insert(0, {"game": game, "time": t_str, "val": moyen})
+        st.markdown("<p class='luck-msg'>🍀 Bonne chance à tous !</p>", unsafe_allow_html=True)
 
-# --- 4. INTERFACE ---
-st.markdown("<h1 style='text-align:center; color:#00ffcc;'>🛰️ TITAN V85.0 ULTRA-SYNC</h1>", unsafe_allow_html=True)
-
-t1, t2, t3 = st.tabs(["✈️ AVIATOR", "🚀 COSMOS X", "💣 MINES VIP"])
-
-# Aviator & Cosmos
-for tab, name in zip([t1, t2], ["AVIATOR", "COSMOS X"]):
-    with tab:
-        c1, c2 = st.columns(2)
-        s_hex = c1.text_input(f"🔑 HEX SEED ({name}):", key=f"hex_{name}")
-        s_time = c2.text_input(f"🕒 HEUR / CLIENT SEED ({name}):", key=f"time_{name}")
-        
-        if st.button(f"🔥 ANALYZE {name}"):
-            res = process_prediction(s_hex, s_time, name)
-            cols = st.columns(3)
-            for i, r in enumerate(res):
-                with cols[i]:
-                    st.markdown(f"""
-                    <div class='prediction-card'>
-                        <b style='color:white;'>TOUR {i+1}</b><br>
-                        <span style='color:#ffcc00;'>{r['time']}</span><br>
-                        <span style='font-size:35px; color:#00ffcc;'>{r['moyen']}x</span><br>
-                        <small style='color:#aaa;'>Min: {r['min']} | Max: {r['max']}</small>
-                    </div>
-                    """, unsafe_allow_html=True)
-            st.markdown("<p class='luck-msg'>🍀 Bonne chance à tous !</p>", unsafe_allow_html=True)
-
-# Mines
-with t3:
-    st.subheader("💣 MINES VIP SYNC")
-    m_srv = st.text_input("Server Seed:")
-    m_clt = st.text_input("Client Seed:")
+with tab1: run_analysis("AVIATOR")
+with tab2: run_analysis("COSMOS X")
+with tab3:
+    st.markdown("### 💣 MINES VIP")
     if st.button("🔍 SCAN MINES"):
-        process_prediction(m_srv, m_clt, "MINES")
         st.write("⭐ ⬛ ⬛ ⭐ ⬛")
         st.markdown("<p class='luck-msg'>🍀 Bonne chance à tous !</p>", unsafe_allow_html=True)
 
-# --- 5. HISTORIQUE ---
-st.markdown("---")
-st.subheader("📜 LAST PREDICTIONS (CAPTURE)")
-if st.session_state.history:
-    for h in st.session_state.history[:5]:
-        st.write(f"🎮 **{h['game']}** | 🕒 {h['time']} | **{h['moyen']}x** (Min: {h['min']} | Max: {h['max']})")
-else:
-    st.info("Tsy mbola misy historique.")
+# --- 4. HISTORIQUE DE LA MANCHE (SCREENSHOTS) ---
+with tab4:
+    st.header("📸 HISTORIQUE DE LA MANCHE")
+    st.subheader("Ampidiro eto ny Screenshot-ny vokatra azo")
+    
+    with st.expander("➕ AMPIDIRO NY VOKATRA VAOVAO"):
+        up_file = st.file_uploader("Safidio ny sary (JPG/PNG):", type=['jpg','png','jpeg'])
+        up_time = st.text_input("Lera nisehoan'ny vokatra:")
+        up_val = st.text_input("Vokatra (x):")
+        
+        if st.button("💾 TEHIRIZINA NY MANCHE"):
+            if up_file:
+                st.session_state.manche_screenshots.insert(0, {
+                    "image": up_file,
+                    "time": up_time,
+                    "val": up_val,
+                    "date": datetime.now().strftime("%d/%m/%Y")
+                })
+                st.success("Voatahiry ny sary!")
+    
+    st.markdown("---")
+    if st.session_state.manche_screenshots:
+        for m in st.session_state.manche_screenshots:
+            col_img, col_txt = st.columns([1, 2])
+            with col_img:
+                st.image(m['image'], width=200)
+            with col_txt:
+                st.markdown(f"**Lera:** {m['time']}")
+                st.markdown(f"**Vokatra:** <span style='color:#00ffcc;'>{m['val']}x</span>", unsafe_allow_html=True)
+                st.markdown(f"**Andro:** {m['date']}")
+            st.markdown("---")
+    else:
+        st.info("Tsy mbola misy screenshot voatahiry.")

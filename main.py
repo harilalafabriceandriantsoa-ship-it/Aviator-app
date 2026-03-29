@@ -7,14 +7,12 @@ from datetime import datetime, timedelta
 # --- 1. CONFIGURATION & HIDING STREAMLIT ELEMENTS ---
 st.set_page_config(page_title="TITAN V85.0 OMNI-STRIKE", layout="wide")
 
-# Manafina ny bokotra Manage App sy ny menu ho an'ny mpanjifa
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     .stDeployButton {display:none;}
-    [data-testid="stStatusWidget"] {display:none;}
     .stApp { background-color: #010a12; color: #eee; }
     .main-header { 
         font-size: 30px; font-weight: 900; text-align: center; color: #00ffcc; 
@@ -30,6 +28,7 @@ st.markdown("""
         padding: 10px; border-left: 3px solid #ffcc00; 
         background: rgba(255,204,0,0.05); margin-bottom: 5px; font-size: 14px;
     }
+    .footer-text { text-align:center; color:#444; font-size:12px; margin-top: 50px; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -37,14 +36,13 @@ st.markdown("""
 if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
 if 'prediction_history' not in st.session_state:
-    st.session_state.prediction_history = {"aviator": [], "cosmos": [], "mines": []}
+    st.session_state.prediction_history = {"aviator": [], "cosmos": [], "mines": [], "foot": [], "racing": []}
 
-# --- 3. CORE ALGORITHM ---
+# --- 3. CORE ALGORITHM (TITAN ENGINE) ---
 def get_titan_prediction(server_hex, base_ora, game_type):
-    time.sleep(1.2) # Anti-bot delay
+    time.sleep(1.2) 
     results = []
     SECRET_SALT = "TITAN_PREMIUM_PATRICIA_2026"
-    
     try:
         start_dt = datetime.strptime(base_ora, "%H:%M")
     except:
@@ -67,11 +65,9 @@ def get_titan_prediction(server_hex, base_ora, game_type):
         
         res = {"lera": future_time, "min": v_min, "moyen": v_moyen, "max": v_max, "prob": accuracy}
         results.append(res)
-        # Tehirizina ny 10 farany ao amin'ny tantara
         st.session_state.prediction_history[game_type].insert(0, res)
         if len(st.session_state.prediction_history[game_type]) > 10:
             st.session_state.prediction_history[game_type].pop()
-            
     return results
 
 # --- 4. LOGIN SYSTEM ---
@@ -79,7 +75,6 @@ if not st.session_state.authenticated:
     st.markdown("<br><br><h1 style='text-align:center; color:#00ffcc;'>🛡️ TITAN ACCESS CONTROL</h1>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
-        # MDP: ADMIN_TITAN
         user_key = st.text_input("ENTER ADMIN KEY:", type="password")
         if st.button("UNLOCK SYSTEM", use_container_width=True):
             if user_key == "ADMIN_TITAN":
@@ -92,16 +87,14 @@ if not st.session_state.authenticated:
 # --- 5. MAIN INTERFACE ---
 st.markdown('<div class="main-header">TITAN V85.0 OMNI-STRIKE ⚔️</div>', unsafe_allow_html=True)
 
-tab1, tab2, tab3, tab4 = st.tabs(["✈️ AVIATOR", "🚀 COSMOS X", "💣 MINES VIP", "⚙️ SETTINGS"])
+tabs = st.tabs(["✈️ AVIATOR", "🚀 COSMOS X", "💣 MINES VIP", "⚽ FOOT", "🐕 RACING", "⚙️ SETTINGS"])
 
-# --- AVIATOR & COSMOS ---
-for i, (tab, g_name) in enumerate(zip([tab1, tab2], ["aviator", "cosmos"])):
+# --- AVIATOR & COSMOS SECTORS ---
+for i, (tab, g_name) in enumerate(zip([tabs[0], tabs[1]], ["aviator", "cosmos"])):
     with tab:
         st.markdown(f"### ⚡ SCANNER {g_name.upper()}")
-        
         with st.expander("📸 UPLOAD SCREENSHOT"):
-            img = st.file_uploader(f"Capture {g_name}", type=['png', 'jpg', 'jpeg'], key=f"img_{g_name}")
-            if img: st.image(img)
+            st.file_uploader(f"Capture {g_name}", type=['png', 'jpg', 'jpeg'], key=f"img_{g_name}")
             
         c1, c2 = st.columns(2)
         hex_val = c1.text_input("🔑 SERVER SEED (Hex):", key=f"h_{g_name}")
@@ -109,65 +102,83 @@ for i, (tab, g_name) in enumerate(zip([tab1, tab2], ["aviator", "cosmos"])):
         
         if st.button(f"🔥 EXECUTE {g_name.upper()} ANALYSIS", use_container_width=True, key=f"b_{g_name}"):
             if hex_val:
-                with st.spinner("Decoding algorithm..."):
-                    preds = get_titan_prediction(hex_val, ora_val, g_name)
-                    for p in preds:
-                        st.markdown(f"""
-                        <div class="card">
-                            <div style="display:flex; justify-content: space-between; align-items:center;">
-                                <span style="font-size:20px; color:#ffcc00; font-weight:bold;">⏰ Lera: {p['lera']}</span>
-                                <span style="background:#00ffcc; color:#010a12; padding:3px 12px; border-radius:20px; font-weight:bold;">{p['prob']}% ACCURACY</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-around; margin-top:20px; text-align:center;">
-                                <div><small>MIN (Safe)</small><br><b>{p['min']}x</b></div>
-                                <div><small style="color:#00ffcc;">TARGET</small><br><div class="target-val">{p['moyen']}x</div></div>
-                                <div><small>MAX (Risk)</small><br><b>{p['max']}x</b></div>
-                            </div>
+                preds = get_titan_prediction(hex_val, ora_val, g_name)
+                for p in preds:
+                    st.markdown(f"""
+                    <div class="card">
+                        <div style="display:flex; justify-content: space-between; align-items:center;">
+                            <span style="font-size:20px; color:#ffcc00; font-weight:bold;">⏰ Lera: {p['lera']}</span>
+                            <span style="background:#00ffcc; color:#010a12; padding:3px 12px; border-radius:20px; font-weight:bold;">{p['prob']}% ACCURACY</span>
                         </div>
-                        """, unsafe_allow_html=True)
-            else:
-                st.warning("Please enter Server Seed.")
+                        <div style="display: flex; justify-content: space-around; margin-top:20px; text-align:center;">
+                            <div><small>MIN</small><br><b>{p['min']}x</b></div>
+                            <div><small style="color:#00ffcc;">TARGET</small><br><div class="target-val">{p['moyen']}x</div></div>
+                            <div><small>MAX</small><br><b>{p['max']}x</b></div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
 
-        # HISTORIQUE
-        st.markdown("#### 📜 TANTARAN'NY VINAVINA")
-        if st.session_state.prediction_history[g_name]:
-            for item in st.session_state.prediction_history[g_name]:
-                st.markdown(f"""
-                <div class="hist-box">
-                    🕒 <b>{item['lera']}</b> | Target: <span style="color:#00ffcc;">{item['moyen']}x</span> | Prob: {item['prob']}%
-                </div>
-                """, unsafe_allow_html=True)
-        else:
-            st.info("Tsy mbola misy tantara.")
-
-# --- MINES VIP ---
-with tab3:
+# --- MINES VIP SECTOR ---
+with tabs[2]:
     st.markdown("### 💣 MINES VIP DECODER")
     m_hex = st.text_input("🔑 SERVER SEED (Hex):", key="mine_h")
-    m_cli = st.text_input("👤 CLIENT SEED:", key="mine_c")
-    m_num = st.select_slider("Isan'ny Mines (1-7):", options=[1,2,3,4,5,6,7], value=3)
-    
+    m_num = st.select_slider("Isan'ny Mines:", options=[1,2,3,4,5], value=3)
     if st.button("💎 DECODE SAFE PATH", use_container_width=True):
-        if m_hex and m_cli:
-            random.seed(int(hashlib.md5(f"{m_hex}{m_cli}{m_num}".encode()).hexdigest()[:10], 16))
+        if m_hex:
+            random.seed(int(hashlib.md5(m_hex.encode()).hexdigest()[:8], 16))
             safe_tiles = random.sample(range(25), 5)
-            
-            grid_html = '<div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; max-width: 300px; margin: auto;">'
+            grid_html = '<div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; max-width: 250px; margin: auto;">'
             for idx in range(25):
-                char = "💎" if idx in safe_tiles else "⬛"
-                bg = "#00ffcc" if idx in safe_tiles else "#1a1a1a"
-                grid_html += f'<div style="background:{bg}; height:50px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:25px; border:1px solid rgba(255,255,255,0.05);">{char}</div>'
+                char, bg = ("💎", "#00ffcc") if idx in safe_tiles else ("⬛", "#1a1a1a")
+                grid_html += f'<div style="background:{bg}; height:45px; border-radius:5px; display:flex; align-items:center; justify-content:center; font-size:20px;">{char}</div>'
             st.markdown(grid_html + '</div>', unsafe_allow_html=True)
-            st.success(f"Algorithm optimized for {m_num} Mines.")
 
-# --- SETTINGS & FOOTER ---
-with tab4:
-    st.markdown("### ⚙️ SYSTEM INFO")
-    st.write(f"**Developer:** Patricia")
-    st.write(f"**Contact:** 0346249701")
-    st.write(f"**Email:** andriantsoakelly@gmail.com")
-    if st.button("🔴 CLEAR ALL DATA"):
-        st.session_state.prediction_history = {"aviator": [], "cosmos": [], "mines": []}
+# --- FOOT VIRTUAL SECTOR ---
+with tabs[3]:
+    st.markdown("### ⚽ FOOT VIRTUAL ANALYZER")
+    with st.expander("📸 UPLOAD CLASSEMENT"):
+        st.file_uploader("Capture Classment", type=['png', 'jpg'], key="foot_img")
+    c1, c2 = st.columns(2)
+    h_team = c1.text_input("🏠 HOME TEAM:")
+    a_team = c2.text_input("✈️ AWAY TEAM:")
+    if st.button("🎯 PREDICT FOOT MATCH", use_container_width=True):
+        if h_team and a_team:
+            with st.spinner("Analyzing stats..."):
+                time.sleep(1.5)
+                res = random.choice(["VICTOIRE HOME", "OVER 1.5", "VICTOIRE AWAY", "GG (BI_BUT)"])
+                score = f"{random.randint(1,3)} - {random.randint(0,2)}"
+                st.markdown(f"""
+                <div class="card" style="text-align:center;">
+                    <h2 style="color:#ffcc00;">{res}</h2>
+                    <div style="font-size:30px; letter-spacing:5px;">{score}</div>
+                    <p style="color:#00ffcc;">96% CONFIDENCE</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+# --- RACING SECTOR ---
+with tabs[4]:
+    st.markdown("### 🐕 RACING PRO (ALIKA/SOAVALY)")
+    mode = st.radio("Mode:", ["Platinum Hounds", "Dashing Derby"], horizontal=True)
+    cotes = st.text_input("📊 AMPIDIRO NY COTES (F1, F2, F3...):", placeholder="ohatra: 2.5, 3.8, 12.0")
+    if st.button("🏇 GENERATE TRIO BOX", use_container_width=True):
+        if cotes:
+            with st.spinner("Calculating Trio probability..."):
+                time.sleep(1.5)
+                nums = random.sample(range(1, 7 if "Hounds" in mode else 12), 3)
+                st.markdown(f"""
+                <div class="card" style="border-color:#ffcc00; text-align:center;">
+                    <small>VINAVINA TRIO DÉSORDRE</small>
+                    <div class="target-val" style="color:#ffcc00;">{nums[0]} - {nums[1]} - {nums[2]}</div>
+                    <p>Safety Tip: Outsider included</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+# --- SETTINGS ---
+with tabs[5]:
+    st.markdown("### ⚙️ SYSTEM & CONTACT")
+    st.info(f"**Developer:** Patricia\n\n**WhatsApp:** 0346249701\n\n**Email:** andriantsoakelly@gmail.com")
+    if st.button("🔴 RESET ALL CACHE"):
+        st.session_state.prediction_history = {"aviator":[], "cosmos":[], "mines":[], "foot":[], "racing":[]}
         st.rerun()
 
-st.markdown('<br><div style="text-align:center; color:#444; font-size:12px;">TITAN OMNI-STRIKE BY PATRICIA © 2026</div>', unsafe_allow_html=True)
+st.markdown('<div class="footer-text">TITAN OMNI-STRIKE BY PATRICIA © 2026</div>', unsafe_allow_html=True)

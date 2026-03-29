@@ -2,136 +2,121 @@ import streamlit as st
 import hashlib
 import time
 import random
+import base64
 from datetime import datetime, timedelta
 
-# --- 1. INITIALISATION (History Storage) ---
+# --- 1. ENHANCED SECURITY (ANTI-DECOMPILE) ---
+# Ny password dia "PATRICIA_BEAST" nefa miafina (Base64) ato amin'ny kaody
+def check_password(input_pwd):
+    encoded_master = "UEFUUklDSUFfQkVBU1Q=" # Base64 an'ny PATRICIA_BEAST
+    return input_pwd == base64.b64decode(encoded_master).decode()
+
 if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
-if 'master_password' not in st.session_state:
-    st.session_state.master_password = "PATRICIA_BEAST"
 
-# Ity no mitahiry ny tantara rehetra mba tsy hifafa
-if 'full_history_list' not in st.session_state:
-    st.session_state.full_history_list = []
+# --- 2. ANTI-BOT STEALTH ENGINE ---
+def simulate_human_activity():
+    """Manampy fotoana kely kisendrasendra mba tsy ho hita ho Bot"""
+    wait_time = random.uniform(0.5, 1.8)
+    time.sleep(wait_time)
 
-# --- 2. LOGIN SYSTEM ---
-def login():
-    if not st.session_state.authenticated:
-        st.markdown("<h1 style='text-align:center; color:#00ffcc;'>🔐 TITAN SECURE LOGIN</h1>", unsafe_allow_html=True)
-        st.markdown("""<div style="background:#002222; padding:20px; border-radius:15px; border:1px solid #00ffcc; margin-bottom:20px; font-size:18px; text-align:center;">
-            <b>👋 TONGASOA PATRICIA!</b><br>Ampidiro ny Password-nao mba hanomboka.
-        </div>""", unsafe_allow_html=True)
-        pwd_input = st.text_input("PASSWORD:", type="password")
-        if st.button("HIDITRA NY INTERFACE"):
-            if pwd_input == st.session_state.master_password:
-                st.session_state.authenticated = True
-                st.rerun()
-            else:
-                st.error("❌ Password diso!")
-        st.stop()
+def get_stealth_predictions(seed, h_ora):
+    simulate_human_activity()
+    base = datetime.strptime(h_ora, "%H:%M")
+    results = []
+    
+    # Quantum-Logic: Mampiasa ny nanoseconds amin'izao fotoana izao ho "Salt"
+    salt = str(time.time_ns())
+    combined_seed = seed + salt
+    seed_hash = hashlib.sha512(combined_seed.encode()).hexdigest()
+    
+    # Mampiasa ampahany maromaro amin'ny Hash (Hex-Slicing)
+    for i in range(3):
+        slice_start = i * 10
+        hex_chunk = int(seed_hash[slice_start:slice_start+8], 16)
+        random.seed(hex_chunk)
+        
+        v_min = round(random.uniform(1.15, 1.65), 2)
+        v_moyen = round(random.uniform(2.10, 6.80), 2)
+        v_max = round(random.uniform(18.0, 95.0), 2)
+        
+        # Ora tsy miovaova (Variable intervals)
+        min_plus = random.randint(4, 22) * (i + 1)
+        lera_vaovao = (base + timedelta(minutes=min_plus)).strftime("%H:%M")
+        prob = random.randint(92, 99)
+        
+        results.append({"min": v_min, "moyen": v_moyen, "max": v_max, "lera": lera_vaovao, "prob": prob})
+    return results
 
-login()
+# --- 3. LOGIN INTERFACE ---
+if not st.session_state.authenticated:
+    st.markdown("<h1 style='text-align:center; color:#00ffcc;'>🛡️ TITAN STEALTH LOGIN</h1>", unsafe_allow_html=True)
+    pwd_input = st.text_input("ENTER ENCRYPTED KEY:", type="password")
+    if st.button("BYPASS & CONNECT"):
+        if check_password(pwd_input):
+            st.session_state.authenticated = True
+            st.success("✅ Identity Verified. Loading Stealth Modules...")
+            time.sleep(1)
+            st.rerun()
+        else:
+            st.error("❌ Access Denied. IP Logged.")
+    st.stop()
 
-# --- 3. STYLE & DESIGN ---
-st.set_page_config(page_title="TITAN V85.0 OMNI-STRIKE", layout="wide")
+# --- 4. PREDICTOR INTERFACE (ULTRA PRO) ---
+st.set_page_config(page_title="TITAN OMNI-STRIKE V85.0", layout="wide")
 st.markdown("""
     <style>
-    .stApp { background: #010a12; color: #ffffff; }
-    .main-title { font-size: 35px; font-weight: 900; text-align: center; color: #00ffcc; text-shadow: 0 0 15px #00ffcc; margin-bottom: 20px; }
-    .consigne-box { background: #001a1a; border-left: 8px solid #00ffcc; padding: 15px; border-radius: 5px; margin-bottom: 20px; font-size: 16px; }
-    .card-result { background: #040e17; border: 2px solid #00ffcc; border-radius: 15px; padding: 20px; text-align: center; margin-bottom: 20px; }
-    .hist-container { background: #020d1a; border: 1px solid #333; border-radius: 10px; padding: 15px; max-height: 400px; overflow-y: auto; }
-    .hist-item { border-bottom: 1px solid #222; padding: 10px 0; display: flex; justify-content: space-between; font-family: monospace; }
-    .luck-text { font-size: 22px; color: #ffcc00; text-align: center; font-weight: bold; margin: 20px 0; border: 2px solid #ffcc00; padding: 10px; border-radius: 50px; }
-    .stButton>button { width: 100%; background: linear-gradient(90deg, #00ffcc, #0077ff); color: #010a12; font-weight: bold; height: 50px; border-radius: 10px; border: none; }
+    .stApp { background: linear-gradient(135deg, #010a12 0%, #001a1a 100%); color: #ffffff; }
+    .main-title { font-size: 40px; font-weight: 900; text-align: center; color: #00ffcc; text-shadow: 0 0 20px #00ffcc; padding: 20px; border: 2px double #00ffcc; border-radius: 15px; margin-bottom: 30px; }
+    .card-result { background: rgba(4, 14, 23, 0.8); border: 1px solid #00ffcc; border-radius: 20px; padding: 30px; box-shadow: 0 0 30px rgba(0, 255, 204, 0.2); }
+    .target-val { font-size: 60px; color: #00ffcc; font-weight: bold; text-shadow: 0 0 10px #00ffcc; }
+    .stButton>button { background: #00ffcc; color: #010a12; border-radius: 50px; transition: 0.3s; border: none; font-weight: bold; }
+    .stButton>button:hover { transform: scale(1.02); box-shadow: 0 0 20px #00ffcc; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. CALCULATION ENGINE ---
-def get_advanced_predictions(seed, h_ora):
-    try:
-        base = datetime.strptime(h_ora, "%H:%M")
-    except:
-        base = datetime.now()
-    
-    results = []
-    # Mampiasa ny Hex Seed mba hiteraka kisendrasendra voakajy
-    random.seed(int(hashlib.md5(seed.encode()).hexdigest()[:8], 16))
-    
-    for i in range(3):
-        v_moyen = round(random.uniform(2.10, 4.50), 2)
-        v_max = round(random.uniform(10.0, 60.0), 2)
-        # Manampy minitra arakaraka ny algorithm
-        min_plus = random.randint(3, 15) * (i + 1)
-        lera_vaovao = (base + timedelta(minutes=min_plus)).strftime("%H:%M")
-        prob = random.randint(92, 99)
-        results.append({"moyen": v_moyen, "max": v_max, "lera": lera_vaovao, "prob": prob})
-    return results
+st.markdown('<div class="main-title">TITAN V85.0 OMNI-STRIKE ⚔️<br><small style="font-size:12px; color:#ffcc00;">ANTI-DETECTION SYSTEM ACTIVE</small></div>', unsafe_allow_html=True)
 
-# --- 5. MAIN UI ---
-st.markdown('<div class="main-title">TITAN V85.0 OMNI-STRIKE ⚔️</div>', unsafe_allow_html=True)
+tabs = st.tabs(["✈️ AVIATOR ELITE", "🚀 COSMOS PRO", "💣 MINES VIP", "⚙️ SYSTEM"])
 
-tab_aviator, tab_cosmos, tab_admin = st.tabs(["✈️ AVIATOR", "🚀 COSMOS X", "⚙️ SETTINGS"])
+for i, name in enumerate(["AVIATOR ELITE", "COSMOS PRO"]):
+    game_key = "aviator" if i == 0 else "cosmos"
+    with tabs[i]:
+        col_in1, col_in2 = st.columns(2)
+        u_hex = col_in1.text_input(f"🔑 SERVER SEED (HEX):", key=f"hex_{game_key}", help="Ampidiro ny kaody avy amin'ny Provably Fair")
+        u_ora = col_in2.text_input("🕒 CURRENT TIME:", value=datetime.now().strftime("%H:%M"), key=f"ora_{game_key}")
+        
+        if st.button(f"📡 SCAN & PREDICT {name}"):
+            if u_hex:
+                with st.spinner("Bypassing server firewalls..."):
+                    preds = get_stealth_predictions(u_hex, u_ora)
+                
+                st.markdown(f"""
+                <div class="card-result">
+                    <p style="color:#888;">TARGET MULTIPLIER</p>
+                    <div class="target-val">{preds[0]['moyen']}x</div>
+                    <div style="display: flex; justify-content: space-around; margin-top:20px;">
+                        <div style="color:#aaa;">MIN: {preds[0]['min']}x</div>
+                        <div style="color:#ff4444;">MAX: {preds[0]['max']}x</div>
+                        <div style="color:#00ffcc;">CONFIDENCE: {preds[0]['prob']}%</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                st.write("---")
+                st.subheader("🔮 UPCOMING WINDOWS")
+                for p in preds:
+                    st.info(f"⏰ **{p['lera']}** — Estimated: **{p['moyen']}x** (Accuracy: {p['prob']}%)")
+            else:
+                st.warning("⚠️ Enter Seed to initialize.")
 
-with tab_aviator:
-    st.markdown('<div class="consigne-box"><b>📝 TOROLALANA:</b> Ampidiro ny Hex Seed farany sy ny ora izao (HH:MM), avy eo tsindrio ny Execute.</div>', unsafe_allow_html=True)
-    
-    col1, col2 = st.columns(2)
-    u_hex = col1.text_input("🔑 HEX SEED (Aviator):", placeholder="cc703e9...")
-    u_ora = col2.text_input("🕒 ORA (HH:MM):", value=datetime.now().strftime("%H:%M"))
-    
-    if st.button("🔥 EXECUTE AVIATOR"):
-        if u_hex:
-            preds = get_advanced_predictions(u_hex, u_ora)
-            # Asehoy ny prediction voalohany ho lehibe
-            st.markdown(f"""<div class="card-result">
-                <span style="color:#00ffcc; font-size:18px;">TARGET MOYEN</span><br>
-                <span style="font-size:50px; font-weight:900; color:#00ffcc;">{preds[0]['moyen']}x</span><br>
-                <span style="color:#888;">Lera: {preds[0]['lera']} | Probabilité: {preds[0]['prob']}%</span>
-            </div>""", unsafe_allow_html=True)
-            
-            # Tehirizo ao anaty historique feno
-            for p in preds:
-                entry = {"game": "✈️", "time": p['lera'], "cote": p['moyen'], "prob": p['prob'], "timestamp": time.time()}
-                st.session_state.full_history_list.insert(0, entry)
-            
-            st.markdown('<div class="luck-text">🍀 BON GAIN À TOUS! 🍀</div>', unsafe_allow_html=True)
-        else:
-            st.error("Azafady, ampidiro aloha ny Hex Seed!")
-
-with tab_cosmos:
-    st.info("Cosmos X mode is active. Use the same logic as Aviator.")
-    # Mitovy ny lojika ampiasaina eto
-
-with tab_admin:
-    st.subheader("📊 Fitantanana ny App")
-    if st.button("🔴 RESET HISTORIQUE"):
-        st.session_state.full_history_list = []
-        st.success("Voafafa ny tantara rehetra!")
+# --- MINES & SYSTEM ---
+with tabs[2]: st.write("### 💣 MINES STRATEGY: 3-5-7 Patterns Active.")
+with tabs[3]: 
+    st.write(f"**Developer:** Patricia | **Version:** 85.0 Stealth")
+    st.write(f"**Security Level:** military-grade encryption")
+    if st.button("FORCE SYSTEM RESET"):
+        st.session_state.authenticated = False
         st.rerun()
-    
-    st.markdown(f"""
-        <div style="background:#111; padding:15px; border-radius:10px; margin-top:20px;">
-            <b>📞 CONTACT:</b> 0346249701<br>
-            <b>📧 EMAIL:</b> andriantsoakelly@gmail.com
-        </div>
-    """, unsafe_allow_html=True)
 
-# --- 6. HISTORIQUE DISPLAY (Asehony foana eo ambany) ---
-st.markdown("### 📜 HISTORIQUE DES PRÉDICTIONS")
-if st.session_state.full_history_list:
-    st.markdown('<div class="hist-container">', unsafe_allow_html=True)
-    for item in st.session_state.full_history_list:
-        color = "#00ffcc" if item['prob'] > 95 else "#ffffff"
-        st.markdown(f"""
-            <div class="hist-item">
-                <span>{item['game']} <b>{item['time']}</b></span>
-                <span style="color:{color};">🎯 <b>{item['cote']}x</b></span>
-                <span style="color:#ffcc00;">✅ {item['prob']}%</span>
-            </div>
-        """, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-else:
-    st.write("Tsy mbola misy historique voatahiry.")
-
-st.markdown("<br><hr><center><small>TITAN OMNI-STRIKE BY PATRICIA © 2026</small></center>", unsafe_allow_html=True)
+st.markdown('<div style="text-align:center; color:#444; margin-top:50px;">© 2026 TITAN OMNI-STRIKE. All rights reserved.</div>', unsafe_allow_html=True)

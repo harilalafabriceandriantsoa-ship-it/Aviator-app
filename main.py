@@ -3,103 +3,122 @@ import hashlib
 import random
 from datetime import datetime, timedelta
 
-# --- 1. CONFIGURATION & STYLE ---
+# --- 1. STYLE "CYBER-CHARME" ---
 st.set_page_config(page_title="TITAN V85.0 ULTRA-SYNC", layout="wide")
 
 st.markdown("""
     <style>
-    .main { background-color: #0d1117; color: #00ffcc; }
-    .stTabs [data-baseweb="tab-list"] { gap: 20px; }
-    .stTabs [data-baseweb="tab"] {
-        background-color: #161b22; border-radius: 10px 10px 0 0;
-        padding: 10px 20px; color: white;
-    }
-    .stTabs [aria-selected="true"] { background-color: #00ffcc !important; color: black !important; }
+    /* Loko fototra maizina */
+    .stApp { background-color: #050505; color: #00ffcc; }
+    
+    /* Tabs style */
+    .stTabs [data-baseweb="tab-list"] { background-color: #050505; }
+    .stTabs [data-baseweb="tab"] { color: #ffffff; font-weight: bold; }
+    .stTabs [aria-selected="true"] { color: #00ffcc !important; border-bottom: 2px solid #00ffcc !important; }
+
+    /* Prediction Cards miaraka amin'ny Glow */
     .prediction-card {
-        background: rgba(0, 255, 204, 0.05); border: 1px solid #00ffcc;
-        padding: 15px; border-radius: 15px; text-align: center; margin: 5px;
-        box-shadow: 0 0 10px rgba(0, 255, 204, 0.2);
+        background: rgba(0, 255, 204, 0.05);
+        border: 2px solid #00ffcc;
+        padding: 20px;
+        border-radius: 20px;
+        text-align: center;
+        box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
+        margin-bottom: 15px;
+    }
+    
+    /* Hafatra Bonne Chance */
+    .luck-msg {
+        color: #00ffcc;
+        font-size: 24px;
+        font-weight: bold;
+        text-align: center;
+        text-shadow: 0 0 10px #00ffcc;
+        margin-top: 20px;
     }
     </style>
     """, unsafe_allow_html=True)
 
+# Fitahirizana data
 if 'history' not in st.session_state: st.session_state.history = []
+if 'admin_pwd' not in st.session_state: st.session_state.admin_pwd = "2026"
 
-# --- 2. CORE ALGORITHM ---
-def get_prediction(srv, clt, game):
-    seed_combined = hashlib.sha256(f"{srv}{clt}".encode()).hexdigest()
-    random.seed(int(seed_combined[:10], 16))
+# --- 2. SETTINGS MANAGER (SIDEBAR) ---
+with st.sidebar:
+    st.markdown("### ⚙️ SETTINGS")
+    auth = st.text_input("Admin Key Access:", type="password")
+    if auth == st.session_state.admin_pwd:
+        st.success("Manager Authenticated")
+        new_p = st.text_input("Hanova MDP vaovao:", type="password")
+        if st.button("Hamafiso ny MDP"):
+            st.session_state.admin_pwd = new_p
+            st.success("MDP Voatahiry!")
+        if st.button("🗑️ RESET APP"):
+            st.session_state.history = []
+            st.rerun()
+
+# --- 3. ALGORITHM ---
+def process_prediction(srv, clt, game):
+    seed_hash = hashlib.sha256(f"{srv}{clt}".encode()).hexdigest()
+    random.seed(int(seed_hash[:8], 16))
     
+    now = datetime.now()
     results = []
-    base_time = datetime.now()
-    
     for i in range(1, 4):
-        moyen = round(random.uniform(1.60, 4.80), 2)
-        # Fanovana ny lera ho an'ny Cosmos (misy segondra)
-        time_fmt = "%H:%M:%S" if game == "COSMOS X" else "%H:%M"
-        
+        val = round(random.uniform(1.65, 4.25), 2)
         p = {
             "game": game,
-            "time": (base_time + timedelta(minutes=i*2)).strftime(time_fmt),
-            "moyen": moyen,
-            "min": round(moyen * 0.85, 2),
-            "max": round(moyen * 1.30, 2)
+            "time": (now + timedelta(minutes=i*2)).strftime("%H:%M:%S" if game == "COSMOS X" else "%H:%M"),
+            "moyen": val,
+            "min": round(val * 0.85, 2),
+            "max": round(val * 1.30, 2)
         }
         results.append(p)
         st.session_state.history.insert(0, p)
     return results
 
-# --- 3. INTERFACE ---
+# --- 4. INTERFACE ---
 st.markdown("<h1 style='text-align:center; color:#00ffcc;'>🛰️ TITAN V85.0 ULTRA-SYNC</h1>", unsafe_allow_html=True)
 
-tab1, tab2, tab3 = st.tabs(["✈️ AVIATOR", "🚀 COSMOS X", "💣 MINES VIP"])
+t1, t2, t3 = st.tabs(["✈️ AVIATOR", "🚀 COSMOS X", "💣 MINES VIP"])
 
-# --- AVIATOR ---
-with tab1:
-    st.subheader("⚡ AVIATOR SCANNER")
-    st.file_uploader("📸 UPLOAD SCREENSHOT (HISTORIQUE)", type=['png','jpg'], key="img_avi")
-    col1, col2 = st.columns(2)
-    hex_seed = col1.text_input("🔑 HEX SEED:", key="hex_avi")
-    heur = col2.text_input("🕒 HEUR (HH:mm):", value=datetime.now().strftime("%H:%M"), key="time_avi")
-    
-    if st.button("🔥 ANALYZE AVIATOR"):
-        res = get_prediction(hex_seed, heur, "AVIATOR")
-        c = st.columns(3)
-        for i, p in enumerate(res):
-            with c[i]:
-                st.markdown(f"<div class='prediction-card'><b>TOUR {i+1}</b><br>{p['time']}<br><span style='font-size:30px;'>{p['moyen']}x</span></div>", unsafe_allow_html=True)
+# Aviator & Cosmos
+for tab, name in zip([t1, t2], ["AVIATOR", "COSMOS X"]):
+    with tab:
+        c1, c2 = st.columns(2)
+        s_hex = c1.text_input(f"🔑 HEX SEED ({name}):", key=f"hex_{name}")
+        s_time = c2.text_input(f"🕒 HEUR / CLIENT SEED ({name}):", key=f"time_{name}")
+        
+        if st.button(f"🔥 ANALYZE {name}"):
+            res = process_prediction(s_hex, s_time, name)
+            cols = st.columns(3)
+            for i, r in enumerate(res):
+                with cols[i]:
+                    st.markdown(f"""
+                    <div class='prediction-card'>
+                        <b style='color:white;'>TOUR {i+1}</b><br>
+                        <span style='color:#ffcc00;'>{r['time']}</span><br>
+                        <span style='font-size:35px; color:#00ffcc;'>{r['moyen']}x</span><br>
+                        <small style='color:#aaa;'>Min: {r['min']} | Max: {r['max']}</small>
+                    </div>
+                    """, unsafe_allow_html=True)
+            st.markdown("<p class='luck-msg'>🍀 Bonne chance à tous !</p>", unsafe_allow_html=True)
 
-# --- COSMOS X (Misy Segondra) ---
-with tab2:
-    st.subheader("🚀 COSMOS X ULTRA-SYNC")
-    st.file_uploader("📸 UPLOAD SCREENSHOT", type=['png','jpg'], key="img_cos")
-    col1, col2 = st.columns(2)
-    hex_c = col1.text_input("🔑 HEX SEED:", key="hex_cos")
-    # Ny lera eto dia mampiasa segondra
-    heur_c = col2.text_input("🕒 HEUR (HH:mm:ss):", value=datetime.now().strftime("%H:%M:%S"), key="time_cos")
-    
-    if st.button("🚀 EXECUTE COSMOS"):
-        res = get_prediction(hex_c, heur_c, "COSMOS X")
-        c = st.columns(3)
-        for i, p in enumerate(res):
-            with c[i]:
-                st.markdown(f"<div class='prediction-card'><b>TOUR {i+1}</b><br><span style='color:#ff4444;'>{p['time']}</span><br><span style='font-size:30px;'>{p['moyen']}x</span></div>", unsafe_allow_html=True)
-
-# --- MINES VIP (Server & Client Seed) ---
-with tab3:
-    st.subheader("💣 MINES VIP 8/10")
-    col1, col2 = st.columns(2)
-    s_srv = col1.text_input("🔑 SEED DU SERVEUR:", key="mines_srv")
-    s_clt = col2.text_input("📱 SEED DU CLIENT:", key="mines_clt")
-    
+# Mines
+with t3:
+    st.subheader("💣 MINES VIP SYNC")
+    m_srv = st.text_input("Server Seed:")
+    m_clt = st.text_input("Client Seed:")
     if st.button("🔍 SCAN MINES"):
-        get_prediction(s_srv, s_clt, "MINES")
-        st.markdown("<div style='text-align:center; font-size:25px;'>⭐ ⬛ ⬛ ⭐ ⬛<br>⬛ ⭐ ⬛ ⬛ ⬛<br>⬛ ⬛ ⭐ ⬛ ⭐</div>", unsafe_allow_html=True)
+        process_prediction(m_srv, m_clt, "MINES")
+        st.write("⭐ ⬛ ⬛ ⭐ ⬛")
+        st.markdown("<p class='luck-msg'>🍀 Bonne chance à tous !</p>", unsafe_allow_html=True)
 
-# --- 4. HISTORIQUE ---
+# --- 5. HISTORIQUE ---
 st.markdown("---")
-st.markdown("### 📜 LAST PREDICTIONS (CAPTURE)")
+st.subheader("📜 LAST PREDICTIONS (CAPTURE)")
 if st.session_state.history:
-    for h in st.session_state.history[:6]:
-        # Miseho eto ny pourcentage Min/Moyen/Max
-        st.write(f"🎮 **{h['game']}** | 🕒 {h['time']} | **Min(85%): {h['min']}x** | **Moyen: {h['moyen']}x** | **Max(130%): {h['max']}x**")
+    for h in st.session_state.history[:5]:
+        st.write(f"🎮 **{h['game']}** | 🕒 {h['time']} | **{h['moyen']}x** (Min: {h['min']} | Max: {h['max']})")
+else:
+    st.info("Tsy mbola misy historique.")

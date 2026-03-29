@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 # --- 1. CONFIGURATION & ACCESS CONTROL ---
 st.set_page_config(page_title="TITAN V85.0 ULTRA-SYNC", layout="wide")
 
-ACCESS_CODE = "2026" 
+ACCESS_CODE = "ADMIN2026" 
 
 # CSS ho an'ny endrika Neon sy ny Sidebar
 st.markdown("""

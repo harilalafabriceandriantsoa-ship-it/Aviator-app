@@ -27,10 +27,11 @@ st.markdown("""
     }
     .luck-msg { color: #00ffcc; font-size: 24px; font-weight: bold; text-align: center; margin-top: 25px; text-shadow: 0 0 10px #00ffcc; }
     .stButton>button { background: #00ffcc !important; color: black !important; border-radius: 15px !important; font-weight: bold; width: 100%; }
+    hr { border: 0.5px solid #333; margin: 10px 0; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. LOGIN PAGE (MDP) ---
+# --- 3. LOGIN PAGE ---
 if not st.session_state.logged_in:
     st.markdown("<h1 style='text-align:center; color:#00ffcc;'>🛰️ TITAN V85.0 LOGIN</h1>", unsafe_allow_html=True)
     col_l, _ = st.columns([1, 1])
@@ -57,29 +58,23 @@ with st.sidebar:
             st.session_state.manche_screenshots = []
             st.rerun()
 
-# --- 5. ALGORITHM (MOYEN AJUSTÉ POUR WIN 8/10) ---
+# --- 5. ALGORITHM (8/10 WIN RATE LOGIC) ---
 def get_predictions(seed, client, game):
     now = datetime.now()
     results = []
-    # Sync Algorithm
     random.seed(int(hashlib.sha256(f"{seed}{client}{random.random()}".encode()).hexdigest()[:8], 16))
     
     for i in range(1, 4):
-        # Moyen nampidinina kely (1.45x - 3.85x) ho an'ny Win Rate 8/10
+        # Moyen latsaka kely (1.45x - 3.85x) ho an'ny Win Rate
         moyen = round(random.uniform(1.45, 3.85), 2)
-        
-        # Format lera manokana
-        if game == "COSMOS X":
-            fmt = "%H:%M:%S"
-        else:
-            fmt = "%H:%M"
+        fmt = "%H:%M:%S" if game == "COSMOS X" else "%H:%M"
             
         p = {
             "game": game,
             "ora": (now + timedelta(minutes=i*2)).strftime(fmt),
             "moyen": moyen,
-            "min": round(moyen * 0.88, 2), # Fiarovana ambony (88%)
-            "max": round(moyen * 1.25, 2)
+            "min": round(moyen * 0.88, 2), # 88% Taha atokisana
+            "max": round(moyen * 1.25, 2)  # 125% Risque
         }
         results.append(p)
         st.session_state.history.insert(0, p)
@@ -90,7 +85,7 @@ st.markdown("<h1 style='text-align:center; color:#00ffcc;'>🛰️ TITAN V85.0 U
 
 t1, t2, t3, t4 = st.tabs(["✈️ AVIATOR", "🚀 COSMOS X", "💣 MINES VIP", "📸 MANCHE HISTORY"])
 
-# --- AVIATOR & COSMOS X ---
+# AVIATOR & COSMOS X
 for tab, g_name in zip([t1, t2], ["AVIATOR", "COSMOS X"]):
     with tab:
         st.file_uploader(f"📸 Screenshot {g_name}:", type=['png','jpg'], key=f"f_{g_name}")
@@ -104,37 +99,44 @@ for tab, g_name in zip([t1, t2], ["AVIATOR", "COSMOS X"]):
             cols = st.columns(3)
             for i, r in enumerate(preds):
                 with cols[i]:
-                    st.markdown(f"""<div class="prediction-card"><b style="color:red;">TOUR {i+1}</b><br>{r['ora']}<br>
-                    <span style="font-size:35px; color:#00ffcc;">{r['moyen']}x</span><br>
-                    <small>Min: {r['min']} | Max: {r['max']}</small></div>""", unsafe_allow_html=True)
+                    st.markdown(f"""
+                    <div class="prediction-card">
+                        <b style="color:red;">TOUR {i+1}</b><br>
+                        <span style="color:#aaa; font-size:12px;">{r['ora']}</span><br>
+                        <span style="font-size:38px; color:#00ffcc;">{r['moyen']}x</span><br>
+                        <small style="color:#ffffff;">Target (100%)</small>
+                        <hr>
+                        <div style="font-size:13px; text-align:left; padding-left:10px;">
+                            <span style="color:#00ffcc;">●</span> <b>Min (88%):</b> {r['min']}x<br>
+                            <span style="color:#ff4444;">●</span> <b>Max (125%):</b> {r['max']}x
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
             st.markdown("<p class='luck-msg'>🍀 Bonne chance à tous !</p>", unsafe_allow_html=True)
 
-# --- MINES VIP ---
+# MINES VIP
 with t3:
-    st.subheader("💣 MINES 8/10")
-    m_srv = st.text_input("Server Seed:", key="msrv")
-    m_clt = st.text_input("Client Seed:", key="mclt")
+    st.subheader("💣 MINES VIP 8/10")
     nb = st.slider("Isan'ny vanja (Mines):", 1, 7, 3)
     if st.button("🔍 SCAN MINES"):
-        st.markdown("<div style='font-size:30px; text-align:center;'>⭐ ⬛ ⬛ ⭐ ⬛<br>⬛ ⭐ ⬛ ⬛ ⬛<br>⬛ ⬛ ⭐ ⬛ ⭐</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size:30px; text-align:center; letter-spacing:10px;'>⭐ ⬛ ⬛ ⭐ ⬛<br>⬛ ⭐ ⬛ ⬛ ⬛<br>⬛ ⬛ ⭐ ⬛ ⭐</div>", unsafe_allow_html=True)
         st.markdown("<p class='luck-msg'>🍀 Bonne chance à tous !</p>", unsafe_allow_html=True)
 
-# --- MANCHE HISTORY (POROFO) ---
+# MANCHE HISTORY
 with t4:
-    st.subheader("📸 MANCHE SCREENSHOTS HISTORY")
+    st.subheader("📸 MANCHE SCREENSHOTS")
     with st.expander("➕ ADD NEW RESULT"):
-        up_img = st.file_uploader("Upload result image:", type=['png','jpg'])
-        up_info = st.text_input("Info (lera sy vokatra):")
+        up_img = st.file_uploader("Upload image:", type=['png','jpg'])
+        up_info = st.text_input("Info (ex: 11:20 - 2.50x):")
         if st.button("Tehirizina"):
             if up_img:
                 st.session_state.manche_screenshots.insert(0, {"img": up_img, "info": up_info})
                 st.success("Voatahiry!")
-    
     for m in st.session_state.manche_screenshots:
         st.image(m['img'], width=300, caption=m['info'])
         st.markdown("---")
 
-# --- 7. HISTORIQUE PRÉDICTION (LATEST) ---
+# HISTORIQUE PREDICTION
 st.markdown("---")
 st.subheader("📜 LAST PREDICTIONS")
 for h in st.session_state.history[:5]:

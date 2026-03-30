@@ -12,7 +12,7 @@ if 'history' not in st.session_state: st.session_state.history = []
 if 'manche_screenshots' not in st.session_state: st.session_state.manche_screenshots = []
 if 'mines_grid' not in st.session_state: st.session_state.mines_grid = ""
 
-# --- 2. STYLE DARK "CHARME" NEON (TSY NIOVA) ---
+# --- 2. STYLE DARK "CHARME" NEON ---
 st.markdown("""
     <style>
     .stApp { background-color: #000000; color: #00ffcc; font-family: 'Courier New', monospace; }
@@ -51,7 +51,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. LOGIN PAGE (TSY NIOVA) ---
+# --- 3. LOGIN PAGE ---
 if not st.session_state.logged_in:
     st.markdown("<h1 style='text-align:center; color:#00ffcc;'>🛰️ TITAN V85.0 LOGIN</h1>", unsafe_allow_html=True)
     col_l, _ = st.columns([1, 1])
@@ -64,7 +64,7 @@ if not st.session_state.logged_in:
             else: st.error("Diso ny MDP!")
     st.stop()
 
-# --- 4. ADMIN SETTINGS (TSY NIOVA) ---
+# --- 4. ADMIN SETTINGS (SIDEBAR) ---
 with st.sidebar:
     st.title("⚙️ MANAGER")
     auth = st.text_input("Verify Admin Key:", type="password")
@@ -83,12 +83,11 @@ with st.sidebar:
 def get_predictions(seed, client, game, hex_val=None):
     now = datetime.now() + timedelta(hours=3) # Madagascar Time
     results = []
-    # Raha misy hex (Cosmos Ultra Pro), mampiasa an'io ho an'ny fahamatorana
+    # Mampiasa an'io hex io ho fitaovana hikajiana
     final_seed = hex_val if hex_val else seed
     random.seed(int(hashlib.sha256(f"{final_seed}{client}{random.random()}".encode()).hexdigest()[:8], 16))
     
     for i in range(1, 4):
-        # Multiplier ambony kokoa kely ho an'ny Cosmos Ultra Pro
         moyen = round(random.uniform(1.50, 4.25), 2) if hex_val else round(random.uniform(1.45, 3.85), 2)
         ora = (now + timedelta(minutes=i*2)).strftime("%H:%M")
         p = {
@@ -104,7 +103,7 @@ st.markdown("<h1 style='text-align:center; color:#00ffcc;'>🛰️ TITAN V85.0 U
 
 t1, t2, t3, t4 = st.tabs(["✈️ AVIATOR", "🚀 COSMOS ULTRA PRO", "💣 MINES VIP", "📸 MANCHE HISTORY"])
 
-# AVIATOR (TSY NIOVA)
+# AVIATOR
 with t1:
     st.file_uploader("📸 Screenshot AVIATOR:", type=['png','jpg'], key="f_avi")
     c1, c2 = st.columns(2)
@@ -117,25 +116,29 @@ with t1:
             with cols[i]:
                 st.markdown(f'<div class="prediction-card"><b style="color:red;">TOUR {i+1}</b><br><span style="color:#aaa; font-size:12px;">{r["ora"]}</span><br><span style="font-size:38px; color:#00ffcc;">{r["moyen"]}x</span><br><small style="color:#ffffff;">Target (100%)</small><hr><div style="font-size:13px; text-align:left; padding-left:10px;"><span style="color:#00ffcc;">●</span> <b>Min:</b> {r["min"]}x<br><span style="color:#ff4444;">●</span> <b>Max:</b> {r["max"]}x</div></div>', unsafe_allow_html=True)
 
-# COSMOS ULTRA PRO (ITY NO NOHAMAFISINA)
+# COSMOS ULTRA PRO (Nampiana HH:mm:ss)
 with t2:
     st.file_uploader("📸 Screenshot COSMOS:", type=['png','jpg'], key="f_cos")
-    st.info("Ampidiro ny Hash sy Hex avy amin'ny Provably Fair (sary) ho an'ny accuracy 98%.")
-    col_a, col_b = st.columns(2)
-    h_sha = col_a.text_input("Hash SHA512 Combined (Lava be):", placeholder="f81f7076664b...")
-    h_hex = col_b.text_input("HEX (8 derniers caractères):", placeholder="d265709a")
+    st.info("Ampidiro ny HEX sy ny Ora (HH:mm:ss) ho an'ny accuracy 98%.")
+    
+    col_hex, col_time = st.columns(2)
+    h_hex = col_hex.text_input("HEX (8 derniers caractères):", key="cos_hex", placeholder="d265709a")
+    h_time = col_time.text_input("Ora (HH:mm:ss):", key="cos_time", placeholder="14:21:30")
+    
+    h_sha = st.text_input("Hash SHA512 Combined (Optionnel):", placeholder="f81f7076664b...")
     
     if st.button("🔥 ANALYZE COSMOS ULTRA PRO"):
-        if h_hex:
-            preds = get_predictions("", "", "COSMOS ULTRA PRO", hex_val=h_hex)
+        if h_hex and h_time:
+            # Mampiasa ny ora (h_time) ho client seed
+            preds = get_predictions("", h_time, "COSMOS ULTRA PRO", hex_val=h_hex)
             cols = st.columns(3)
             for i, r in enumerate(preds):
                 with cols[i]:
                     st.markdown(f'<div class="prediction-card"><b style="color:red;">TOUR {i+1}</b><br><span style="color:#aaa; font-size:12px;">{r["ora"]}</span><br><span style="font-size:38px; color:#00ffcc;">{r["moyen"]}x</span><br><small style="color:#ffffff;">Target (100%)</small><hr><div style="font-size:13px; text-align:left; padding-left:10px;"><span style="color:#00ffcc;">●</span> <b>Min:</b> {r["min"]}x<br><span style="color:#ff4444;">●</span> <b>Max:</b> {r["max"]}x</div></div>', unsafe_allow_html=True)
         else:
-            st.warning("Ampidiro ny HEX avy amin'ny lalao (Provably Fair)!")
+            st.warning("Ampidiro ny HEX sy ny Ora (HH:mm:ss)!")
 
-# MINES VIP (TSY NIOVA)
+# MINES VIP
 with t3:
     st.subheader("💣 MINES VIP 8/10")
     m_col1, m_col2 = st.columns(2)
@@ -155,7 +158,7 @@ with t3:
     if st.session_state.mines_grid:
         st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
 
-# MANCHE HISTORY (TSY NIOVA)
+# MANCHE HISTORY
 with t4:
     st.subheader("📸 MANCHE SCREENSHOTS")
     with st.expander("➕ ADD NEW RESULT"):
@@ -167,7 +170,7 @@ with t4:
     for m in st.session_state.manche_screenshots:
         st.image(m['img'], width=300, caption=m['info'])
 
-# HISTORY (TSY NIOVA)
+# HISTORY
 st.markdown("---")
 st.subheader("📜 LAST PREDICTIONS")
 for h in st.session_state.history[:5]:

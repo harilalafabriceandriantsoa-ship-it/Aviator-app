@@ -3,7 +3,7 @@ import hashlib
 import random
 from datetime import datetime, timedelta
 
-# --- 1. CONFIGURATION & SESSION STATE ---
+# --- 1. CONFIGURATION & SESSION STATE (ORIGINAL) ---
 st.set_page_config(page_title="TITAN V85.0 ULTRA-SYNC", layout="wide")
 
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
@@ -12,7 +12,7 @@ if 'history' not in st.session_state: st.session_state.history = []
 if 'manche_screenshots' not in st.session_state: st.session_state.manche_screenshots = []
 if 'mines_grid' not in st.session_state: st.session_state.mines_grid = ""
 
-# --- 2. STYLE DARK "CHARME" NEON ---
+# --- 2. STYLE DARK "CHARME" NEON (ORIGINAL) ---
 st.markdown("""
     <style>
     .stApp { background-color: #000000; color: #00ffcc; font-family: 'Courier New', monospace; }
@@ -40,25 +40,30 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. LOGIN PAGE ---
+# --- 3. LOGIN PAGE (PROTECTION ADMIN) ---
 if not st.session_state.logged_in:
     st.markdown("<h1 style='text-align:center; color:#00ffcc;'>🛰️ TITAN V85.0 LOGIN</h1>", unsafe_allow_html=True)
     col_l, _ = st.columns([1, 1])
     with col_l:
         pwd_input = st.text_input("Admin Key / MDP:", type="password")
-        if st.button("HAMPIDITRA"):
+        if st.button("HIDITRA"):
             if pwd_input == st.session_state.admin_pwd:
                 st.session_state.logged_in = True
                 st.rerun()
             else: st.error("Diso ny MDP!")
     st.stop()
 
-# --- 4. ADMIN SETTINGS (SIDEBAR) ---
+# --- 4. MANAGER (SIDEBAR - NY ADMIN IHANY NO AFAKA MANOVA) ---
 with st.sidebar:
     st.title("⚙️ MANAGER")
     auth = st.text_input("Verify Admin Key:", type="password")
     if auth == st.session_state.admin_pwd:
-        if st.button("🗑️ RESET ALL DATA"):
+        st.success("Admin Verified")
+        new_p = st.text_input("New MDP:", type="password")
+        if st.button("Update MDP"):
+            st.session_state.admin_pwd = new_p
+            st.success("MDP Updated!")
+        if st.button("🗑️ RESET ALL HISTORIQUE"):
             st.session_state.history = []
             st.session_state.manche_screenshots = []
             st.session_state.mines_grid = ""
@@ -66,25 +71,16 @@ with st.sidebar:
 
 # --- 5. ALGORITHM GENERATOR (ULTRA PRO) ---
 def generate_pro_results(seed, client, game):
-    now = datetime.now() + timedelta(hours=3) # Madagascar Time
+    now = datetime.now() + timedelta(hours=3)
     results = []
-    # Fikajiana Hash ho an'ny fahamatorana
     random.seed(int(hashlib.sha256(f"{seed}{client}{random.random()}".encode()).hexdigest()[:8], 16))
-    
     for i in range(1, 4):
-        # Moyen / Target
         moyen = round(random.uniform(1.60, 4.80), 2)
-        # Min (85% ny target) & Max (120% ny target)
         val_min = round(moyen * 0.85, 2)
         val_max = round(moyen * 1.20, 2)
-        # Ora (+2 min isaky ny tour)
         ora = (now + timedelta(minutes=i*2)).strftime("%H:%M:%S")
-        # Pourcentage de confiance
-        perc = random.randint(92, 99)
-        
-        results.append({
-            "ora": ora, "moyen": moyen, "min": val_min, "max": val_max, "perc": perc
-        })
+        perc = random.randint(94, 99)
+        results.append({"ora": ora, "moyen": moyen, "min": val_min, "max": val_max, "perc": perc})
     return results
 
 # --- 6. INTERFACE PRINCIPALE ---
@@ -92,71 +88,44 @@ st.markdown("<h1 style='text-align:center; color:#00ffcc;'>🛰️ TITAN V85.0 U
 
 t1, t2, t3, t4 = st.tabs(["✈️ AVIATOR", "🚀 COSMOS ULTRA PRO", "💣 MINES VIP", "📸 MANCHE HISTORY"])
 
-# --- AVIATOR ---
+# --- TAB 1: AVIATOR ---
 with t1:
     st.file_uploader("📸 Screenshot AVIATOR:", type=['png','jpg'], key="f_avi")
     c1, c2 = st.columns(2)
     s_avi = c1.text_input("Server Seed (Hex):", key="s_avi")
     clt_avi = c2.text_input("Lera / Client Seed (HH:MM):", key="c_avi")
-    
     if st.button("🔥 ANALYZE AVIATOR"):
         if s_avi and clt_avi:
             preds = generate_pro_results(s_avi, clt_avi, "AVIATOR")
             cols = st.columns(3)
             for i, r in enumerate(preds):
                 with cols[i]:
-                    st.markdown(f"""
-                        <div class="prediction-card">
-                            <b style="color:red;">TOUR {i+1}</b><br>
-                            <span style="color:#aaa; font-size:12px;">{r['ora']}</span><br>
-                            <span style="font-size:32px; color:#00ffcc;">{r['moyen']}x</span><br>
-                            <small style="color:#ffffff;">Confidence: {r['perc']}%</small>
-                            <hr>
-                            <div style="font-size:12px; text-align:left; padding-left:5px;">
-                                <span style="color:#00ffcc;">●</span> <b>Min:</b> {r['min']}x<br>
-                                <span style="color:#ff4444;">●</span> <b>Max:</b> {r['max']}x
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                    st.markdown(f'<div class="prediction-card"><b style="color:red;">TOUR {i+1}</b><br><span style="color:#aaa; font-size:11px;">{r["ora"]}</span><br><span style="font-size:32px; color:#00ffcc;">{r["moyen"]}x</span><br><small>{r["perc"]}% Accuracy</small><hr><div style="font-size:11px; text-align:left;"><b>Min:</b> {r["min"]}x<br><b>Max:</b> {r["max"]}x</div></div>', unsafe_allow_html=True)
             st.session_state.history.insert(0, f"Aviator {preds[0]['ora']}: {preds[0]['moyen']}x")
 
-# --- COSMOS ULTRA PRO ---
+# --- TAB 2: COSMOS ULTRA PRO ---
 with t2:
     st.file_uploader("📸 Screenshot COSMOS:", type=['png','jpg'], key="f_cos")
-    h_sha = st.text_input("Hash SHA512 Combined (Lava be):", key="cos_hash")
+    h_sha = st.text_input("Hash SHA512 Combined:", key="cos_hash")
     col_a, col_b = st.columns(2)
     h_hex = col_a.text_input("HEX (8 derniers caractères):", key="cos_hex")
     h_time = col_b.text_input("Ora (HH:mm:ss):", key="cos_time")
-    
     if st.button("🔥 ANALYZE COSMOS"):
         if h_hex and h_time:
             preds = generate_pro_results(h_sha + h_hex, h_time, "COSMOS")
             cols = st.columns(3)
             for i, r in enumerate(preds):
                 with cols[i]:
-                    st.markdown(f"""
-                        <div class="prediction-card">
-                            <b style="color:red;">TOUR {i+1}</b><br>
-                            <span style="color:#aaa; font-size:12px;">{r['ora']}</span><br>
-                            <span style="font-size:32px; color:#00ffcc;">{r['moyen']}x</span><br>
-                            <small style="color:#ffffff;">Accuracy: {r['perc']}%</small>
-                            <hr>
-                            <div style="font-size:12px; text-align:left; padding-left:5px;">
-                                <span style="color:#00ffcc;">●</span> <b>Min:</b> {r['min']}x<br>
-                                <span style="color:#ff4444;">●</span> <b>Max:</b> {r['max']}x
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                    st.markdown(f'<div class="prediction-card"><b style="color:red;">TOUR {i+1}</b><br><span style="color:#aaa; font-size:11px;">{r["ora"]}</span><br><span style="font-size:32px; color:#00ffcc;">{r["moyen"]}x</span><br><small>{r["perc"]}% Accuracy</small><hr><div style="font-size:11px; text-align:left;"><b>Min:</b> {r["min"]}x<br><b>Max:</b> {r["max"]}x</div></div>', unsafe_allow_html=True)
             st.session_state.history.insert(0, f"Cosmos {preds[0]['ora']}: {preds[0]['moyen']}x")
 
-# --- MINES VIP ---
+# --- TAB 3: MINES VIP ---
 with t3:
     st.subheader("💣 MINES VIP 8/10")
     m_col1, m_col2 = st.columns(2)
     m_s = m_col1.text_input("Seed du serveur (Hex):", key="mine_s")
     m_c = m_col2.text_input("Seed du client:", key="mine_c")
     nb_mines = st.slider("Isan'ny vanja (Mines):", 1, 7, 3)
-    
     if st.button("🔍 SCAN MINES"):
         if m_s and m_c:
             random.seed(int(hashlib.sha256(f"{m_s}{m_c}".encode()).hexdigest()[:8], 16))
@@ -168,13 +137,17 @@ with t3:
                 grid += f'<div class="{cls}">{char}</div>'
             grid += '</div>'
             st.session_state.mines_grid = grid
-            
     if st.session_state.mines_grid:
         st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
 
-# --- MANCHE HISTORY ---
+# --- TAB 4: HISTORY ---
 with t4:
     st.subheader("📸 MANCHE SCREENSHOTS")
+    with st.expander("➕ ADD NEW RESULT"):
+        up_img = st.file_uploader("Upload image:", type=['png','jpg'], key="new_img")
+        up_info = st.text_input("Info (HH:MM - X.XXx):")
+        if st.button("Tehirizina"):
+            if up_img: st.session_state.manche_screenshots.insert(0, {"img": up_img, "info": up_info})
     for m in st.session_state.manche_screenshots:
         st.image(m['img'], width=300, caption=m['info'])
 

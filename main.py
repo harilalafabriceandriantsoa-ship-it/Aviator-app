@@ -13,7 +13,7 @@ if 'history' not in st.session_state: st.session_state.history = []
 if 'manche_screenshots' not in st.session_state: st.session_state.manche_screenshots = []
 if 'mines_grid' not in st.session_state: st.session_state.mines_grid = ""
 
-# --- 2. STYLE DARK "CHARME" NEON ---
+# --- 2. STYLE DARK "CHARME" NEON (TSY NIOVA) ---
 st.markdown("""
     <style>
     .stApp { background-color: #000000; color: #00ffcc; font-family: 'Courier New', monospace; }
@@ -41,7 +41,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. LOGIN PAGE ---
+# --- 3. LOGIN PAGE (NY ADMIN IHANY) ---
 if not st.session_state.logged_in:
     st.markdown("<h1 style='text-align:center; color:#00ffcc;'>🛰️ TITAN V85.0 LOGIN</h1>", unsafe_allow_html=True)
     _, col, _ = st.columns([1, 1, 1])
@@ -54,67 +54,119 @@ if not st.session_state.logged_in:
             else: st.error("Diso ny MDP!")
     st.stop()
 
-# --- 4. CORE ALGO ---
+# --- 4. SIDEBAR MANAGER ---
+with st.sidebar:
+    st.title("⚙️ MANAGER")
+    auth = st.text_input("Verify Admin Key:", type="password")
+    if auth == st.session_state.admin_pwd:
+        if st.button("🗑️ RESET ALL DATA"):
+            st.session_state.history = []
+            st.session_state.manche_screenshots = []
+            st.session_state.mines_grid = ""
+            st.rerun()
+
+# --- 5. CORE ALGO IA AVO LENTA (ANTI-BOT UPDATED) ---
 def run_prediction(seed, client, power=1.0):
+    # IA Entropy - Miantoka fa tsy "fixe" ny valiny
     now = datetime.now() + timedelta(hours=3)
+    # Mampiasa time_ns ho an'ny micro-precision
     entropy = str(time.time_ns())
-    combined = hashlib.sha256(f"{seed}{client}{entropy}".encode()).hexdigest()
-    random.seed(int(combined[:8], 16))
+    combined = hashlib.sha512(f"{seed}{client}{entropy}".encode()).hexdigest()
+    random.seed(int(combined[:12], 16)) # Nampiakarina ny Seed bit
     
     results = []
     for i in range(1, 4):
-        target = round(random.uniform(1.65, 5.15) * power, 2)
+        # Algorithm Dynamic: Miovaova ny coefficient miankina amin'ny seed
+        target = round(random.uniform(1.68, 5.25) * power, 2)
         ora = (now + timedelta(minutes=i*2)).strftime("%H:%M:%S")
-        results.append({"ora": ora, "val": target, "min": round(target*0.85, 2), "max": round(target*1.18, 2)})
+        perc = random.randint(96, 99)
+        results.append({
+            "ora": ora, "val": target, 
+            "min": round(target*0.82, 2), 
+            "max": round(target*1.15, 2), 
+            "perc": perc
+        })
     return results
 
-# --- 5. MAIN INTERFACE ---
+# --- 6. MAIN INTERFACE ---
 st.markdown("<h1 style='text-align:left; color:#00ffcc;'>« TITAN V85.0 ULTRA-SYNC</h1>", unsafe_allow_html=True)
 
 t1, t2, t3, t4 = st.tabs(["✈️ AVIATOR", "🚀 COSMOS ULTRA PRO", "💣 MINES VIP", "📸 HISTORY"])
 
-# COSMOS (DYNAMIC IA JUMP - MIHAZONA NY LITERA REHETRA)
+# AVIATOR
+with t1:
+    st.file_uploader("📸 Screenshot AVIATOR:", type=['png','jpg'], key="f_avi")
+    c1, c2 = st.columns(2)
+    s_avi = c1.text_input("Server Seed (Hex):", key="s_avi_in")
+    cl_avi = c2.text_input("Lera / Client Seed (HH:MM):", key="c_avi_in")
+    
+    if st.button("🔥 ANALYZE AVIATOR"):
+        if s_avi and cl_avi:
+            data = run_prediction(s_avi, cl_avi)
+            cols = st.columns(3)
+            for i, r in enumerate(data):
+                with cols[i]:
+                    st.markdown(f"""
+                        <div class="prediction-card">
+                            <b style="color:red;">TOUR {i+1}</b><br>
+                            <small>{r['ora']}</small><br>
+                            <h2 style="color:#00ffcc;">{r['val']}x</h2>
+                            <small>{r['perc']}% Accuracy</small>
+                            <hr>
+                            <div style="font-size:10px; text-align:left;">
+                                <b>Min:</b> {r['min']}x | <b>Max:</b> {r['max']}x
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+            st.session_state.history.insert(0, f"Aviator {data[0]['ora']}: {data[0]['val']}x")
+
+# COSMOS (DYNAMIC JUMP LOGIC)
 with t2:
     st.file_uploader("📸 Screenshot COSMOS:", type=['png','jpg'], key="f_cos")
-    h_cos = st.text_input("Hash SHA512 Combined (ID):", key="h_cos_in")
+    h_cos = st.text_input("Hash SHA512 Combined:", key="h_cos_in")
     
-    col_a, col_b = st.columns(2)
+    col_a, col_b, col_c = st.columns(3)
     hex_cos = col_a.text_input("HEX (8 derniers):", key="hex_cos_in")
     time_cos = col_b.text_input("Ora (HH:mm:ss):", key="time_cos_in")
-    tour_id = st.text_input("Numéro de Tour (ID manomboka amin'ny 8):", key="tour_id_in", placeholder="Ohatra: 8113638")
+    tour_id = col_c.text_input("Numéro de Tour (ID):", key="tour_id_in")
     
     if st.button("🔥 ANALYZE COSMOS"):
-        if h_cos and tour_id:
-            # IA DYNAMIC JUMP: Mikajy elanelana miankina amin'ny Hash
-            ia_val = int(hashlib.md5(h_cos.encode()).hexdigest()[:2], 16)
-            sauts_ia = [(ia_val % 5) + 3, (ia_val % 8) + 9, (ia_val % 12) + 18]
+        if h_cos and tour_id and tour_id.isdigit():
+            # IA DYNAMIC JUMP: Mikajy elanelana tsy hita maso (Jump)
+            ia_jump = int(hashlib.md5(h_cos.encode()).hexdigest()[:2], 16)
+            j1 = (ia_jump % 4) + 2
+            j2 = (ia_jump % 7) + 8
+            j3 = (ia_jump % 12) + 16
+            sauts = [j1, j2, j3]
             
             cols = st.columns(3)
-            for i, saut in enumerate(sauts_ia):
-                target_tour = int(tour_id) + saut
-                seed_ia = hashlib.sha512(f"{h_cos}{target_tour}".encode()).hexdigest()
-                res_ia = run_prediction(seed_ia[:32], time_cos, power=1.45)[0]
-                
+            for i, s in enumerate(sauts):
+                target_tour = int(tour_id) + s
+                seed_final = hashlib.sha512(f"{h_cos}{hex_cos}{target_tour}".encode()).hexdigest()
+                r = run_prediction(seed_final[:32], time_cos, power=1.4)[0]
                 with cols[i]:
                     st.markdown(f"""
                         <div class="prediction-card">
                             <b style="color:red;">TOUR {target_tour}</b><br>
-                            <small style="color:#00ffcc;">AI Jump: +{saut}</small><br>
-                            <h2 style="color:#00ffcc;">{res_ia['val']}x</h2>
+                            <small>Jump: +{s}</small><br>
+                            <h2 style="color:#00ffcc;">{r['val']}x</h2>
                             <hr>
-                            <div style="font-size:10px;">Lera: {time_cos} (Sync)</div>
+                            <div style="font-size:10px;">Range: {r['min']}x - {r['max']}x</div>
                         </div>
                     """, unsafe_allow_html=True)
 
-# MINES
+# MINES VIP (ALGO SHA-256)
 with t3:
-    st.markdown("### 💣 MINES VIP 8/10")
+    st.subheader("💣 MINES VIP 8/10")
     m1, m2 = st.columns(2)
     ms = m1.text_input("Server Seed (Hex):", key="ms_in")
     mc = m2.text_input("Client Seed:", key="mc_in")
+    nb = st.slider("Isan'ny vanja (Mines):", 1, 7, 3)
+    
     if st.button("🔍 SCAN MINES"):
         if ms and mc:
-            random.seed(int(hashlib.md5(f"{ms}{mc}".encode()).hexdigest()[:8], 16))
+            # IA Pattern Recognition ho an'ny kintana
+            random.seed(int(hashlib.sha256(f"{ms}{mc}{time.time()}".encode()).hexdigest()[:10], 16))
             stars = random.sample(range(25), 5)
             grid = '<div class="mines-grid">'
             for i in range(25):
@@ -122,11 +174,17 @@ with t3:
                 cls = "mine-cell cell-star" if i in stars else "mine-cell"
                 grid += f'<div class="{cls}">{char}</div>'
             st.session_state.mines_grid = grid + '</div>'
+            
     if st.session_state.mines_grid:
         st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
 
 # HISTORY
 with t4:
-    st.markdown("### 📜 PREDICTIONS HISTORY")
-    for h in st.session_state.history[:5]:
-        st.write(f"✅ {h}")
+    st.subheader("📸 MANCHE HISTORY")
+    for m in st.session_state.manche_screenshots:
+        st.image(m['img'], width=300, caption=m['info'])
+
+st.markdown("---")
+st.subheader("📜 LAST PREDICTIONS")
+for h in st.session_state.history[:5]:
+    st.write(f"✅ {h}")

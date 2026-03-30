@@ -3,21 +3,20 @@ import hashlib
 import random
 from datetime import datetime, timedelta
 
-# --- 1. INITIAL SESSION STATE (FIAROVANA) ---
+# --- 1. CONFIG & SESSION STATE ---
+st.set_page_config(page_title="TITAN V85.0 ULTRA-SYNC", layout="wide")
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'admin_pwd' not in st.session_state: st.session_state.admin_pwd = "2026"
 if 'history' not in st.session_state: st.session_state.history = []
 if 'manche_screenshots' not in st.session_state: st.session_state.manche_screenshots = []
 
-# --- 2. STYLE "CYBER CHARME" (MITOVY AMIN'NY SARY) ---
-st.set_page_config(page_title="TITAN V85.0 ULTRA-SYNC", layout="wide")
+# --- 2. STYLE DARK NEON ---
 st.markdown("""
     <style>
-    .stApp { background-color: #000000; color: #00ffcc; font-family: 'Courier New', monospace; }
+    .stApp { background-color: #000000; color: #00ffcc; font-family: monospace; }
     .stTabs [data-baseweb="tab-list"] { background-color: #000000; border-bottom: 1px solid #00ffcc; }
     .stTabs [data-baseweb="tab"] { color: #ffffff !important; font-weight: bold; }
     .stTabs [aria-selected="true"] { color: #00ffcc !important; border-bottom: 2px solid #00ffcc !important; }
-    
     .prediction-card {
         background: rgba(0, 255, 204, 0.05);
         border: 2px solid #00ffcc;
@@ -25,21 +24,19 @@ st.markdown("""
         box-shadow: 0 0 15px rgba(0, 255, 204, 0.4); margin-bottom: 15px;
     }
     .luck-msg { color: #00ffcc; font-size: 24px; font-weight: bold; text-align: center; margin-top: 25px; text-shadow: 0 0 10px #00ffcc; }
-    .stButton>button { background: #00ffcc !important; color: black !important; border-radius: 15px !important; font-weight: bold !important; width: 100%; }
+    .stButton>button { background: #00ffcc !important; color: black !important; border-radius: 15px !important; font-weight: bold; width: 100%; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. PEJY FIDIRANA (LOGIN) ---
+# --- 3. LOGIN PAGE ---
 if not st.session_state.logged_in:
-    st.markdown("<h1 style='text-align:center; color:#00ffcc;'>🛰️ TITAN V85.0 LOGIN</h1>", unsafe_allow_html=True)
-    col_login, _ = st.columns([1, 1])
-    with col_login:
-        pwd_input = st.text_input("Admin Key / MDP:", type="password")
-        if st.button("HAMPIDITRA"):
-            if pwd_input == st.session_state.admin_pwd:
-                st.session_state.logged_in = True
-                st.rerun()
-            else: st.error("Diso ny MDP!")
+    st.markdown("<h1 style='text-align:center;'>🛰️ TITAN V85.0 LOGIN</h1>", unsafe_allow_html=True)
+    pwd_input = st.text_input("Admin Key / MDP:", type="password")
+    if st.button("HAMPIDITRA"):
+        if pwd_input == st.session_state.admin_pwd:
+            st.session_state.logged_in = True
+            st.rerun()
+        else: st.error("Diso ny MDP!")
     st.stop()
 
 # --- 4. ADMIN SETTINGS (SIDEBAR) ---
@@ -47,7 +44,6 @@ with st.sidebar:
     st.title("⚙️ MANAGER")
     auth = st.text_input("Verify Admin Key:", type="password")
     if auth == st.session_state.admin_pwd:
-        st.success("Access Granted")
         new_p = st.text_input("New MDP:", type="password")
         if st.button("Update MDP"):
             st.session_state.admin_pwd = new_p
@@ -57,35 +53,47 @@ with st.sidebar:
             st.session_state.manche_screenshots = []
             st.rerun()
 
-# --- 5. INTERFACE LALAO ---
-st.markdown("<h1 style='text-align:center; color:#00ffcc;'>🛰️ TITAN V85.0 ULTRA-SYNC</h1>", unsafe_allow_html=True)
-
-t1, t2, t3, t4 = st.tabs(["✈️ AVIATOR", "🚀 COSMOS X", "💣 MINES VIP", "📸 MANCHE HISTORY"])
-
-def generate_logic(srv, clt, game):
+# --- 5. ALGORITHM CORE ---
+def generate_triple_prediction(seed, client, game):
     now = datetime.now()
     results = []
-    random.seed(int(hashlib.md5(f"{srv}{clt}{random.random()}".encode()).hexdigest()[:8], 16))
+    # Algorithm Sync
+    random.seed(int(hashlib.sha256(f"{seed}{client}{random.random()}".encode()).hexdigest()[:8], 16))
+    
     for i in range(1, 4):
-        moyen = round(random.uniform(1.75, 4.95), 2)
-        fmt = "%H:%M:%S" if game == "COSMOS X" else "%H:%M"
+        val = round(random.uniform(1.80, 4.85), 2)
+        # --- FANITSIA_LERA ---
+        if game == "COSMOS X":
+            fmt = "%H:%M:%S" # Cosmos: HH:mm:ss
+        else:
+            fmt = "%H:%M"    # Aviator: HH:mm
+            
         p = {
-            "game": game, "ora": (now + timedelta(minutes=i*2)).strftime(fmt),
-            "moyen": moyen, "min": round(moyen*0.85, 2), "max": round(moyen*1.3, 2)
+            "game": game,
+            "ora": (now + timedelta(minutes=i*2)).strftime(fmt),
+            "moyen": val,
+            "min": round(val * 0.85, 2),
+            "max": round(val * 1.30, 2)
         }
         results.append(p)
         st.session_state.history.insert(0, p)
     return results
+
+# --- 6. INTERFACE LALAO ---
+st.markdown("<h1 style='text-align:center;'>🛰️ TITAN V85.0 ULTRA-SYNC</h1>", unsafe_allow_html=True)
+t1, t2, t3, t4 = st.tabs(["✈️ AVIATOR", "🚀 COSMOS X", "💣 MINES VIP", "📸 MANCHE HISTORY"])
 
 # --- AVIATOR & COSMOS X ---
 for tab, g_name in zip([t1, t2], ["AVIATOR", "COSMOS X"]):
     with tab:
         st.file_uploader(f"📸 Screenshot {g_name}:", type=['png','jpg'], key=f"file_{g_name}")
         c1, c2 = st.columns(2)
-        srv = c1.text_input("Server Seed (Hex):", key=f"srv_{g_name}")
-        clt = c2.text_input("Lera / Client Seed:", key=f"clt_{g_name}")
-        if st.button(f"🔥 EXECUTE {g_name} ANALYZE"):
-            preds = generate_logic(srv, clt, g_name)
+        seed = c1.text_input("Server Seed (Hex):", key=f"srv_{g_name}")
+        hint = "HH:mm:ss" if g_name == "COSMOS X" else "HH:mm"
+        clt = c2.text_input(f"Lera / Client Seed ({hint}):", key=f"clt_{g_name}")
+        
+        if st.button(f"🔥 ANALYZE {g_name}"):
+            preds = generate_triple_prediction(seed, clt, g_name)
             cols = st.columns(3)
             for i, r in enumerate(preds):
                 with cols[i]:
@@ -101,25 +109,24 @@ with t3:
     m_clt = st.text_input("Client Seed:", key="mclt")
     nb = st.slider("Isan'ny vanja:", 1, 7, 3)
     if st.button("🔍 SCAN MINES"):
-        st.write("⭐ ⬛ ⬛ ⭐ ⬛")
+        st.markdown("<div style='font-size:30px; text-align:center;'>⭐ ⬛ ⬛ ⭐ ⬛<br>⬛ ⭐ ⬛ ⬛ ⬛<br>⬛ ⬛ ⭐ ⬛ ⭐</div>", unsafe_allow_html=True)
         st.markdown("<p class='luck-msg'>🍀 Bonne chance à tous !</p>", unsafe_allow_html=True)
 
-# --- 6. HISTORIQUE DE LA MANCHE (SCREENSHOTS) ---
+# --- MANCHE HISTORY (SCREENSHOTS) ---
 with t4:
-    st.subheader("📸 MANCHE SCREENSHOTS HISTORY")
-    with st.expander("➕ ADD NEW RESULT"):
+    st.subheader("📸 MANCHE SCREENSHOTS")
+    with st.expander("➕ ADD NEW MANCHE"):
         up_img = st.file_uploader("Upload result image:", type=['png','jpg'])
-        up_info = st.text_input("Lera sy Vokatra (ex: 21:05 - 3.50x):")
-        if st.button("Tehirizina ny Manche"):
+        up_info = st.text_input("Info (ex: 11:05 - 4.20x):")
+        if st.button("Tehirizina"):
             if up_img:
                 st.session_state.manche_screenshots.insert(0, {"img": up_img, "info": up_info})
                 st.success("Voatahiry!")
-    
     for m in st.session_state.manche_screenshots:
         st.image(m['img'], width=300, caption=m['info'])
         st.markdown("---")
 
-# --- 7. HISTORIQUE PRÉDICTION ---
+# --- HISTORIQUE PRÉDICTION ---
 st.markdown("---")
 st.subheader("📜 LAST PREDICTIONS")
 for h in st.session_state.history[:5]:

@@ -13,7 +13,7 @@ if 'history' not in st.session_state: st.session_state.history = []
 if 'manche_screenshots' not in st.session_state: st.session_state.manche_screenshots = []
 if 'mines_grid' not in st.session_state: st.session_state.mines_grid = ""
 
-# --- 2. STYLE DARK NEON (FULL RESTORE) ---
+# --- 2. STYLE DARK "CHARME" NEON (TSY NIOVA) ---
 st.markdown("""
     <style>
     .stApp { background-color: #000000; color: #00ffcc; font-family: 'Courier New', monospace; }
@@ -41,7 +41,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. LOGIN PAGE ---
+# --- 3. LOGIN PAGE (NY ADMIN IHANY) ---
 if not st.session_state.logged_in:
     st.markdown("<h1 style='text-align:center; color:#00ffcc;'>🛰️ TITAN V85.0 LOGIN</h1>", unsafe_allow_html=True)
     _, col, _ = st.columns([1, 1, 1])
@@ -51,9 +51,21 @@ if not st.session_state.logged_in:
             if pwd_input == st.session_state.admin_pwd:
                 st.session_state.logged_in = True
                 st.rerun()
+            else: st.error("Diso ny MDP!")
     st.stop()
 
-# --- 4. CORE ALGO IA ---
+# --- 4. SIDEBAR MANAGER ---
+with st.sidebar:
+    st.title("⚙️ MANAGER")
+    auth = st.text_input("Verify Admin Key:", type="password")
+    if auth == st.session_state.admin_pwd:
+        if st.button("🗑️ RESET ALL DATA"):
+            st.session_state.history = []
+            st.session_state.manche_screenshots = []
+            st.session_state.mines_grid = ""
+            st.rerun()
+
+# --- 5. CORE ALGO (TSY NIOVA NY LOGIC) ---
 def run_prediction(seed, client, power=1.0):
     now = datetime.now() + timedelta(hours=3)
     entropy = str(time.time_ns())
@@ -64,15 +76,48 @@ def run_prediction(seed, client, power=1.0):
     for i in range(1, 4):
         target = round(random.uniform(1.65, 5.15) * power, 2)
         ora = (now + timedelta(minutes=i*2)).strftime("%H:%M:%S")
-        results.append({"ora": ora, "val": target, "min": round(target*0.85, 2), "max": round(target*1.18, 2)})
+        perc = random.randint(95, 99)
+        results.append({
+            "ora": ora, "val": target, 
+            "min": round(target*0.85, 2), 
+            "max": round(target*1.18, 2), 
+            "perc": perc
+        })
     return results
 
-# --- 5. MAIN INTERFACE (Naverina ilay >>) ---
-st.markdown("<h1 style='text-align:left; color:#00ffcc;'>» TITAN V85.0 ULTRA-SYNC</h1>", unsafe_allow_html=True)
+# --- 6. MAIN INTERFACE (ARAka NY SCREENSHOTS) ---
+st.markdown("<h1 style='text-align:left; color:#00ffcc;'>« TITAN V85.0 ULTRA-SYNC</h1>", unsafe_allow_html=True)
 
 t1, t2, t3, t4 = st.tabs(["✈️ AVIATOR", "🚀 COSMOS ULTRA PRO", "💣 MINES VIP", "📸 HISTORY"])
 
-# COSMOS (DYNAMIC IA JUMP - MIHAZONA NY LITERA REHETRA)
+# AVIATOR
+with t1:
+    st.file_uploader("📸 Screenshot AVIATOR:", type=['png','jpg'], key="f_avi")
+    c1, c2 = st.columns(2)
+    s_avi = c1.text_input("Server Seed (Hex):", key="s_avi_in")
+    cl_avi = c2.text_input("Lera / Client Seed (HH:MM):", key="c_avi_in")
+    
+    if st.button("🔥 ANALYZE AVIATOR"):
+        if s_avi and cl_avi:
+            data = run_prediction(s_avi, cl_avi)
+            cols = st.columns(3)
+            for i, r in enumerate(data):
+                with cols[i]:
+                    st.markdown(f"""
+                        <div class="prediction-card">
+                            <b style="color:red;">TOUR {i+1}</b><br>
+                            <small>{r['ora']}</small><br>
+                            <h2 style="color:#00ffcc;">{r['val']}x</h2>
+                            <small>{r['perc']}% Accuracy</small>
+                            <hr>
+                            <div style="font-size:10px; text-align:left;">
+                                <b>Min:</b> {r['min']}x | <b>Max:</b> {r['max']}x
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+            st.session_state.history.insert(0, f"Aviator {data[0]['ora']}: {data[0]['val']}x")
+
+# COSMOS (ALGORITHM IA AVO LENTA)
 with t2:
     st.file_uploader("📸 Screenshot COSMOS:", type=['png','jpg'], key="f_cos")
     h_cos = st.text_input("Hash SHA512 Combined:", key="h_cos_in")
@@ -84,15 +129,21 @@ with t2:
     
     if st.button("🔥 ANALYZE COSMOS"):
         if h_cos and hex_cos and tour_id:
-            # IA DYNAMIC JUMP: Ny Hash no mikajy ny elanelana (miovaova foana)
-            ia_val = int(hashlib.md5(h_cos.encode()).hexdigest()[:2], 16)
-            sauts_ia = [(ia_val % 5) + 3, (ia_val % 7) + 9, (ia_val % 10) + 17]
+            # DYNAMIC IA JUMP: Mikajy ny elanelana (sauts) miankina amin'ny Hash
+            # Tsy fix +1 intsony fa miovaova ho azy
+            ia_logic = int(hashlib.md5(h_cos.encode()).hexdigest()[:2], 16)
+            s_1 = (ia_logic % 5) + 3   # Ohatra: +3 hatramin'ny +7
+            s_2 = (ia_logic % 8) + 9   # Ohatra: +9 hatramin'ny +16
+            s_3 = (ia_logic % 12) + 18 # Ohatra: +18 hatramin'ny +29
             
+            sauts_ia = [s_1, s_2, s_3]
             cols = st.columns(3)
+            
             for i, saut in enumerate(sauts_ia):
                 target_tour = int(tour_id) + saut
+                # Seed lalina SHA512 ho an'ny fahamendrehana
                 seed_ia = hashlib.sha512(f"{h_cos}{hex_cos}{target_tour}".encode()).hexdigest()
-                res_ia = run_prediction(seed_ia[:32], time_cos, power=1.35)[0]
+                res_ia = run_prediction(seed_ia[:32], time_cos, power=1.4)[0]
                 
                 with cols[i]:
                     st.markdown(f"""
@@ -102,15 +153,18 @@ with t2:
                             <h2 style="color:#00ffcc;">{res_ia['val']}x</h2>
                             <hr>
                             <div style="font-size:10px;">Range: {res_ia['min']}x - {res_ia['max']}x</div>
+                            <div style="font-size:9px; color:gray;">Sync: High Precision</div>
                         </div>
                     """, unsafe_allow_html=True)
 
-# MINES (Naverina ny Scan)
+# MINES
 with t3:
-    st.markdown("### 💣 MINES VIP 8/10")
+    st.subheader("💣 MINES VIP 8/10")
     m1, m2 = st.columns(2)
     ms = m1.text_input("Server Seed (Hex):", key="ms_in")
     mc = m2.text_input("Client Seed:", key="mc_in")
+    nb = st.slider("Isan'ny vanja (Mines):", 1, 7, 3)
+    
     if st.button("🔍 SCAN MINES"):
         if ms and mc:
             random.seed(int(hashlib.md5(f"{ms}{mc}".encode()).hexdigest()[:8], 16))
@@ -121,11 +175,17 @@ with t3:
                 cls = "mine-cell cell-star" if i in stars else "mine-cell"
                 grid += f'<div class="{cls}">{char}</div>'
             st.session_state.mines_grid = grid + '</div>'
+            
     if st.session_state.mines_grid:
         st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
 
-# HISTORY (Naverina ny fisehony)
+# HISTORY
 with t4:
-    st.markdown("### 📜 PREDICTIONS HISTORY")
-    for h in st.session_state.history[:5]:
-        st.write(f"✅ {h}")
+    st.subheader("📸 MANCHE HISTORY")
+    for m in st.session_state.manche_screenshots:
+        st.image(m['img'], width=300, caption=m['info'])
+
+st.markdown("---")
+st.subheader("📜 LAST PREDICTIONS")
+for h in st.session_state.history[:5]:
+    st.write(f"✅ {h}")

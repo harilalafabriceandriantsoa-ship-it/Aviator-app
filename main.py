@@ -121,19 +121,25 @@ with t1:
 with t2:
     st.file_uploader("📸 Screenshot COSMOS:", type=['png','jpg'], key="f_cos")
     h_cos = st.text_input("Hash SHA512 Combined:", key="h_cos_in")
-    col_a, col_b = st.columns(2)
+    
+    # --- NOAMPINA NUMERO DE TOUR ETO ---
+    col_a, col_b, col_c = st.columns(3)
     hex_cos = col_a.text_input("HEX (8 derniers):", key="hex_cos_in")
     time_cos = col_b.text_input("Ora (HH:mm:ss):", key="time_cos_in")
+    tour_id = col_c.text_input("Numéro de Tour (ID):", key="tour_id_in") # Vaovao
     
     if st.button("🔥 ANALYZE COSMOS"):
         if hex_cos and time_cos:
-            data = run_prediction(h_cos + hex_cos, time_cos, power=1.2)
+            # Ny tour_id dia ampiasaina mba hanamafisana ny seed
+            seed_final = h_cos + hex_cos + str(tour_id)
+            data = run_prediction(seed_final, time_cos, power=1.2)
             cols = st.columns(3)
             for i, r in enumerate(data):
+                current_tour = int(tour_id) + i if tour_id.isdigit() else i + 1
                 with cols[i]:
                     st.markdown(f"""
                         <div class="prediction-card">
-                            <b style="color:red;">TOUR {i+1}</b><br>
+                            <b style="color:red;">TOUR {current_tour}</b><br>
                             <small>{r['ora']}</small><br>
                             <h2 style="color:#00ffcc;">{r['val']}x</h2>
                             <hr>

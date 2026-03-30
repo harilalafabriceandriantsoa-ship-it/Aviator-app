@@ -81,13 +81,13 @@ with st.sidebar:
 
 # --- 5. ALGORITHM (8/10 WIN RATE LOGIC) ---
 def get_predictions(seed, client, game):
-    now = datetime.now()
+    # Natao UTC+3 (Heure de Madagascar)
+    now = datetime.now() + timedelta(hours=3)
     results = []
     random.seed(int(hashlib.sha256(f"{seed}{client}{random.random()}".encode()).hexdigest()[:8], 16))
     
     for i in range(1, 4):
         moyen = round(random.uniform(1.45, 3.85), 2)
-        # Natao heure normale (HH:MM) ho an'ny rehetra
         fmt = "%H:%M" 
             
         p = {

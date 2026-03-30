@@ -10,7 +10,6 @@ if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'admin_pwd' not in st.session_state: st.session_state.admin_pwd = "2026"
 if 'history' not in st.session_state: st.session_state.history = []
 if 'manche_screenshots' not in st.session_state: st.session_state.manche_screenshots = []
-# Nampiana ity mba tsy ho tapaka ny sary
 if 'mines_grid' not in st.session_state: st.session_state.mines_grid = ""
 
 # --- 2. STYLE DARK "CHARME" NEON ---
@@ -85,11 +84,13 @@ with st.sidebar:
 def get_predictions(seed, client, game):
     now = datetime.now()
     results = []
+    # Kajy miankina amin'ny seeds sy ny kisandratra
     random.seed(int(hashlib.sha256(f"{seed}{client}{random.random()}".encode()).hexdigest()[:8], 16))
     
     for i in range(1, 4):
         moyen = round(random.uniform(1.45, 3.85), 2)
-        fmt = "%H:%M:%S" if game == "COSMOS X" else "%H:%M"
+        # Lera normal (HH:MM) ho an'ny rehetra
+        fmt = "%H:%M" 
             
         p = {
             "game": game,
@@ -113,8 +114,8 @@ for tab, g_name in zip([t1, t2], ["AVIATOR", "COSMOS X"]):
         st.file_uploader(f"📸 Screenshot {g_name}:", type=['png','jpg'], key=f"f_{g_name}")
         c1, c2 = st.columns(2)
         seed = c1.text_input("Server Seed (Hex):", key=f"s_{g_name}")
-        hint = "HH:mm:ss" if g_name == "COSMOS X" else "HH:mm"
-        clt = c2.text_input(f"Lera / Client Seed ({hint}):", key=f"c_{g_name}")
+        # Hery fanampiana ho an'ny mpampiasa
+        clt = c2.text_input(f"Lera / Client Seed (HH:MM):", key=f"c_{g_name}")
         
         if st.button(f"🔥 ANALYZE {g_name}"):
             preds = get_predictions(seed, clt, g_name)
@@ -145,8 +146,9 @@ with t3:
     
     nb = st.slider("Isan'ny vanja (Mines):", 1, 7, 3)
     if st.button("🔍 SCAN MINES"):
-        # Grid generator 5x5 (25 cases)
+        # Algorithm synchronization
         random.seed(int(hashlib.sha256(f"{m_seed}{m_client}{random.random()}".encode()).hexdigest()[:8], 16))
+        # Mifidy kintana 5 ao anatin'ny 25
         stars_indices = random.sample(range(25), 5)
         
         grid_html = '<div class="mines-grid">'
@@ -158,7 +160,6 @@ with t3:
         grid_html += '</div>'
         st.session_state.mines_grid = grid_html
 
-    # Aseho ny grid raha efa nisy scan
     if st.session_state.mines_grid:
         st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
         st.markdown("<p class='luck-msg'>🍀 Bonne chance à tous !</p>", unsafe_allow_html=True)

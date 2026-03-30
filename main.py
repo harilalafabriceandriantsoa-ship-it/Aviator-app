@@ -28,6 +28,26 @@ st.markdown("""
     .luck-msg { color: #00ffcc; font-size: 24px; font-weight: bold; text-align: center; margin-top: 25px; text-shadow: 0 0 10px #00ffcc; }
     .stButton>button { background: #00ffcc !important; color: black !important; border-radius: 15px !important; font-weight: bold; width: 100%; }
     hr { border: 0.5px solid #333; margin: 10px 0; }
+    
+    /* Style ho an'ny Grid Mines */
+    .mines-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+        max-width: 300px;
+        margin: 20px auto;
+    }
+    .mine-cell {
+        aspect-ratio: 1/1;
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+    .cell-star { border-color: #00ffcc; box-shadow: 0 0 5px #00ffcc; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -65,7 +85,6 @@ def get_predictions(seed, client, game):
     random.seed(int(hashlib.sha256(f"{seed}{client}{random.random()}".encode()).hexdigest()[:8], 16))
     
     for i in range(1, 4):
-        # Moyen latsaka kely (1.45x - 3.85x) ho an'ny Win Rate
         moyen = round(random.uniform(1.45, 3.85), 2)
         fmt = "%H:%M:%S" if game == "COSMOS X" else "%H:%M"
             
@@ -73,8 +92,8 @@ def get_predictions(seed, client, game):
             "game": game,
             "ora": (now + timedelta(minutes=i*2)).strftime(fmt),
             "moyen": moyen,
-            "min": round(moyen * 0.88, 2), # 88% Taha atokisana
-            "max": round(moyen * 1.25, 2)  # 125% Risque
+            "min": round(moyen * 0.88, 2), 
+            "max": round(moyen * 1.25, 2)
         }
         results.append(p)
         st.session_state.history.insert(0, p)
@@ -114,17 +133,28 @@ for tab, g_name in zip([t1, t2], ["AVIATOR", "COSMOS X"]):
                     """, unsafe_allow_html=True)
             st.markdown("<p class='luck-msg'>🍀 Bonne chance à tous !</p>", unsafe_allow_html=True)
 
-# MINES VIP
+# MINES VIP (Updated with 5x5 Grid and Seeds)
 with t3:
     st.subheader("💣 MINES VIP 8/10")
-    # Nampidirina eto ny Seeds ho an'ny Mines araka ny fangatahanao
     m_col1, m_col2 = st.columns(2)
     m_seed = m_col1.text_input("Seed du serveur (Hex):", key="mine_s")
     m_client = m_col2.text_input("Seed du client:", key="mine_c")
     
     nb = st.slider("Isan'ny vanja (Mines):", 1, 7, 3)
     if st.button("🔍 SCAN MINES"):
-        st.markdown("<div style='font-size:30px; text-align:center; letter-spacing:10px;'>⭐ ⬛ ⬛ ⭐ ⬛<br>⬛ ⭐ ⬛ ⬛ ⬛<br>⬛ ⬛ ⭐ ⬛ ⭐</div>", unsafe_allow_html=True)
+        # Grid generator 5x5 (25 cases)
+        random.seed(int(hashlib.sha256(f"{m_seed}{m_client}".encode()).hexdigest()[:8], 16))
+        stars_indices = random.sample(range(25), 5)
+        
+        grid_html = '<div class="mines-grid">'
+        for i in range(25):
+            if i in stars_indices:
+                grid_html += '<div class="mine-cell cell-star">⭐</div>'
+            else:
+                grid_html += '<div class="mine-cell">⬛</div>'
+        grid_html += '</div>'
+        
+        st.markdown(grid_html, unsafe_allow_html=True)
         st.markdown("<p class='luck-msg'>🍀 Bonne chance à tous !</p>", unsafe_allow_html=True)
 
 # MANCHE HISTORY

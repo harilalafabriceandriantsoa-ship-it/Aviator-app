@@ -30,7 +30,6 @@ st.markdown("""
     .stButton>button { background: #00ffcc !important; color: black !important; border-radius: 15px !important; font-weight: bold; width: 100%; }
     hr { border: 0.5px solid #333; margin: 10px 0; }
     
-    /* Style ho an'ny Grid Mines */
     .mines-grid {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
@@ -84,12 +83,11 @@ with st.sidebar:
 def get_predictions(seed, client, game):
     now = datetime.now()
     results = []
-    # Kajy miankina amin'ny seeds sy ny kisandratra
     random.seed(int(hashlib.sha256(f"{seed}{client}{random.random()}".encode()).hexdigest()[:8], 16))
     
     for i in range(1, 4):
         moyen = round(random.uniform(1.45, 3.85), 2)
-        # Lera normal (HH:MM) ho an'ny rehetra
+        # Natao heure normale (HH:MM) ho an'ny rehetra
         fmt = "%H:%M" 
             
         p = {
@@ -114,7 +112,6 @@ for tab, g_name in zip([t1, t2], ["AVIATOR", "COSMOS X"]):
         st.file_uploader(f"📸 Screenshot {g_name}:", type=['png','jpg'], key=f"f_{g_name}")
         c1, c2 = st.columns(2)
         seed = c1.text_input("Server Seed (Hex):", key=f"s_{g_name}")
-        # Hery fanampiana ho an'ny mpampiasa
         clt = c2.text_input(f"Lera / Client Seed (HH:MM):", key=f"c_{g_name}")
         
         if st.button(f"🔥 ANALYZE {g_name}"):
@@ -137,7 +134,7 @@ for tab, g_name in zip([t1, t2], ["AVIATOR", "COSMOS X"]):
                     """, unsafe_allow_html=True)
             st.markdown("<p class='luck-msg'>🍀 Bonne chance à tous !</p>", unsafe_allow_html=True)
 
-# MINES VIP (Fixed Grid 5x5)
+# MINES VIP (Grid 5x5)
 with t3:
     st.subheader("💣 MINES VIP 8/10")
     m_col1, m_col2 = st.columns(2)
@@ -146,9 +143,7 @@ with t3:
     
     nb = st.slider("Isan'ny vanja (Mines):", 1, 7, 3)
     if st.button("🔍 SCAN MINES"):
-        # Algorithm synchronization
         random.seed(int(hashlib.sha256(f"{m_seed}{m_client}{random.random()}".encode()).hexdigest()[:8], 16))
-        # Mifidy kintana 5 ao anatin'ny 25
         stars_indices = random.sample(range(25), 5)
         
         grid_html = '<div class="mines-grid">'
@@ -169,7 +164,7 @@ with t4:
     st.subheader("📸 MANCHE SCREENSHOTS")
     with st.expander("➕ ADD NEW RESULT"):
         up_img = st.file_uploader("Upload image:", type=['png','jpg'])
-        up_info = st.text_input("Info (ex: 11:20 - 2.50x):")
+        up_info = st.text_input("Info (HH:MM - 2.50x):")
         if st.button("Tehirizina"):
             if up_img:
                 st.session_state.manche_screenshots.insert(0, {"img": up_img, "info": up_info})

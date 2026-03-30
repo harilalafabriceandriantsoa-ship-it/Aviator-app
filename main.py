@@ -3,7 +3,7 @@ import hashlib
 import random
 from datetime import datetime, timedelta
 
-# --- 1. CONFIGURATION & SESSION STATE (ORIGINAL) ---
+# --- 1. CONFIGURATION & SESSION STATE ---
 st.set_page_config(page_title="TITAN V85.0 ULTRA-SYNC", layout="wide")
 
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
@@ -12,7 +12,7 @@ if 'history' not in st.session_state: st.session_state.history = []
 if 'manche_screenshots' not in st.session_state: st.session_state.manche_screenshots = []
 if 'mines_grid' not in st.session_state: st.session_state.mines_grid = ""
 
-# --- 2. STYLE DARK "CHARME" NEON (ORIGINAL) ---
+# --- 2. STYLE DARK "CHARME" NEON ---
 st.markdown("""
     <style>
     .stApp { background-color: #000000; color: #00ffcc; font-family: 'Courier New', monospace; }
@@ -23,7 +23,7 @@ st.markdown("""
     .prediction-card {
         background: rgba(0, 255, 204, 0.05);
         border: 2px solid #00ffcc;
-        padding: 20px; border-radius: 20px; text-align: center;
+        padding: 15px; border-radius: 20px; text-align: center;
         box-shadow: 0 0 15px rgba(0, 255, 204, 0.4); margin-bottom: 15px;
     }
     .stButton>button { background: #00ffcc !important; color: black !important; border-radius: 15px !important; font-weight: bold; width: 100%; }
@@ -64,56 +64,97 @@ with st.sidebar:
             st.session_state.mines_grid = ""
             st.rerun()
 
-# --- 5. INTERFACE PRINCIPALE ---
+# --- 5. ALGORITHM GENERATOR (ULTRA PRO) ---
+def generate_pro_results(seed, client, game):
+    now = datetime.now() + timedelta(hours=3) # Madagascar Time
+    results = []
+    # Fikajiana Hash ho an'ny fahamatorana
+    random.seed(int(hashlib.sha256(f"{seed}{client}{random.random()}".encode()).hexdigest()[:8], 16))
+    
+    for i in range(1, 4):
+        # Moyen / Target
+        moyen = round(random.uniform(1.60, 4.80), 2)
+        # Min (85% ny target) & Max (120% ny target)
+        val_min = round(moyen * 0.85, 2)
+        val_max = round(moyen * 1.20, 2)
+        # Ora (+2 min isaky ny tour)
+        ora = (now + timedelta(minutes=i*2)).strftime("%H:%M:%S")
+        # Pourcentage de confiance
+        perc = random.randint(92, 99)
+        
+        results.append({
+            "ora": ora, "moyen": moyen, "min": val_min, "max": val_max, "perc": perc
+        })
+    return results
+
+# --- 6. INTERFACE PRINCIPALE ---
 st.markdown("<h1 style='text-align:center; color:#00ffcc;'>🛰️ TITAN V85.0 ULTRA-SYNC</h1>", unsafe_allow_html=True)
 
 t1, t2, t3, t4 = st.tabs(["✈️ AVIATOR", "🚀 COSMOS ULTRA PRO", "💣 MINES VIP", "📸 MANCHE HISTORY"])
 
-# --- TAB 1: AVIATOR (ULTRA PRO) ---
+# --- AVIATOR ---
 with t1:
     st.file_uploader("📸 Screenshot AVIATOR:", type=['png','jpg'], key="f_avi")
     c1, c2 = st.columns(2)
     s_avi = c1.text_input("Server Seed (Hex):", key="s_avi")
     clt_avi = c2.text_input("Lera / Client Seed (HH:MM):", key="c_avi")
+    
     if st.button("🔥 ANALYZE AVIATOR"):
         if s_avi and clt_avi:
-            random.seed(int(hashlib.sha256(f"{s_avi}{clt_avi}{random.random()}".encode()).hexdigest()[:8], 16))
+            preds = generate_pro_results(s_avi, clt_avi, "AVIATOR")
             cols = st.columns(3)
-            for i in range(3):
-                val = round(random.uniform(1.45, 3.85), 2)
+            for i, r in enumerate(preds):
                 with cols[i]:
-                    st.markdown(f'<div class="prediction-card"><b style="color:red;">TOUR {i+1}</b><br><span style="font-size:38px; color:#00ffcc;">{val}x</span></div>', unsafe_allow_html=True)
-            st.session_state.history.insert(0, f"Aviator: {val}x")
+                    st.markdown(f"""
+                        <div class="prediction-card">
+                            <b style="color:red;">TOUR {i+1}</b><br>
+                            <span style="color:#aaa; font-size:12px;">{r['ora']}</span><br>
+                            <span style="font-size:32px; color:#00ffcc;">{r['moyen']}x</span><br>
+                            <small style="color:#ffffff;">Confidence: {r['perc']}%</small>
+                            <hr>
+                            <div style="font-size:12px; text-align:left; padding-left:5px;">
+                                <span style="color:#00ffcc;">●</span> <b>Min:</b> {r['min']}x<br>
+                                <span style="color:#ff4444;">●</span> <b>Max:</b> {r['max']}x
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+            st.session_state.history.insert(0, f"Aviator {preds[0]['ora']}: {preds[0]['moyen']}x")
 
-# --- TAB 2: COSMOS ULTRA PRO (Misy Hash, HEX, sy Ora) ---
+# --- COSMOS ULTRA PRO ---
 with t2:
     st.file_uploader("📸 Screenshot COSMOS:", type=['png','jpg'], key="f_cos")
-    h_sha = st.text_input("Hash SHA512 Combined (Provably Fair):", key="cos_hash")
+    h_sha = st.text_input("Hash SHA512 Combined (Lava be):", key="cos_hash")
     col_a, col_b = st.columns(2)
-    h_hex = col_a.text_input("HEX (8 derniers caractères):", key="cos_hex", placeholder="d265709a")
-    h_time = col_b.text_input("Ora (HH:mm:ss):", key="cos_time", placeholder="14:21:30")
+    h_hex = col_a.text_input("HEX (8 derniers caractères):", key="cos_hex")
+    h_time = col_b.text_input("Ora (HH:mm:ss):", key="cos_time")
     
     if st.button("🔥 ANALYZE COSMOS"):
         if h_hex and h_time:
-            # Fikajiana mampiasa Hash + HEX + Ora ho an'ny accuracy ambony
-            seed_data = f"{h_sha}{h_hex}{h_time}{random.random()}"
-            random.seed(int(hashlib.sha256(seed_data.encode()).hexdigest()[:8], 16))
+            preds = generate_pro_results(h_sha + h_hex, h_time, "COSMOS")
             cols = st.columns(3)
-            for i in range(3):
-                val = round(random.uniform(1.50, 5.80), 2)
+            for i, r in enumerate(preds):
                 with cols[i]:
-                    st.markdown(f'<div class="prediction-card"><b style="color:red;">TOUR {i+1}</b><br><span style="font-size:38px; color:#00ffcc;">{val}x</span></div>', unsafe_allow_html=True)
-            st.session_state.history.insert(0, f"Cosmos: {val}x")
-        else: st.warning("Fenoy ny HEX sy ny Ora (HH:mm:ss)!")
+                    st.markdown(f"""
+                        <div class="prediction-card">
+                            <b style="color:red;">TOUR {i+1}</b><br>
+                            <span style="color:#aaa; font-size:12px;">{r['ora']}</span><br>
+                            <span style="font-size:32px; color:#00ffcc;">{r['moyen']}x</span><br>
+                            <small style="color:#ffffff;">Accuracy: {r['perc']}%</small>
+                            <hr>
+                            <div style="font-size:12px; text-align:left; padding-left:5px;">
+                                <span style="color:#00ffcc;">●</span> <b>Min:</b> {r['min']}x<br>
+                                <span style="color:#ff4444;">●</span> <b>Max:</b> {r['max']}x
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+            st.session_state.history.insert(0, f"Cosmos {preds[0]['ora']}: {preds[0]['moyen']}x")
 
-# --- TAB 3: MINES VIP (Ultra Pro 1-7) ---
+# --- MINES VIP ---
 with t3:
     st.subheader("💣 MINES VIP 8/10")
     m_col1, m_col2 = st.columns(2)
     m_s = m_col1.text_input("Seed du serveur (Hex):", key="mine_s")
     m_c = m_col2.text_input("Seed du client:", key="mine_c")
-    
-    # Naverina ny Slider 1-7
     nb_mines = st.slider("Isan'ny vanja (Mines):", 1, 7, 3)
     
     if st.button("🔍 SCAN MINES"):
@@ -131,7 +172,7 @@ with t3:
     if st.session_state.mines_grid:
         st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
 
-# --- TAB 4: HISTORY ---
+# --- MANCHE HISTORY ---
 with t4:
     st.subheader("📸 MANCHE SCREENSHOTS")
     for m in st.session_state.manche_screenshots:

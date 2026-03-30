@@ -4,7 +4,7 @@ import random
 from datetime import datetime, timedelta
 
 # --- 1. CONFIGURATION & SESSION STATE ---
-st.set_page_config(page_title="TITAN V85.5 PROVABLY-SAFE", layout="wide")
+st.set_page_config(page_title="TITAN V85.0 ULTRA-SYNC", layout="wide")
 
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'admin_pwd' not in st.session_state: st.session_state.admin_pwd = "2026"
@@ -12,7 +12,7 @@ if 'history' not in st.session_state: st.session_state.history = []
 if 'manche_screenshots' not in st.session_state: st.session_state.manche_screenshots = []
 if 'mines_grid' not in st.session_state: st.session_state.mines_grid = ""
 
-# --- 2. STYLE DARK "CHARME" NEON ---
+# --- 2. STYLE ORIGINAL (TSY NIOVA) ---
 st.markdown("""
     <style>
     .stApp { background-color: #000000; color: #00ffcc; font-family: 'Courier New', monospace; }
@@ -50,7 +50,7 @@ st.markdown("""
 
 # --- 3. LOGIN PAGE ---
 if not st.session_state.logged_in:
-    st.markdown("<h1 style='text-align:center; color:#00ffcc;'>🛰️ TITAN V85.5 LOGIN</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align:center; color:#00ffcc;'>🛰️ TITAN V85.0 LOGIN</h1>", unsafe_allow_html=True)
     col_l, _ = st.columns([1, 1])
     with col_l:
         pwd_input = st.text_input("Admin Key / MDP:", type="password")
@@ -61,79 +61,58 @@ if not st.session_state.logged_in:
             else: st.error("Diso ny MDP!")
     st.stop()
 
-# --- 4. CORE ALGORITHM (PROVABLY FAIR SYNC) ---
-def get_predictions_pro(hash_combined, hex_val, game_name):
+# --- 4. FUNCTIONS ---
+def get_predictions(seed, client, game):
     now = datetime.now() + timedelta(hours=3) # Heure Madagascar
     results = []
-    # Mampiasa ny Hex avy amin'ny lalao ho "Seed"
-    random.seed(int(hex_val, 16) if hex_val else random.randint(1, 1000000))
+    random.seed(int(hashlib.sha256(f"{seed}{client}{random.random()}".encode()).hexdigest()[:8], 16))
     
     for i in range(1, 4):
-        moyen = round(random.uniform(1.45, 4.50), 2)
+        moyen = round(random.uniform(1.45, 3.85), 2)
         ora = (now + timedelta(minutes=i*2)).strftime("%H:%M")
-        p = {
-            "game": game_name,
-            "ora": ora,
-            "moyen": moyen,
-            "min": round(moyen * 0.88, 2), 
-            "max": round(moyen * 1.25, 2)
-        }
+        p = {"game": game, "ora": ora, "moyen": moyen, "min": round(moyen * 0.88, 2), "max": round(moyen * 1.25, 2)}
         results.append(p)
         st.session_state.history.insert(0, p)
     return results
 
 # --- 5. INTERFACE PRINCIPALE ---
-st.markdown("<h1 style='text-align:center; color:#00ffcc;'>🛰️ TITAN V85.5 ULTRA-SYNC</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#00ffcc;'>🛰️ TITAN V85.0 ULTRA-SYNC</h1>", unsafe_allow_html=True)
 
-t1, t2, t3, t4 = st.tabs(["🚀 COSMOS PRO", "✈️ AVIATOR", "💣 MINES VIP", "📸 HISTORY"])
+# Naverina amin'ny laharana mahazatra ny Tabs
+t1, t2, t3, t4, t5 = st.tabs(["✈️ AVIATOR", "🚀 COSMOS X", "💣 MINES VIP", "📸 HISTORY", "🔭 COSMOS PRO"])
 
-# COSMOS PRO (Mampiasa ilay sary farany)
+# AVIATOR (Original)
 with t1:
-    st.subheader("Kajy Cosmos Provably Fair")
-    col1, col2 = st.columns(2)
-    h_comb = col1.text_input("Hash SHA512 Combined (avy amin'ny lalao):", placeholder="f81f7076664b...")
-    h_hex = col2.text_input("HEX (8 derniers caractères):", placeholder="d265709a")
-    
-    if st.button("🔥 ANALYZE COSMOS PRO"):
-        if h_comb and h_hex:
-            preds = get_predictions_pro(h_comb, h_hex, "COSMOS PRO")
-            cols = st.columns(3)
-            for i, r in enumerate(preds):
-                with cols[i]:
-                    st.markdown(f"""
-                    <div class="prediction-card">
-                        <b style="color:red;">TOUR {i+1}</b><br>
-                        <span style="color:#aaa; font-size:12px;">{r['ora']}</span><br>
-                        <span style="font-size:38px; color:#00ffcc;">{r['moyen']}x</span><br>
-                        <small style="color:#ffffff;">Target (100%)</small>
-                        <hr>
-                        <div style="font-size:13px; text-align:left; padding-left:10px;">
-                            <span style="color:#00ffcc;">●</span> <b>Min:</b> {r['min']}x<br>
-                            <span style="color:#ff4444;">●</span> <b>Max:</b> {r['max']}x
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
-            st.markdown("<p class='luck-msg'>🍀 Bonne chance à tous !</p>", unsafe_allow_html=True)
-        else:
-            st.warning("Ampidiro aloha ny Hash sy ny Hex hitanao ao amin'ny Cosmos (sary farany)!")
-
-# AVIATOR (Mitovy tamin'ny teo aloha)
-with t2:
-    st.subheader("✈️ AVIATOR SYNC")
-    a_seed = st.text_input("Server Seed (Hex):", key="avi_s")
-    a_clt = st.text_input("Client Seed / Lera (HH:MM):", key="avi_c")
+    st.file_uploader("📸 Screenshot Aviator:", type=['png','jpg'], key="f_avi")
+    c1, c2 = st.columns(2)
+    seed = c1.text_input("Server Seed (Hex):", key="s_avi")
+    clt = c2.text_input("Lera / Client Seed (HH:MM):", key="c_avi")
     if st.button("🔥 ANALYZE AVIATOR"):
-        preds = get_predictions_pro(a_seed, a_seed[:8] if a_seed else "0", "AVIATOR")
+        preds = get_predictions(seed, clt, "AVIATOR")
         cols = st.columns(3)
         for i, r in enumerate(preds):
             with cols[i]:
-                st.markdown(f'<div class="prediction-card"><b>TOUR {i+1}</b><br>{r["ora"]}<br><span style="font-size:30px; color:#00ffcc;">{r["moyen"]}x</span></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="prediction-card"><b style="color:red;">TOUR {i+1}</b><br>{r["ora"]}<br><span style="font-size:38px; color:#00ffcc;">{r["moyen"]}x</span><hr>Min: {r["min"]}x | Max: {r["max"]}x</div>', unsafe_allow_html=True)
 
-# MINES VIP (Mitovy tamin'ny teo aloha 5x5)
+# COSMOS X (Original)
+with t2:
+    st.file_uploader("📸 Screenshot Cosmos:", type=['png','jpg'], key="f_cos")
+    c1, c2 = st.columns(2)
+    s_cos = c1.text_input("Server Seed:", key="s_cos")
+    c_cos = c2.text_input("Client Seed:", key="c_cos")
+    if st.button("🔥 ANALYZE COSMOS X"):
+        preds = get_predictions(s_cos, c_cos, "COSMOS X")
+        cols = st.columns(3)
+        for i, r in enumerate(preds):
+            with cols[i]:
+                st.markdown(f'<div class="prediction-card"><b style="color:red;">TOUR {i+1}</b><br>{r["ora"]}<br><span style="font-size:38px; color:#00ffcc;">{r["moyen"]}x</span></div>', unsafe_allow_html=True)
+
+# MINES VIP (Original 5x5)
 with t3:
     st.subheader("💣 MINES VIP 8/10")
-    m_seed = st.text_input("Seed du serveur:", key="mine_s")
-    m_client = st.text_input("Seed du client:", key="mine_c")
+    m_col1, m_col2 = st.columns(2)
+    m_seed = m_col1.text_input("Seed du serveur:", key="mine_s")
+    m_client = m_col2.text_input("Seed du client:", key="mine_c")
     if st.button("🔍 SCAN MINES"):
         random.seed(int(hashlib.sha256(f"{m_seed}{m_client}".encode()).hexdigest()[:8], 16))
         stars_indices = random.sample(range(25), 5)
@@ -144,7 +123,6 @@ with t3:
             grid_html += f'<div class="{cls}">{char}</div>'
         grid_html += '</div>'
         st.session_state.mines_grid = grid_html
-
     if st.session_state.mines_grid:
         st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
 
@@ -152,3 +130,18 @@ with t3:
 with t4:
     for h in st.session_state.history[:10]:
         st.write(f"🕒 {h['ora']} | {h['game']} | **{h['moyen']}x**")
+
+# COSMOS PRO (ITY NO APY VAOVAO)
+with t5:
+    st.subheader("Kajy Cosmos Provably Fair (New)")
+    col1, col2 = st.columns(2)
+    h_comb = col1.text_input("Hash SHA512 Combined:", placeholder="f81f7076664b...")
+    h_hex = col2.text_input("HEX (8 derniers):", placeholder="d265709a")
+    if st.button("🔥 ANALYZE PRO"):
+        if h_comb and h_hex:
+            random.seed(int(h_hex, 16))
+            now = datetime.now() + timedelta(hours=3)
+            for i in range(1, 4):
+                val = round(random.uniform(1.50, 5.00), 2)
+                st.success(f"Tour {i}: {val}x ({ (now + timedelta(minutes=i*2)).strftime('%H:%M') })")
+        else: st.warning("Ampidiro ny Hash sy Hex avy amin'ny lalao")

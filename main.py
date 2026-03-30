@@ -59,7 +59,7 @@ with st.sidebar:
     auth = st.text_input("Verify Admin Key:", type="password")
     if auth == st.session_state.admin_pwd:
         st.success("Admin Verified")
-        new_p = st.text_input("New MDP:", type="password")
+        new_p = st.text_input("New MDP Vaovao:", type="password")
         if st.button("Update MDP"):
             st.session_state.admin_pwd = new_p
             st.success("MDP Updated!")
@@ -71,16 +71,21 @@ with st.sidebar:
 
 # --- 5. ALGORITHM GENERATOR (ULTRA PRO) ---
 def generate_pro_results(seed, client, game):
-    now = datetime.now() + timedelta(hours=3)
+    now = datetime.now() + timedelta(hours=3) # Madagascar Time
     results = []
+    # Seed fahamatorana mampiasa hash
     random.seed(int(hashlib.sha256(f"{seed}{client}{random.random()}".encode()).hexdigest()[:8], 16))
+    
     for i in range(1, 4):
         moyen = round(random.uniform(1.60, 4.80), 2)
         val_min = round(moyen * 0.85, 2)
         val_max = round(moyen * 1.20, 2)
         ora = (now + timedelta(minutes=i*2)).strftime("%H:%M:%S")
         perc = random.randint(94, 99)
-        results.append({"ora": ora, "moyen": moyen, "min": val_min, "max": val_max, "perc": perc})
+        
+        results.append({
+            "ora": ora, "moyen": moyen, "min": val_min, "max": val_max, "perc": perc
+        })
     return results
 
 # --- 6. INTERFACE PRINCIPALE ---
@@ -94,13 +99,26 @@ with t1:
     c1, c2 = st.columns(2)
     s_avi = c1.text_input("Server Seed (Hex):", key="s_avi")
     clt_avi = c2.text_input("Lera / Client Seed (HH:MM):", key="c_avi")
+    
     if st.button("🔥 ANALYZE AVIATOR"):
         if s_avi and clt_avi:
             preds = generate_pro_results(s_avi, clt_avi, "AVIATOR")
             cols = st.columns(3)
             for i, r in enumerate(preds):
                 with cols[i]:
-                    st.markdown(f'<div class="prediction-card"><b style="color:red;">TOUR {i+1}</b><br><span style="color:#aaa; font-size:11px;">{r["ora"]}</span><br><span style="font-size:32px; color:#00ffcc;">{r["moyen"]}x</span><br><small>{r["perc"]}% Accuracy</small><hr><div style="font-size:11px; text-align:left;"><b>Min:</b> {r["min"]}x<br><b>Max:</b> {r["max"]}x</div></div>', unsafe_allow_html=True)
+                    st.markdown(f"""
+                        <div class="prediction-card">
+                            <b style="color:red;">TOUR {i+1}</b><br>
+                            <span style="color:#aaa; font-size:11px;">{r['ora']}</span><br>
+                            <span style="font-size:32px; color:#00ffcc;">{r['moyen']}x</span><br>
+                            <small>{r['perc']}% Accuracy</small>
+                            <hr>
+                            <div style="font-size:11px; text-align:left;">
+                                <b>Min:</b> {r['min']}x<br>
+                                <b>Max:</b> {r['max']}x
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
             st.session_state.history.insert(0, f"Aviator {preds[0]['ora']}: {preds[0]['moyen']}x")
 
 # --- TAB 2: COSMOS ULTRA PRO ---
@@ -110,13 +128,26 @@ with t2:
     col_a, col_b = st.columns(2)
     h_hex = col_a.text_input("HEX (8 derniers caractères):", key="cos_hex")
     h_time = col_b.text_input("Ora (HH:mm:ss):", key="cos_time")
+    
     if st.button("🔥 ANALYZE COSMOS"):
         if h_hex and h_time:
             preds = generate_pro_results(h_sha + h_hex, h_time, "COSMOS")
             cols = st.columns(3)
             for i, r in enumerate(preds):
                 with cols[i]:
-                    st.markdown(f'<div class="prediction-card"><b style="color:red;">TOUR {i+1}</b><br><span style="color:#aaa; font-size:11px;">{r["ora"]}</span><br><span style="font-size:32px; color:#00ffcc;">{r["moyen"]}x</span><br><small>{r["perc"]}% Accuracy</small><hr><div style="font-size:11px; text-align:left;"><b>Min:</b> {r["min"]}x<br><b>Max:</b> {r["max"]}x</div></div>', unsafe_allow_html=True)
+                    st.markdown(f"""
+                        <div class="prediction-card">
+                            <b style="color:red;">TOUR {i+1}</b><br>
+                            <span style="color:#aaa; font-size:11px;">{r['ora']}</span><br>
+                            <span style="font-size:32px; color:#00ffcc;">{r['moyen']}x</span><br>
+                            <small>{r['perc']}% Accuracy</small>
+                            <hr>
+                            <div style="font-size:11px; text-align:left;">
+                                <b>Min:</b> {r['min']}x<br>
+                                <b>Max:</b> {r['max']}x
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
             st.session_state.history.insert(0, f"Cosmos {preds[0]['ora']}: {preds[0]['moyen']}x")
 
 # --- TAB 3: MINES VIP ---
@@ -126,6 +157,7 @@ with t3:
     m_s = m_col1.text_input("Seed du serveur (Hex):", key="mine_s")
     m_c = m_col2.text_input("Seed du client:", key="mine_c")
     nb_mines = st.slider("Isan'ny vanja (Mines):", 1, 7, 3)
+    
     if st.button("🔍 SCAN MINES"):
         if m_s and m_c:
             random.seed(int(hashlib.sha256(f"{m_s}{m_c}".encode()).hexdigest()[:8], 16))
@@ -137,6 +169,7 @@ with t3:
                 grid += f'<div class="{cls}">{char}</div>'
             grid += '</div>'
             st.session_state.mines_grid = grid
+            
     if st.session_state.mines_grid:
         st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
 
@@ -145,12 +178,14 @@ with t4:
     st.subheader("📸 MANCHE SCREENSHOTS")
     with st.expander("➕ ADD NEW RESULT"):
         up_img = st.file_uploader("Upload image:", type=['png','jpg'], key="new_img")
-        up_info = st.text_input("Info (HH:MM - X.XXx):")
+        up_info = st.text_input("Info (Ora - Isa):")
         if st.button("Tehirizina"):
-            if up_img: st.session_state.manche_screenshots.insert(0, {"img": up_img, "info": up_info})
+            if up_img:
+                st.session_state.manche_screenshots.insert(0, {"img": up_img, "info": up_info})
     for m in st.session_state.manche_screenshots:
         st.image(m['img'], width=300, caption=m['info'])
 
+# LAST PREDICTIONS (Tsy tapaka intsony)
 st.markdown("---")
 st.subheader("📜 LAST PREDICTIONS")
 for h in st.session_state.history[:5]:

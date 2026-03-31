@@ -145,10 +145,9 @@ with t2:
                     """, unsafe_allow_html=True)
             st.session_state.history.insert(0, f"Cosmos Tour {tour_id}: {r['val']}x")
 
-# MINES (Nampidirina 1-7 araka ny fangatahanao)
+# MINES
 with t3:
     st.subheader("💣 MINES VIP PREDICTOR")
-    # Ny slider izao dia manomboka amin'ny 1 ka hatramin'ny 12
     nb_mines = st.select_slider("Isan'ny Mines (Difficulty):", options=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], value=3)
     
     m1, m2 = st.columns(2)
@@ -158,7 +157,6 @@ with t3:
     if st.button("🔍 SCAN MINES"):
         if ms and mc:
             random.seed(int(hashlib.sha256(f"{ms}{mc}{nb_mines}{time.time()}".encode()).hexdigest()[:10], 16))
-            # Mamoaka kintana 5 azo antoka araka ny kajy
             safe_stars = random.sample(range(25), 5)
             grid = '<div class="mines-grid">'
             for i in range(25):

@@ -41,7 +41,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. LOGIN PAGE ---
+# --- 3. LOGIN PAGE (Naverina) ---
 if not st.session_state.logged_in:
     st.markdown("<h1 style='text-align:center; color:#00ffcc;'>🛰️ TITAN V85.0 LOGIN</h1>", unsafe_allow_html=True)
     _, col, _ = st.columns([1, 1, 1])
@@ -54,7 +54,7 @@ if not st.session_state.logged_in:
             else: st.error("Diso ny MDP!")
     st.stop()
 
-# --- 4. SIDEBAR MANAGER ---
+# --- 4. SIDEBAR MANAGER (Misy Password) ---
 with st.sidebar:
     st.title("⚙️ MANAGER")
     auth = st.text_input("Verify Admin Key to Manage:", type="password")
@@ -68,10 +68,10 @@ with st.sidebar:
     else:
         st.warning("Ampidiro ny password raha hanova Manager")
 
-# --- 5. CORE ALGO IA AVO LENTA (TSY NOVAINA NY LOGIC) ---
+# --- 5. CORE ALGO IA AVO LENTA ---
 def run_prediction(seed, client, power=1.0):
     now = datetime.now() + timedelta(hours=3)
-    entropy = str(time.time_ns()) # Entropy mba tsy hotsatoka
+    entropy = str(time.time_ns())
     combined = hashlib.sha512(f"{seed}{client}{entropy}".encode()).hexdigest()
     random.seed(int(combined[:12], 16))
     
@@ -109,10 +109,8 @@ with t1:
                     st.markdown(f"""
                         <div class="prediction-card">
                             <b style="color:red;">TOUR {i+1}</b><br>
-                            <small>{r['ora']}</small><hr>
-                            <small>Min: {r['min']}x</small>
+                            <small>{r['ora']}</small><br>
                             <h2 style="color:#00ffcc;">{r['val']}x</h2>
-                            <small>Max: {r['max']}x</small>
                         </div>
                     """, unsafe_allow_html=True)
             st.session_state.history.insert(0, f"Aviator {data[0]['ora']}: {data[0]['val']}x")
@@ -121,6 +119,7 @@ with t1:
 with t2:
     st.file_uploader("📸 Screenshot COSMOS:", type=['png','jpg'], key="f_cos")
     h_cos = st.text_input("Hash SHA512 Combined:", key="h_cos_in")
+    
     col_a, col_b, col_c = st.columns(3)
     hex_cos = col_a.text_input("HEX (8 derniers):", key="hex_cos_in")
     time_cos = col_b.text_input("Ora (HH:mm:ss):", key="time_cos_in")
@@ -128,9 +127,8 @@ with t2:
     
     if st.button("🔥 ANALYZE COSMOS"):
         if h_cos and tour_id and tour_id.isdigit():
-            # Dynamic Jump miankina amin'ny Hash
             ia_jump = int(hashlib.md5(h_cos.encode()).hexdigest()[:2], 16)
-            sauts = [(ia_jump % 5) + 3, (ia_jump % 9) + 11, (ia_jump % 15) + 21]
+            sauts = [(ia_jump % 4) + 2, (ia_jump % 7) + 8, (ia_jump % 12) + 16]
             
             cols = st.columns(3)
             for i, s in enumerate(sauts):
@@ -141,19 +139,18 @@ with t2:
                     st.markdown(f"""
                         <div class="prediction-card">
                             <b style="color:red;">TOUR {target_tour}</b><br>
-                            <small>Jump: +{s}</small><hr>
-                            <small>Min: {r['min']}x</small>
+                            <small>Jump: +{s}</small><br>
                             <h2 style="color:#00ffcc;">{r['val']}x</h2>
-                            <small>Max: {r['max']}x</small><hr>
-                            <b style="color:#ffff00;">{r['perc']}%</b>
                         </div>
                     """, unsafe_allow_html=True)
             st.session_state.history.insert(0, f"Cosmos Tour {tour_id}: {r['val']}x")
 
-# MINES
+# MINES (Nampidirina 1-7 araka ny fangatahanao)
 with t3:
     st.subheader("💣 MINES VIP PREDICTOR")
+    # Ny slider izao dia manomboka amin'ny 1 ka hatramin'ny 12
     nb_mines = st.select_slider("Isan'ny Mines (Difficulty):", options=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], value=3)
+    
     m1, m2 = st.columns(2)
     ms = m1.text_input("Server Seed (Hex):", key="ms_in")
     mc = m2.text_input("Client Seed:", key="mc_in")
@@ -161,6 +158,7 @@ with t3:
     if st.button("🔍 SCAN MINES"):
         if ms and mc:
             random.seed(int(hashlib.sha256(f"{ms}{mc}{nb_mines}{time.time()}".encode()).hexdigest()[:10], 16))
+            # Mamoaka kintana 5 azo antoka araka ny kajy
             safe_stars = random.sample(range(25), 5)
             grid = '<div class="mines-grid">'
             for i in range(25):

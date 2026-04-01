@@ -156,6 +156,7 @@ with t3:
     
     if st.button("🔍 SCAN MINES"):
         if ms and mc:
+            # Ny algorithm SHA-256 ampiasainao mivantana
             random.seed(int(hashlib.sha256(f"{ms}{mc}{nb_mines}{time.time()}".encode()).hexdigest()[:10], 16))
             safe_stars = random.sample(range(25), 5)
             grid = '<div class="mines-grid">'

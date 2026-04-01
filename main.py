@@ -1,3 +1,4 @@
+ITy codeko ITU no amboaro Ary aza Ovaina na litera iray aza
 import streamlit as st
 import hashlib
 import random
@@ -65,7 +66,7 @@ with st.sidebar:
             st.session_state.mines_grid = ""
             st.rerun()
 
-# --- 5. CORE ALGO IA AVO LENTA (X2.00+ LOGIC) ---
+# --- 5. CORE ALGO IA AVO LENTA ---
 def run_prediction(seed, client, power=1.0):
     now = datetime.now() + timedelta(hours=3)
     entropy = str(time.time_ns())
@@ -74,12 +75,11 @@ def run_prediction(seed, client, power=1.0):
     
     results = []
     for i in range(1, 4):
-        # Target namboarina ho x2.00+ hatrany
-        target = round(random.uniform(2.15, 5.85) * power, 2)
+        target = round(random.uniform(1.68, 5.25) * power, 2)
         ora = (now + timedelta(minutes=i*2)).strftime("%H:%M:%S")
         results.append({
             "ora": ora, "val": target, 
-            "min": round(target*0.85, 2), # Min assuré x1.85+
+            "min": round(target*0.82, 2), 
             "max": round(target*1.15, 2)
         })
     return results
@@ -107,7 +107,6 @@ with t1:
                             <b style="color:red;">TOUR {i+1}</b><br>
                             <small>{r['ora']}</small><br>
                             <h2 style="color:#00ffcc;">{r['val']}x</h2>
-                            <small style="color:white;">Min: {r['min']}x</small>
                         </div>
                     """, unsafe_allow_html=True)
             st.session_state.history.insert(0, f"Aviator: {data[0]['val']}x")
@@ -124,11 +123,12 @@ with t2:
     
     if st.button("🔥 ANALYZE COSMOS"):
         if h_cos and tour_id and tour_id.isdigit():
+            # IA DYNAMIQUE JUMP: Mikajy Jump arakaraka ny Hash (Tsy fixe)
             ia_hash = hashlib.md5(h_cos.encode()).hexdigest()
             sauts = [
-                (int(ia_hash[0:2], 16) % 5) + 3,   
-                (int(ia_hash[2:4], 16) % 10) + 8,  
-                (int(ia_hash[4:6], 16) % 15) + 15  
+                (int(ia_hash[0:2], 16) % 5) + 3,   # Jump 1 dynamique
+                (int(ia_hash[2:4], 16) % 10) + 8,  # Jump 2 dynamique
+                (int(ia_hash[4:6], 16) % 15) + 15  # Jump 3 dynamique
             ]
             
             cols = st.columns(3)
@@ -142,7 +142,6 @@ with t2:
                             <b style="color:red;">TOUR {target_tour}</b><br>
                             <small style="color:#00ffcc;">Jump IA: +{s}</small><br>
                             <h2 style="color:#00ffcc;">{r['val']}x</h2>
-                            <small style="color:white;">Min: {r['min']}x</small>
                         </div>
                     """, unsafe_allow_html=True)
             st.session_state.history.insert(0, f"Cosmos ID {tour_id}: {r['val']}x")
@@ -158,14 +157,12 @@ with t3:
         if ms and mc:
             random.seed(int(hashlib.sha256(f"{ms}{mc}{nb_mines}{time.time()}".encode()).hexdigest()[:10], 16))
             stars = random.sample(range(25), 5)
-            grid_html = '<div class="mines-grid">'
+            grid = '<div class="mines-grid">'
             for i in range(25):
                 cls = "mine-cell cell-star" if i in stars else "mine-cell"
-                grid_html += f'<div class="{cls}">{"⭐" if i in stars else "⬛"}</div>'
-            st.session_state.mines_grid = grid_html + '</div>'
-            
-    if st.session_state.mines_grid: 
-        st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
+                grid += f'<div class="{cls}">{"⭐" if i in stars else "⬛"}</div>'
+            st.session_state.mines_grid = grid + '</div>'
+    if st.session_state.mines_grid: st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
 
 # HISTORY
 with t4:

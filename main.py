@@ -2,7 +2,6 @@ import streamlit as st
 import hashlib
 import random
 import time
-import hmac
 from datetime import datetime, timedelta
 
 # --- 1. CONFIGURATION & SESSION STATE ---
@@ -13,7 +12,6 @@ if 'admin_pwd' not in st.session_state: st.session_state.admin_pwd = "2026"
 if 'history' not in st.session_state: st.session_state.history = []
 if 'manche_screenshots' not in st.session_state: st.session_state.manche_screenshots = []
 if 'mines_grid' not in st.session_state: st.session_state.mines_grid = ""
-if 'nonce' not in st.session_state: st.session_state.nonce = 1
 
 # --- 2. STYLE DARK "CHARME" NEON ---
 st.markdown("""
@@ -39,7 +37,7 @@ st.markdown("""
         aspect-ratio: 1/1; background: #1a1a1a; border: 1px solid #333; border-radius: 5px;
         display: flex; align-items: center; justify-content: center; font-size: 24px;
     }
-    .cell-star { border: 2px solid #ffff00 !important; box-shadow: 0 0 15px #ffff00; color: #ffff00; background: rgba(255, 255, 0, 0.1); }
+    .cell-star { border: 2px solid #00ffcc !important; box-shadow: 0 0 10px #00ffcc; color: #ffff00; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -64,7 +62,7 @@ with st.sidebar:
         st.success("Admin Access Granted")
         if st.button("🗑️ RESET ALL DATA"):
             st.session_state.history = []
-            st.session_state.nonce = 1
+            st.session_state.manche_screenshots = []
             st.session_state.mines_grid = ""
             st.rerun()
     else:
@@ -73,7 +71,7 @@ with st.sidebar:
 # --- 5. CORE ALGO IA AVO LENTA (TSY NOVAINA NY LOGIC) ---
 def run_prediction(seed, client, power=1.0):
     now = datetime.now() + timedelta(hours=3)
-    entropy = str(time.time_ns())
+    entropy = str(time.time_ns()) # Entropy mba tsy hotsatoka
     combined = hashlib.sha512(f"{seed}{client}{entropy}".encode()).hexdigest()
     random.seed(int(combined[:12], 16))
     
@@ -117,59 +115,65 @@ with t1:
                             <small>Max: {r['max']}x</small>
                         </div>
                     """, unsafe_allow_html=True)
+            st.session_state.history.insert(0, f"Aviator {data[0]['ora']}: {data[0]['val']}x")
 
 # COSMOS
 with t2:
+    st.file_uploader("📸 Screenshot COSMOS:", type=['png','jpg'], key="f_cos")
     h_cos = st.text_input("Hash SHA512 Combined:", key="h_cos_in")
     col_a, col_b, col_c = st.columns(3)
+    hex_cos = col_a.text_input("HEX (8 derniers):", key="hex_cos_in")
+    time_cos = col_b.text_input("Ora (HH:mm:ss):", key="time_cos_in")
     tour_id = col_c.text_input("Numéro de Tour (ID):", key="tour_id_in")
     
     if st.button("🔥 ANALYZE COSMOS"):
-        if h_cos and tour_id:
-            r = run_prediction(h_cos, tour_id, power=1.4)[0]
-            st.markdown(f"""<div class="prediction-card"><h2 style="color:#00ffcc;">{r['val']}x</h2></div>""", unsafe_allow_html=True)
+        if h_cos and tour_id and tour_id.isdigit():
+            # Dynamic Jump miankina amin'ny Hash
+            ia_jump = int(hashlib.md5(h_cos.encode()).hexdigest()[:2], 16)
+            sauts = [(ia_jump % 5) + 3, (ia_jump % 9) + 11, (ia_jump % 15) + 21]
+            
+            cols = st.columns(3)
+            for i, s in enumerate(sauts):
+                target_tour = int(tour_id) + s
+                seed_final = hashlib.sha512(f"{h_cos}{hex_cos}{target_tour}".encode()).hexdigest()
+                r = run_prediction(seed_final[:32], time_cos, power=1.4)[0]
+                with cols[i]:
+                    st.markdown(f"""
+                        <div class="prediction-card">
+                            <b style="color:red;">TOUR {target_tour}</b><br>
+                            <small>Jump: +{s}</small><hr>
+                            <small>Min: {r['min']}x</small>
+                            <h2 style="color:#00ffcc;">{r['val']}x</h2>
+                            <small>Max: {r['max']}x</small><hr>
+                            <b style="color:#ffff00;">{r['perc']}%</b>
+                        </div>
+                    """, unsafe_allow_html=True)
+            st.session_state.history.insert(0, f"Cosmos Tour {tour_id}: {r['val']}x")
 
-# MINES (IZAO NO NOHAMAFISINA HANOHERANA NY LOSS)
+# MINES
 with t3:
     st.subheader("💣 MINES VIP PREDICTOR")
-    nb_mines = st.select_slider("Isan'ny Mines:", options=[1, 2, 3, 4, 5], value=3)
+    nb_mines = st.select_slider("Isan'ny Mines (Difficulty):", options=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], value=3)
     m1, m2 = st.columns(2)
     ms = m1.text_input("Server Seed (Hex):", key="ms_in")
-    mc = m2.text_input("Client Seed:", key="mc_in", value="IST_Pat#2026!@98%_ULTRA")
+    mc = m2.text_input("Client Seed:", key="mc_in")
     
-    st.write(f"🔢 **Nonce Actuel: {st.session_state.nonce}**")
-    
-    if st.button("🔍 SCAN MINES (ULTRA SYNC)"):
+    if st.button("🔍 SCAN MINES"):
         if ms and mc:
-            # ANTI-BOT JITTER
-            with st.spinner('Synchronisation avec le serveur...'):
-                time.sleep(random.uniform(1.0, 2.5))
-            
-            # KAJY HMCA-SHA512 (Fomba fiasan'ny Bet261 marina)
-            msg = f"{mc}:{st.session_state.nonce}".encode()
-            h = hmac.new(ms.encode(), msg, hashlib.sha512).hexdigest()
-            
-            # Famakiana ny Grid
-            random.seed(int(h[:16], 16))
-            safe_stars = random.sample(range(25), 5) 
-            
+            random.seed(int(hashlib.sha256(f"{ms}{mc}{nb_mines}{time.time()}".encode()).hexdigest()[:10], 16))
+            safe_stars = random.sample(range(25), 5)
             grid = '<div class="mines-grid">'
             for i in range(25):
-                char = "💎" if i in safe_stars else "⬛"
+                char = "⭐" if i in safe_stars else "⬛"
                 cls = "mine-cell cell-star" if i in safe_stars else "mine-cell"
                 grid += f'<div class="{cls}">{char}</div>'
             st.session_state.mines_grid = grid + '</div>'
             
-            # Update Nonce automatically
-            st.session_state.nonce += 1
-            st.session_state.history.insert(0, f"Mines Scan: Nonce {st.session_state.nonce-1}")
-            st.rerun()
-            
     if st.session_state.mines_grid:
         st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
-        st.info("💡 Torohevitra: Manokatra diamondra 5 fotsiny dia CASHOUT!")
 
 # HISTORY
 with t4:
+    st.markdown("### 📜 PREDICTIONS HISTORY")
     for h in st.session_state.history[:10]:
         st.write(f"✅ {h}")

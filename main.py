@@ -119,7 +119,7 @@ with t2:
                                 <span>Min: {r['min']}x</span>
                                 <span>Max: {r['max']}x</span>
                             </div>
-                            <div class="luck-text">🍀 Bonne Chance Patricia! 🍀</div>
+                            <div class="luck-text">🍀 Bonne Chance à tous ! 🍀</div>
                         </div>
                     """, unsafe_allow_html=True)
 

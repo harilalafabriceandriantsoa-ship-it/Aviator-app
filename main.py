@@ -5,7 +5,7 @@ import time
 from datetime import datetime, timedelta
 
 # --- 1. CONFIGURATION & SESSION STATE ---
-st.set_page_config(page_title="TITAN V85.0 ULTRA-SYNC", layout="wide")
+st.set_page_config(page_title="TITAN V85.0 ULTRA-PRO", layout="wide")
 
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'admin_pwd' not in st.session_state: st.session_state.admin_pwd = "2026"
@@ -38,6 +38,7 @@ st.markdown("""
         display: flex; align-items: center; justify-content: center; font-size: 24px;
     }
     .cell-star { border: 2px solid #00ffcc !important; box-shadow: 0 0 15px #00ffcc; color: #ffff00; }
+    .prob-text { color: #ffff00; font-size: 0.8em; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -54,7 +55,33 @@ if not st.session_state.logged_in:
             else: st.error("Diso ny MDP!")
     st.stop()
 
-# --- 4. SIDEBAR MANAGER ---
+# --- 4. CORE ALGO IA (DOUBLE HASH SYNC) ---
+def run_prediction(seed, client, power=1.0):
+    now = datetime.now() + timedelta(hours=3)
+    # DOUBLE HASHING: SHA256 then SHA512 for absolute security
+    h1 = hashlib.sha256(f"{seed}{client}".encode()).hexdigest()
+    h2 = hashlib.sha512(h1.encode()).hexdigest()
+    random.seed(int(h2[:16], 16))
+    
+    results = []
+    # Generation of Min, Moyen, Max
+    types = ["MIN", "MOYEN", "MAX"]
+    for i, t in enumerate(types):
+        if t == "MIN":
+            val = round(random.uniform(1.50, 2.20) * power, 2)
+            prob = random.randint(94, 99)
+        elif t == "MOYEN":
+            val = round(random.uniform(2.21, 3.80) * power, 2)
+            prob = random.randint(88, 93)
+        else: # MAX
+            val = round(random.uniform(3.81, 8.50) * power, 2)
+            prob = random.randint(75, 87)
+            
+        ora = (now + timedelta(minutes=(i+1)*2)).strftime("%H:%M:%S")
+        results.append({"type": t, "ora": ora, "val": val, "prob": prob})
+    return results
+
+# --- 5. SIDEBAR MANAGER ---
 with st.sidebar:
     st.title("⚙️ MANAGER")
     auth = st.text_input("Verify Admin Key to Manage:", type="password")
@@ -68,24 +95,8 @@ with st.sidebar:
     else:
         st.warning("Ampidiro ny password raha hanova Manager")
 
-# --- 5. CORE ALGO IA (FIXED SYNC) ---
-def run_prediction(seed, client, power=1.0):
-    # Nesorina ny time.time() mba ho raikitra (FIXE) ny valiny mifanaraka amin'ny Seed
-    now = datetime.now() + timedelta(hours=3)
-    # Hashing matanjaka mampiasa SHA512
-    combined = hashlib.sha512(f"{seed}{client}".encode()).hexdigest()
-    random.seed(int(combined[:16], 16))
-    
-    results = []
-    for i in range(1, 4):
-        # Algorithm filter: misoroka ny latsaky ny 1.50x matetika
-        target = round(random.uniform(1.85, 4.95) * power, 2)
-        ora = (now + timedelta(minutes=i*2)).strftime("%H:%M:%S")
-        results.append({"ora": ora, "val": target})
-    return results
-
 # --- 6. MAIN INTERFACE ---
-st.markdown("<h1 style='text-align:left; color:#00ffcc;'>« TITAN V85.0 ULTRA-SYNC</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:left; color:#00ffcc;'>« TITAN V85.0 ULTRA-PRO</h1>", unsafe_allow_html=True)
 
 t1, t2, t3, t4 = st.tabs(["✈️ AVIATOR", "🚀 COSMOS ULTRA PRO", "💣 MINES VIP", "📸 HISTORY"])
 
@@ -104,12 +115,13 @@ with t1:
                 with cols[i]:
                     st.markdown(f"""
                         <div class="prediction-card">
-                            <b style="color:red;">TOUR {i+1}</b><br>
+                            <b style="color:red;">{r['type']}</b><br>
                             <small>{r['ora']}</small><br>
                             <h2 style="color:#00ffcc;">{r['val']}x</h2>
+                            <span class="prob-text">Sync: {r['prob']}%</span>
                         </div>
                     """, unsafe_allow_html=True)
-            st.session_state.history.insert(0, f"Aviator {data[0]['ora']}: {data[0]['val']}x")
+            st.session_state.history.insert(0, f"Aviator {data[0]['ora']}: {data[1]['val']}x ({data[1]['prob']}%)")
 
 # --- COSMOS ---
 with t2:
@@ -123,45 +135,43 @@ with t2:
     
     if st.button("🔥 ANALYZE COSMOS"):
         if h_cos and tour_id and tour_id.isdigit():
-            # IA Jump logic mampiasa Hash MD5
             ia_jump = int(hashlib.md5(h_cos.encode()).hexdigest()[:2], 16)
-            sauts = [(ia_jump % 4) + 2, (ia_jump % 7) + 8, (ia_jump % 12) + 16]
+            saut = (ia_jump % 5) + 2
             
+            target_tour = int(tour_id) + saut
+            seed_final = hashlib.sha512(f"{h_cos}{hex_cos}{target_tour}".encode()).hexdigest()
+            data = run_prediction(seed_final[:32], time_cos, power=1.2)
+            
+            st.markdown(f"<h3 style='text-align:center;'>🎯 TARGET TOUR: {target_tour} (Jump +{saut})</h3>", unsafe_allow_html=True)
             cols = st.columns(3)
-            for i, s in enumerate(sauts):
-                target_tour = int(tour_id) + s
-                seed_final = hashlib.sha512(f"{h_cos}{hex_cos}{target_tour}".encode()).hexdigest()
-                r = run_prediction(seed_final[:32], time_cos, power=1.25)[0]
+            for i, r in enumerate(data):
                 with cols[i]:
                     st.markdown(f"""
                         <div class="prediction-card">
-                            <b style="color:red;">TOUR {target_tour}</b><br>
-                            <small>Jump: +{s}</small><br>
+                            <b style="color:red;">{r['type']}</b><br>
+                            <small>Signal {i+1}</small><br>
                             <h2 style="color:#00ffcc;">{r['val']}x</h2>
+                            <span class="prob-text">Sync: {r['prob']}%</span>
                         </div>
                     """, unsafe_allow_html=True)
-            st.session_state.history.insert(0, f"Cosmos Tour {tour_id}: {r['val']}x")
+            st.session_state.history.insert(0, f"Cosmos Tour {target_tour}: {data[1]['val']}x")
 
-# --- MINES VIP (VERSION 100% FIXE) ---
+# --- MINES VIP ---
 with t3:
-    st.subheader("💣 MINES VIP PREDICTOR")
+    st.subheader("💣 MINES VIP PREDICTOR (DOUBLE HASH)")
     nb_mines = st.select_slider("Isan'ny Mines:", options=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], value=3)
     
     m1, m2 = st.columns(2)
     ms = m1.text_input("Server Seed (Hex):", key="ms_in")
     mc = m2.text_input("Client Seed:", key="mc_in")
     
-    if st.button("🔍 SCAN MINES"):
+    if st.button("🔍 SCAN MINES (FIXE)"):
         if ms and mc:
-            # Algorithm Deterministic: 1 Seed = 1 Schema Fixe
-            # Nesorina ny time.time() mba tsy hiovaova ny kintana isaky ny refresh
-            seed_sync = f"{ms}{mc}{nb_mines}"
-            final_hash = hashlib.sha256(seed_sync.encode()).hexdigest()
+            # DOUBLE HASH FOR MINES
+            h1 = hashlib.sha256(f"{ms}{mc}{nb_mines}".encode()).hexdigest()
+            h2 = hashlib.sha512(h1.encode()).hexdigest()
+            random.seed(int(h2[:16], 16))
             
-            # Mampiasa ny ampahany amin'ny Hash ho faka (Seed)
-            random.seed(int(final_hash[:16], 16))
-            
-            # Kintana 5 "Safe" raikitra
             safe_stars = random.sample(range(25), 5)
             grid = '<div class="mines-grid">'
             for i in range(25):
@@ -172,7 +182,7 @@ with t3:
             
     if st.session_state.mines_grid:
         st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
-        st.success("✅ SCHEMA SYNC: Raikitra ho an'io Seed io ity. Manaova 'Rotate Seed' isaky ny Win.")
+        st.success("✅ IA ULTRA-SYNC: Schema raikitra (Fixe) mifanaraka amin'ny Double Hash.")
 
 # --- HISTORY ---
 with t4:

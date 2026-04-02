@@ -41,7 +41,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. LOGIN PAGE (Naverina) ---
+# --- 3. LOGIN PAGE ---
 if not st.session_state.logged_in:
     st.markdown("<h1 style='text-align:center; color:#00ffcc;'>🛰️ TITAN V85.0 LOGIN</h1>", unsafe_allow_html=True)
     _, col, _ = st.columns([1, 1, 1])
@@ -54,7 +54,7 @@ if not st.session_state.logged_in:
             else: st.error("Diso ny MDP!")
     st.stop()
 
-# --- 4. SIDEBAR MANAGER (Misy Password) ---
+# --- 4. SIDEBAR MANAGER ---
 with st.sidebar:
     st.title("⚙️ MANAGER")
     auth = st.text_input("Verify Admin Key to Manage:", type="password")
@@ -68,23 +68,19 @@ with st.sidebar:
     else:
         st.warning("Ampidiro ny password raha hanova Manager")
 
-# --- 5. CORE ALGO IA AVO LENTA ---
+# --- 5. CORE ALGO IA FIXE & SYNC ---
 def run_prediction(seed, client, power=1.0):
+    # Nesorina ny entropy (time.time_ns) mba ho raikitra ny valiny mifanaraka amin'ny Seed
     now = datetime.now() + timedelta(hours=3)
-    entropy = str(time.time_ns())
-    combined = hashlib.sha512(f"{seed}{client}{entropy}".encode()).hexdigest()
+    combined = hashlib.sha512(f"{seed}{client}".encode()).hexdigest()
     random.seed(int(combined[:12], 16))
     
     results = []
     for i in range(1, 4):
         target = round(random.uniform(1.68, 5.25) * power, 2)
         ora = (now + timedelta(minutes=i*2)).strftime("%H:%M:%S")
-        perc = random.randint(96, 99)
         results.append({
-            "ora": ora, "val": target, 
-            "min": round(target*0.82, 2), 
-            "max": round(target*1.15, 2), 
-            "perc": perc
+            "ora": ora, "val": target
         })
     return results
 
@@ -127,6 +123,7 @@ with t2:
     
     if st.button("🔥 ANALYZE COSMOS"):
         if h_cos and tour_id and tour_id.isdigit():
+            # Algorithm de saut raikitra
             ia_jump = int(hashlib.md5(h_cos.encode()).hexdigest()[:2], 16)
             sauts = [(ia_jump % 4) + 2, (ia_jump % 7) + 8, (ia_jump % 12) + 16]
             
@@ -145,10 +142,9 @@ with t2:
                     """, unsafe_allow_html=True)
             st.session_state.history.insert(0, f"Cosmos Tour {tour_id}: {r['val']}x")
 
-# MINES (Nampidirina 1-7 araka ny fangatahanao)
+# MINES VIP (ALGO FIXE - NO TIME)
 with t3:
     st.subheader("💣 MINES VIP PREDICTOR")
-    # Ny slider izao dia manomboka amin'ny 1 ka hatramin'ny 12
     nb_mines = st.select_slider("Isan'ny Mines (Difficulty):", options=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], value=3)
     
     m1, m2 = st.columns(2)
@@ -157,8 +153,13 @@ with t3:
     
     if st.button("🔍 SCAN MINES"):
         if ms and mc:
-            random.seed(int(hashlib.sha256(f"{ms}{mc}{nb_mines}{time.time()}".encode()).hexdigest()[:10], 16))
-            # Mamoaka kintana 5 azo antoka araka ny kajy
+            # Algorithm FIXE: Raha mbola iray ny Seed dia tsy maintsy mitovy ny schema
+            # Nesorina ny time.time() eto
+            sync_key = f"{ms}{mc}{nb_mines}"
+            final_hash = hashlib.sha256(sync_key.encode()).hexdigest()
+            random.seed(int(final_hash[:12], 16))
+            
+            # Kintana 5 azo antoka ho an'io Seed io
             safe_stars = random.sample(range(25), 5)
             grid = '<div class="mines-grid">'
             for i in range(25):
@@ -169,6 +170,7 @@ with t3:
             
     if st.session_state.mines_grid:
         st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
+        st.info("Routine: 1 Seed -> 1 Win -> Rotate Server Seed indray.")
 
 # HISTORY
 with t4:

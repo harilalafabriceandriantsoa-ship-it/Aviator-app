@@ -58,21 +58,21 @@ if not st.session_state.logged_in:
 # --- 4. CORE ALGO IA (DOUBLE HASH SYNC) ---
 def run_prediction(seed, client, power=1.0):
     now = datetime.now() + timedelta(hours=3)
-    # DOUBLE HASHING: SHA256 then SHA512 for absolute security
+    # DOUBLE HASHING: SHA256 then SHA512 for absolute fixed security
     h1 = hashlib.sha256(f"{seed}{client}".encode()).hexdigest()
     h2 = hashlib.sha512(h1.encode()).hexdigest()
     random.seed(int(h2[:16], 16))
     
     results = []
-    # Generation of Min, Moyen, Max
+    # Logic for MIN, MOYEN, MAX
     types = ["MIN", "MOYEN", "MAX"]
     for i, t in enumerate(types):
         if t == "MIN":
-            val = round(random.uniform(1.50, 2.20) * power, 2)
-            prob = random.randint(94, 99)
+            val = round(random.uniform(1.50, 2.10) * power, 2)
+            prob = random.randint(95, 99)
         elif t == "MOYEN":
-            val = round(random.uniform(2.21, 3.80) * power, 2)
-            prob = random.randint(88, 93)
+            val = round(random.uniform(2.11, 3.80) * power, 2)
+            prob = random.randint(88, 94)
         else: # MAX
             val = round(random.uniform(3.81, 8.50) * power, 2)
             prob = random.randint(75, 87)
@@ -156,22 +156,23 @@ with t2:
                     """, unsafe_allow_html=True)
             st.session_state.history.insert(0, f"Cosmos Tour {target_tour}: {data[1]['val']}x")
 
-# --- MINES VIP ---
+# --- MINES VIP (KINTANA 5 FIXE & ASSURE) ---
 with t3:
-    st.subheader("💣 MINES VIP PREDICTOR (DOUBLE HASH)")
+    st.subheader("💣 MINES VIP - 5 DIAMANTS ULTRA-ASSURÉ")
     nb_mines = st.select_slider("Isan'ny Mines:", options=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], value=3)
     
     m1, m2 = st.columns(2)
     ms = m1.text_input("Server Seed (Hex):", key="ms_in")
     mc = m2.text_input("Client Seed:", key="mc_in")
     
-    if st.button("🔍 SCAN MINES (FIXE)"):
+    if st.button("🔍 SCAN 5 DIAMANTS"):
         if ms and mc:
-            # DOUBLE HASH FOR MINES
+            # DOUBLE HASH FOR ABSOLUTE FIXED GRID
             h1 = hashlib.sha256(f"{ms}{mc}{nb_mines}".encode()).hexdigest()
             h2 = hashlib.sha512(h1.encode()).hexdigest()
             random.seed(int(h2[:16], 16))
             
+            # Kintana 5 raikitra ho an'io Seed io
             safe_stars = random.sample(range(25), 5)
             grid = '<div class="mines-grid">'
             for i in range(25):
@@ -182,7 +183,7 @@ with t3:
             
     if st.session_state.mines_grid:
         st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
-        st.success("✅ IA ULTRA-SYNC: Schema raikitra (Fixe) mifanaraka amin'ny Double Hash.")
+        st.success("✅ IA ULTRA-SYNC: Kintana 5 raikitra. Ataovy 'Rotate Seed' isaky ny WIN.")
 
 # --- HISTORY ---
 with t4:

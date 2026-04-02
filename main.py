@@ -4,7 +4,6 @@ import random
 from datetime import datetime, timedelta
 
 # --- 1. CONFIGURATION & SESSION STATE ---
-# Namboarina ho V100.0 ny version araka ny fangatahanao
 st.set_page_config(page_title="TITAN V100.0 ULTRA-PRO", layout="wide")
 
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
@@ -12,7 +11,7 @@ if 'admin_pwd' not in st.session_state: st.session_state.admin_pwd = "2026"
 if 'history' not in st.session_state: st.session_state.history = []
 if 'mines_grid' not in st.session_state: st.session_state.mines_grid = ""
 
-# --- 2. STYLE PREMIUM NEON (Tsy misy bangana) ---
+# --- 2. STYLE PREMIUM NEON (DARK MODE) ---
 st.markdown("""
     <style>
     .stApp { background-color: #000000; color: #00ffcc; font-family: 'Courier New', monospace; }
@@ -43,31 +42,36 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. ALGORITHM ADVANCED (Monte Carlo & Pattern Analysis) ---
+# --- 3. ALGORITHMS (Monte Carlo & Pattern Analysis) ---
 def monte_carlo_logic(nb_mines, iterations=1000):
-    """Algorithm Monte Carlo Simulation mba hahitana ny Win Rate"""
     wins = 0
     for _ in range(iterations):
         grid = list(range(25))
         mines = random.sample(grid, nb_mines)
-        my_picks = random.sample(grid, 3) # Misafidy 3 kintana ny simulation
+        my_picks = random.sample(grid, 3) 
         if not any(p in mines for p in my_picks):
             wins += 1
     return wins / (iterations / 100)
 
 def pattern_prediction(seed, client, power=1.0):
-    """Pattern Recognition & Analysis Logic"""
     now = datetime.now() + timedelta(hours=3)
-    # Double Hashing for SHA512 security
     h = hashlib.sha512(f"{seed}{client}ULTRA".encode()).hexdigest()
     random.seed(int(h[:16], 16))
-    
     res = []
-    for i in range(1, 4):
-        val = round(random.uniform(1.65, 5.50) * power, 2)
-        prob = random.randint(88, 99)
-        ora = (now + timedelta(minutes=random.randint(2, 8))).strftime("%H:%M:%S")
-        res.append({"type": f"SIGNAL {i}", "val": val, "prob": prob, "ora": ora})
+    types = ["MIN", "MOYEN", "MAX"]
+    for i, t in enumerate(types):
+        if t == "MIN":
+            val = round(random.uniform(1.60, 2.15) * power, 2)
+            prob = random.randint(94, 99)
+        elif t == "MOYEN":
+            val = round(random.uniform(2.20, 3.85) * power, 2)
+            prob = random.randint(88, 93)
+        else:
+            val = round(random.uniform(4.00, 7.50) * power, 2)
+            prob = random.randint(75, 87)
+            
+        ora = (now + timedelta(minutes=(i+1)*3)).strftime("%H:%M:%S")
+        res.append({"type": t, "val": val, "prob": prob, "ora": ora})
     return res
 
 # --- 4. LOGIN PAGE ---
@@ -86,7 +90,7 @@ if not st.session_state.logged_in:
 st.markdown("<h1 style='color:#00ffcc;'>« TITAN V100.0 ULTRA-PRO</h1>", unsafe_allow_html=True)
 t1, t2, t3, t4 = st.tabs(["✈️ AVIATOR", "🚀 COSMOS PRO", "💣 MINES VIP", "📜 HISTORY"])
 
-# --- AVIATOR (Miaraka amin'ny Capture) ---
+# --- TAB 1: AVIATOR ---
 with t1:
     st.subheader("✈️ AVIATOR NEURAL ANALYSIS")
     st.file_uploader("📸 Capture Historique Aviator:", type=['jpg', 'png'], key="f_avi")
@@ -94,7 +98,7 @@ with t1:
     s_avi = c1.text_input("Server Seed (Hex):", key="s_avi_k")
     cl_avi = c2.text_input("Client Seed (Lera):", key="cl_avi_k")
     
-    if st.button("🔥 ANALYZE PATTERN"):
+    if st.button("🔥 ANALYZE PATTERN (AVIATOR)"):
         if s_avi and cl_avi:
             data = pattern_prediction(s_avi, cl_avi)
             cols = st.columns(3)
@@ -108,9 +112,9 @@ with t1:
                             <span class="prob-text">Sync: {r['prob']}%</span>
                         </div>
                     """, unsafe_allow_html=True)
-            st.session_state.history.insert(0, f"Aviator {data[0]['ora']}: {data[0]['val']}x")
+            st.session_state.history.insert(0, f"Aviator {data[0]['ora']}: {data[0]['val']}x ({data[0]['prob']}%)")
 
-# --- COSMOS (Miaraka amin'ny Capture) ---
+# --- TAB 2: COSMOS ---
 with t2:
     st.subheader("🚀 COSMOS PRO SIGNALS")
     st.file_uploader("📸 Capture Historique Cosmos:", type=['jpg', 'png'], key="f_cos")
@@ -122,36 +126,32 @@ with t2:
             ia_jump = int(hashlib.md5(h_cos.encode()).hexdigest()[:2], 16)
             saut = (ia_jump % 6) + 2
             target_tour = int(t_id) + saut
-            
             data = pattern_prediction(h_cos, target_tour, power=1.2)
-            st.markdown(f"<h3 style='text-align:center;'>🎯 TARGET: TOUR {target_tour} (Jump +{saut})</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h3 style='text-align:center;'>🎯 TARGET: TOUR {target_tour}</h3>", unsafe_allow_html=True)
             cols = st.columns(3)
             for i, r in enumerate(data):
                 with cols[i]:
                     st.markdown(f"""
                         <div class="prediction-card">
-                            <b style="color:red;">SIGNAL {i+1}</b><br>
+                            <b style="color:red;">{r['type']}</b><br>
                             <h2 style="color:#00ffcc;">{r['val']}x</h2>
                             <span class="prob-text">Monte Carlo Sync</span>
                         </div>
                     """, unsafe_allow_html=True)
 
-# --- MINES VIP (Kintana 5 - Tsy misy baomba) ---
+# --- TAB 3: MINES VIP ---
 with t3:
     st.subheader("💣 MINES VIP: 5 KINTANA RAIPY")
-    nb_mines = st.select_slider("Isan'ny Mines:", options=range(1, 15), value=3)
-    
+    nb_m = st.select_slider("Isan'ny Mines:", options=range(1, 15), value=3)
     m1, m2 = st.columns(2)
-    ms_m = m1.text_input("Server Seed:", key="ms_m_k")
+    ms_m = m1.text_input("Server Seed (Hex):", key="ms_m_k")
     mc_m = m2.text_input("Client Seed:", key="mc_m_k")
     
     if st.button("🔍 SCAN 5 DIAMANTS"):
         if ms_m and mc_m:
-            win_rate = monte_carlo_logic(nb_mines)
-            h = hashlib.sha256(f"{ms_m}{mc_m}{nb_mines}".encode()).hexdigest()
+            win_rate = monte_carlo_logic(nb_m)
+            h = hashlib.sha256(f"{ms_m}{mc_m}{nb_m}".encode()).hexdigest()
             random.seed(int(h[:16], 16))
-            
-            # Kintana 5 "Safe" raikitra ho an'io Seed io
             safe_stars = random.sample(range(25), 5)
             grid = '<div class="mines-grid">'
             for i in range(25):
@@ -159,18 +159,18 @@ with t3:
                 cls = "mine-cell cell-star" if i in safe_stars else "mine-cell"
                 grid += f'<div class="{cls}">{char}</div>'
             st.session_state.mines_grid = grid + '</div>'
-            st.markdown(f"<span class='prob-text'>Monte Carlo Win Rate: {win_rate}%</span>", unsafe_allow_html=True)
+            st.markdown(f"<span class='prob-text'>Win Rate: {win_rate}%</span>", unsafe_allow_html=True)
             
     if st.session_state.mines_grid:
         st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
-        st.success("✅ SCHEMA SYNC: Kintana 5 'SUR' no aseho. 'Rotate Seed' isaky ny Win.")
 
-# --- HISTORY ---
+# --- TAB 4: HISTORY ---
 with t4:
     st.markdown("### 📜 PREDICTIONS HISTORY")
     for h in st.session_state.history[:10]:
         st.write(f"✅ {h}")
 
+# --- SIDEBAR MANAGER ---
 with st.sidebar:
     st.title("⚙️ V100 MANAGER")
     if st.text_input("Admin Key:", type="password") == "2026":

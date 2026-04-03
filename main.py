@@ -51,24 +51,26 @@ def run_ultra_sync(seed, client, power=1.2):
     return results
 
 def get_mines_pattern(ms, mc, nb):
-    # Triple Hash logic for Mines focus
-    h = hashlib.md5(hashlib.sha512(f"{ms}{mc}{nb}".encode()).hexdigest().encode()).hexdigest()
+    # Triple Hash logic voadio ho an'ny schema 8/5
+    h_combined = f"{ms}{mc}{nb}ULTRA_SYNC"
+    h = hashlib.md5(hashlib.sha512(h_combined.encode()).hexdigest().encode()).hexdigest()
     random.seed(int(h[:16], 16))
-    # Isan'ny kintana araka ny Mines (1=10, 2=7, 3=5)
-    count = 10 if nb == 1 else (7 if nb == 2 else 5)
+    
+    # Schema: 8 Diamants ho an'ny Mines 1 sy 2, 5 Diamants ho an'ny Mines 3
+    count = 8 if nb in [1, 2] else 5
     return random.sample(range(25), count)
 
 # --- 5. INTERFACE ---
 st.markdown("<h1 style='color:#00ffcc;'>🛰️ TITAN V85.0 FARATAMPONY</h1>", unsafe_allow_html=True)
-t1, t2, t3 = st.tabs(["🚀 COSMOS ULTRA-SYNC", "💣 MINES VIP (1-3)", "📜 HISTORY"])
+t1, t2, t3 = st.tabs(["🚀 COSMOS ULTRA-SYNC", "💣 MINES VIP (8/5)", "📜 HISTORY"])
 
 with t1:
     st.markdown("### 🛰️ COSMOS 2-STEP PREDICTION")
-    h_cos = st.text_input("Hash SHA512 Combined:")
+    h_cos = st.text_input("Hash SHA512 Combined:", key="h_cos_main")
     c1, c2, c3 = st.columns(3)
-    hex_cos = c1.text_input("HEX (8 derniers):")
-    time_cos = c2.text_input("Ora (HH:mm:ss):")
-    tour_id = c3.text_input("Tour ID:")
+    hex_cos = c1.text_input("HEX (8 derniers):", key="hex_cos_main")
+    time_cos = c2.text_input("Ora (HH:mm:ss):", key="time_cos_main")
+    tour_id = c3.text_input("Tour ID:", key="tour_id_main")
     
     if st.button("🔥 ANALYZE COSMOS"):
         if h_cos and tour_id.isdigit():
@@ -82,30 +84,38 @@ with t1:
             st.session_state.history.insert(0, f"Cosmos Tour {target}: {data[0]['val']}x")
 
 with t2:
-    st.subheader("💣 MINES ANALYZER (Focus 1, 2, 3)")
+    st.subheader("💣 MINES ANALYZER (Schema 8/5)")
     nb_mines = st.select_slider("Isan'ny Mines:", options=[1, 2, 3], value=3)
     m1, m2 = st.columns(2)
-    ms, mc = m1.text_input("Server Seed:"), m2.text_input("Client Seed:")
+    ms = m1.text_input("Server Seed (Hex):", key="ms_mine")
+    mc = m2.text_input("Client Seed (Ora):", key="mc_mine")
     
     if st.button("🔍 SCAN SAFE SECTORS"):
         if ms and mc:
             safe_stars = get_mines_pattern(ms, mc, nb_mines)
             grid = '<div class="mines-grid">'
             for i in range(25):
-                cls = "mine-cell cell-star" if i in safe_stars else "mine-cell"
-                grid += f'<div class="{cls}">{"⭐" if i in safe_stars else "⬛"}</div>'
+                is_star = i in safe_stars
+                cls = "mine-cell cell-star" if is_star else "mine-cell"
+                char = "⭐" if is_star else "⬛"
+                grid += f'<div class="{cls}">{char}</div>'
             st.session_state.mines_grid = grid + '</div>'
     
     if st.session_state.mines_grid:
         st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
-        st.success("✅ IA ULTRA-SYNC: Pattern voadio ho an'ny Mines " + str(nb_mines))
+        count_stars = 8 if nb_mines in [1, 2] else 5
+        st.success(f"✅ IA ULTRA-SYNC: Kintana {count_stars} mivoaka ho an'ny Mines {nb_mines}")
 
 with t3:
-    for h in st.session_state.history[:10]: st.write(f"✅ {h}")
+    st.markdown("### 📜 PREDICTIONS HISTORY")
+    for h in st.session_state.history[:10]:
+        st.write(f"✅ {h}")
 
 with st.sidebar:
     st.title("⚙️ MANAGER")
-    if st.text_input("Admin Password:", type="password") == st.session_state.admin_pwd:
-        if st.button("🗑️ RESET DATA"):
-            st.session_state.history, st.session_state.mines_grid = [], ""
+    admin_check = st.text_input("Admin Password:", type="password", key="side_pwd")
+    if admin_check == st.session_state.admin_pwd:
+        if st.button("🗑️ RESET DATA", key="reset_btn"):
+            st.session_state.history = []
+            st.session_state.mines_grid = ""
             st.rerun()

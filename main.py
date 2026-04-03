@@ -51,13 +51,13 @@ def run_prediction(seed, client, power=1.0):
     return results
 
 # --- 5. MAIN INTERFACE ---
-st.markdown("<h1 style='color:#00ffcc;'>« TITAN V85.0 ULTRA-SYNC</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='color:#00ffcc;'>🛰️ TITAN V85.0 ULTRA-SYNC</h1>", unsafe_allow_html=True)
 t1, t2, t3, t4 = st.tabs(["✈️ AVIATOR", "🚀 COSMOS PRO", "💣 MINES VIP", "📜 HISTORY"])
 
 with t1:
-    st.file_uploader("📸 Screenshot:", type=['png','jpg'], key="f_avi")
+    st.file_uploader("📸 Screenshot Aviator:", type=['png','jpg'], key="f_avi")
     c1, c2 = st.columns(2)
-    s_avi, cl_avi = c1.text_input("Server Seed:"), c2.text_input("Client Seed (Ora):")
+    s_avi, cl_avi = c1.text_input("Server Seed:", key="s1"), c2.text_input("Client Seed (Ora):", key="c1")
     if st.button("🔥 ANALYZE AVIATOR"):
         if s_avi and cl_avi:
             data = run_prediction(s_avi, cl_avi)
@@ -68,7 +68,7 @@ with t1:
 
 with t2:
     st.file_uploader("📸 Screenshot Cosmos:", type=['png','jpg'], key="f_cos")
-    h_cos = st.text_input("Hash SHA512:")
+    h_cos = st.text_input("Hash SHA512:", key="h2")
     col_a, col_b, col_c = st.columns(3)
     hex_cos, time_cos, tour_id = col_a.text_input("HEX:"), col_b.text_input("Ora:"), col_c.text_input("Tour ID:")
     if st.button("🔥 ANALYZE COSMOS"):
@@ -82,12 +82,12 @@ with t2:
                 cols[i].markdown(f'<div class="prediction-card"><b style="color:red;">TOUR {target_tour}</b><br><small>Jump: +{s}</small><br><h2>{r["val"]}x</h2></div>', unsafe_allow_html=True)
 
 with t3:
-    nb_mines = st.select_slider("Mines:", options=range(1, 13), value=3)
+    nb_m = st.select_slider("Mines:", options=range(1, 13), value=3)
     m1, m2 = st.columns(2)
     ms, mc = m1.text_input("Server Seed:", key="ms_in"), m2.text_input("Client Seed:", key="mc_in")
     if st.button("🔍 SCAN MINES"):
         if ms and mc:
-            random.seed(int(hashlib.sha256(f"{ms}{mc}{nb_mines}".encode()).hexdigest()[:16], 16))
+            random.seed(int(hashlib.sha256(f"{ms}{mc}{nb_m}".encode()).hexdigest()[:16], 16))
             safe_stars = random.sample(range(25), 5)
             grid = '<div class="mines-grid">'
             for i in range(25):

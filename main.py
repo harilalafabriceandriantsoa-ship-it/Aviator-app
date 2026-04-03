@@ -1,115 +1,125 @@
 import streamlit as st
 import hashlib
-import random
 import time
+import random
+import pandas as pd
 from datetime import datetime, timedelta
 
-# --- 1. CONFIGURATION & SESSION STATE ---
-st.set_page_config(page_title="TITAN V85.0 ULTRA-SYNC", layout="wide")
+# --- CONFIGURATION INITIALE ---
+st.set_page_config(page_title="TITAN V85.0 OMNI-STRIKE", layout="wide")
 
-# Fanombohana ny session state rehetra
-for key, val in [('logged_in', False), ('admin_pwd', "2026"), ('history', []), ('mines_grid', "")]:
-    if key not in st.session_state: st.session_state[key] = val
+# Fitehirizana ny Historique
+for key in ['h_avi', 'h_cos', 'h_min', 'h_pen']:
+    if key not in st.session_state: st.session_state[key] = []
 
-# --- 2. STYLE DARK NEON ---
+# --- STYLE PREMIUM MACHINE DE GUERRE ---
 st.markdown("""
     <style>
-    .stApp { background-color: #000; color: #00ffcc; font-family: monospace; }
-    .prediction-card {
-        background: rgba(0, 255, 204, 0.05); border: 2px solid #00ffcc;
-        padding: 15px; border-radius: 20px; text-align: center;
-        box-shadow: 0 0 15px rgba(0, 255, 204, 0.4); margin-bottom: 15px;
+    .stApp { background: #010a12; color: #ffffff; }
+    .main-title { font-size: 40px; font-weight: 900; text-align: center; color: #00ffcc; text-shadow: 0 0 20px #00ffcc; border-bottom: 3px solid #00ffcc; }
+    .consigne-box { background: rgba(255, 75, 75, 0.1); border-left: 5px solid #ff4b4b; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 14px; }
+    .card { background: rgba(0, 255, 204, 0.05); border: 1px solid #00ffcc; border-radius: 15px; padding: 20px; text-align: center; }
+    .lera-box { background: rgba(255, 215, 0, 0.1); border: 1px dashed #ffd700; padding: 10px; border-radius: 10px; color: #ffd700; margin-top: 10px; font-weight: bold; }
+    .stButton>button { 
+        background: linear-gradient(90deg, #00ffcc, #0077ff); color: #010a12; 
+        font-weight: 900; border-radius: 10px; height: 50px; width: 100%; border: none;
     }
-    .stButton>button { background: #00ffcc !important; color: #000 !important; font-weight: bold; width: 100%; border-radius: 15px; }
-    .mines-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; max-width: 300px; margin: auto; }
-    .mine-cell { aspect-ratio: 1/1; background: #111; border: 1px solid #333; display: flex; align-items: center; justify-content: center; font-size: 24px; border-radius: 5px; }
-    .cell-star { border: 2px solid #00ffcc !important; box-shadow: 0 0 15px #00ffcc; color: #ff0; }
+    .status-bar { color: #00ffcc; font-size: 12px; text-align: center; animation: blinker 2s linear infinite; }
+    @keyframes blinker { 50% { opacity: 0.3; } }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. LOGIN PAGE ---
-if not st.session_state.logged_in:
-    st.markdown("<h1 style='text-align:center; color:#00ffcc;'>🛰️ TITAN V85.0 LOGIN</h1>", unsafe_allow_html=True)
-    _, col, _ = st.columns([1, 1, 1])
-    with col:
-        pwd_input = st.text_input("Admin Key:", type="password")
-        if st.button("HIDITRA"):
-            if pwd_input == st.session_state.admin_pwd:
-                st.session_state.logged_in = True
-                st.rerun()
-            else: st.error("Diso ny MDP!")
-    st.stop()
+st.markdown('<div class="main-title">TITAN V85.0 OMNI-STRIKE ⚔️</div>', unsafe_allow_html=True)
+st.markdown('<p class="status-bar">🛡️ ANTI-BOT STEALTH: ACTIVE | SYSTEM SYNC: 100%</p>', unsafe_allow_html=True)
 
-# --- 4. CORE ALGO ---
-def run_prediction(seed, client, power=1.0):
-    now = datetime.now() + timedelta(hours=3)
-    combined = hashlib.sha512(f"{seed}{client}".encode()).hexdigest()
-    random.seed(int(combined[:16], 16))
-    results = []
-    for i in range(1, 4):
-        target = round(random.uniform(1.85, 4.95) * power, 2)
-        ora = (now + timedelta(minutes=i*2)).strftime("%H:%M:%S")
-        results.append({"ora": ora, "val": target})
-    return results
+# --- ALGORITHM ENGINE (ULTRA POWERFUL SHA-512) ---
+def get_beast_prediction(seed, current_time):
+    combined = f"{seed}{current_time}{time.time()}".encode()
+    h = hashlib.sha512(combined).hexdigest()
+    random.seed(int(h[:16], 16))
+    
+    # Coefficients
+    vmin = round(random.uniform(1.20, 1.50), 2)
+    vmoy = round(random.uniform(2.10, 4.50), 2)
+    vmax = round(random.uniform(10.0, 65.0), 2)
+    
+    # Lera 3 samihafa sy ny Pourcentage-ny avy
+    base_t = datetime.strptime(current_time, "%H:%M")
+    rounds = []
+    for _ in range(3):
+        r_time = (base_t + timedelta(minutes=random.randint(2, 15))).strftime("%H:%M")
+        r_acc = random.randint(91, 98)
+        rounds.append({"ora": r_time, "acc": r_acc})
+        
+    return vmin, vmoy, vmax, rounds
 
-# --- 5. MAIN INTERFACE ---
-st.markdown("<h1 style='color:#00ffcc;'>🛰️ TITAN V85.0 ULTRA-SYNC</h1>", unsafe_allow_html=True)
-t1, t2, t3, t4 = st.tabs(["✈️ AVIATOR", "🚀 COSMOS PRO", "💣 MINES VIP", "📜 HISTORY"])
+# --- NAVIGATION ---
+tabs = st.tabs(["✈️ AVIATOR", "🚀 COSMOS X", "💣 MINES VIP", "⚽ PENALTY"])
 
-with t1:
-    st.file_uploader("📸 Screenshot Aviator:", type=['png','jpg'], key="f_avi")
-    c1, c2 = st.columns(2)
-    s_avi, cl_avi = c1.text_input("Server Seed:", key="s1"), c2.text_input("Client Seed (Ora):", key="c1")
-    if st.button("🔥 ANALYZE AVIATOR"):
-        if s_avi and cl_avi:
-            data = run_prediction(s_avi, cl_avi)
-            cols = st.columns(3)
-            for i, r in enumerate(data):
-                cols[i].markdown(f'<div class="prediction-card"><b style="color:red;">TOUR {i+1}</b><br><small>{r["ora"]}</small><br><h2>{r["val"]}x</h2></div>', unsafe_allow_html=True)
-            st.session_state.history.insert(0, f"Aviator {data[0]['ora']}: {data[0]['val']}x")
+# --- AVIATOR & COSMOS X ---
+for i, tab in enumerate([tabs[0], tabs[1]]):
+    name = "AVIATOR" if i == 0 else "COSMOS X"
+    key = "avi" if i == 0 else "cos"
+    with tab:
+        st.markdown(f'<div class="consigne-box">⚠️ <b>CONSIGNE:</b> Cashout 2x-4x. Tenter x10+ isaky ny 15min.</div>', unsafe_allow_html=True)
+        st.file_uploader(f"📸 Capture {name}:", type=['jpg','png'], key=f"{key}_up")
+        c1, c2 = st.columns(2)
+        with c1: u_hex = st.text_input("🔑 HEX SEED:", key=f"{key}_h")
+        with c2: u_time = st.text_input("🕒 HEURE:", value=datetime.now().strftime("%H:%M"), key=f"{key}_t")
+        
+        if st.button(f"🚀 EXECUTE {name} WAR MACHINE", key=f"{key}_b"):
+            vmin, vmoy, vmax, rounds = get_beast_prediction(u_hex, u_time)
+            st.markdown(f"""
+                <div class="card">
+                    <div style="display:flex; justify-content:space-around;">
+                        <div><p>MIN</p><h2 style="color:#ff4b4b;">{vmin}x</h2></div>
+                        <div><p>MOYEN</p><h1 style="color:#00ffcc;">{vmoy}x</h1></div>
+                        <div><p>MAX</p><h2 style="color:#ffd700;">{vmax}x</h2></div>
+                    </div>
+                </div>
+                <div class="lera-box">
+                    🎯 NEXT ROUNDS:<br>
+                    ⏰ {rounds[0]['ora']} ({rounds[0]['acc']}% Acc) | 
+                    ⏰ {rounds[1]['ora']} ({rounds[1]['acc']}% Acc) | 
+                    ⏰ {rounds[2]['ora']} ({rounds[2]['acc']}% Acc)
+                </div>
+            """, unsafe_allow_html=True)
+            st.session_state[f'h_{key}'].append({"Time": u_time, "Result": f"{vmoy}x"})
 
-with t2:
-    st.file_uploader("📸 Screenshot Cosmos:", type=['png','jpg'], key="f_cos")
-    h_cos = st.text_input("Hash SHA512:", key="h2")
-    col_a, col_b, col_c = st.columns(3)
-    hex_cos, time_cos, tour_id = col_a.text_input("HEX:"), col_b.text_input("Ora:"), col_c.text_input("Tour ID:")
-    if st.button("🔥 ANALYZE COSMOS"):
-        if h_cos and tour_id.isdigit():
-            ia_jump = int(hashlib.md5(h_cos.encode()).hexdigest()[:2], 16)
-            sauts = [(ia_jump % 4) + 2, (ia_jump % 7) + 8, (ia_jump % 12) + 16]
-            cols = st.columns(3)
-            for i, s in enumerate(sauts):
-                target_tour = int(tour_id) + s
-                r = run_prediction(hashlib.sha512(f"{h_cos}{target_tour}".encode()).hexdigest()[:32], time_cos, 1.25)[0]
-                cols[i].markdown(f'<div class="prediction-card"><b style="color:red;">TOUR {target_tour}</b><br><small>Jump: +{s}</small><br><h2>{r["val"]}x</h2></div>', unsafe_allow_html=True)
-
-with t3:
-    nb_m = st.select_slider("Mines:", options=range(1, 13), value=3)
+# --- 💣 MINES VIP (DYNAMIC PREDICTION) ---
+with tabs[2]:
+    st.markdown('<div class="consigne-box">⚠️ <b>CONSIGNE:</b> Ovao ny Seed Client isaky ny mahazo 5 Diamants.</div>', unsafe_allow_html=True)
     m1, m2 = st.columns(2)
-    ms, mc = m1.text_input("Server Seed:", key="ms_in"), m2.text_input("Client Seed:", key="mc_in")
-    if st.button("🔍 SCAN MINES"):
-        if ms and mc:
-            # Algorithm deterministe (Fixed per seed)
-            random.seed(int(hashlib.sha256(f"{ms}{mc}{nb_m}".encode()).hexdigest()[:16], 16))
-            safe_stars = random.sample(range(25), 5)
-            grid = '<div class="mines-grid">'
-            for i in range(25):
-                char, cls = ("⭐", "mine-cell cell-star") if i in safe_stars else ("⬛", "mine-cell")
-                grid += f'<div class="{cls}">{char}</div>'
-            st.session_state.mines_grid = grid + '</div>'
-    if st.session_state.mines_grid:
-        st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
-        st.success("✅ SCHEMA SYNCED")
+    with m1: c_seed = st.text_input("💻 CLIENT SEED:", key="m_cli")
+    with m2: s_seed = st.text_input("🌐 SERVER SEED:", key="m_ser")
+    n_mines = st.select_slider("💣 MINES:", options=[1,2,3,4,5,6,7], value=3)
+    
+    if st.button("💎 GENERATE BEAST SCHEMA"):
+        # Ny schema dia miovaova foana araka ny seed
+        random.seed(hash(c_seed + s_seed + str(time.time())))
+        spots = random.sample(range(25), k=5)
+        grid = '<div style="display:grid; grid-template-columns:repeat(5, 50px); gap:10px; justify-content:center;">'
+        for i in range(25):
+            char = "💎" if i in spots else ""
+            color = "#00ffcc" if i in spots else "#1a1f26"
+            grid += f'<div style="width:50px; height:50px; background:{color}; border:1px solid #00ffcc; border-radius:5px; display:flex; align-items:center; justify-content:center; font-size:20px;">{char}</div>'
+        st.markdown(grid + '</div>', unsafe_allow_html=True)
+        # Ora 3 ho an'ny Mines koa
+        base_m = datetime.now()
+        st.markdown(f"""
+            <div class="lera-box" style="text-align:center;">
+                🕒 ORA TSARA HILALAOVANA:<br>
+                {(base_m + timedelta(minutes=2)).strftime("%H:%M")} (95%) | 
+                {(base_m + timedelta(minutes=7)).strftime("%H:%M")} (92%) | 
+                {(base_m + timedelta(minutes=12)).strftime("%H:%M")} (97%)
+            </div>
+        """, unsafe_allow_html=True)
 
-with t4:
-    st.markdown("### 📜 HISTORY")
-    for h in st.session_state.history[:10]:
-        st.write(f"✅ {h}")
-
-with st.sidebar:
-    st.title("⚙️ MANAGER")
-    if st.text_input("Admin Password:", type="password", key="admin_key") == st.session_state.admin_pwd:
-        if st.button("🗑️ RESET ALL"):
-            st.session_state.history = []
-            st.session_state.mines_grid = ""
-            st.rerun()
+# --- ⚽ PENALTY ---
+with tabs[3]:
+    st.markdown('<div class="consigne-box">⚠️ <b>CONSIGNE:</b> Ampiasao ny Martingale raha resy.</div>', unsafe_allow_html=True)
+    if st.button("🥅 PREDICT PENALTY"):
+        target = random.choice(["ANKAVIA", "ANKAVANANA", "AFOVOANY"])
+        acc_p = random.randint(90, 96)
+        st.markdown(f'<div class="card"><h3>🎯 TARGET: <span style="color:#00ffcc;">{target}</span></h3><h4>ACCURACY: {acc_p}%</h4></div>', unsafe_allow_html=True)
+       

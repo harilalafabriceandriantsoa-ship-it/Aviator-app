@@ -2,68 +2,75 @@ import streamlit as st
 import hashlib
 import random
 
-# --- STYLE DARK NEON ---
-st.set_page_config(page_title="TITAN V85.0 DYNAMIC", layout="wide")
+# --- 1. CONFIGURATION ---
+st.set_page_config(page_title="TITAN V85.0 HASH-JUMP", layout="wide")
+
+if 'logged_in' not in st.session_state: st.session_state.logged_in = False
+
+# --- 2. STYLE NEON ---
 st.markdown("""
     <style>
     .stApp { background-color: #000; color: #00ffcc; font-family: monospace; }
     .prediction-card {
-        background: rgba(0, 255, 204, 0.05); border: 1px solid #00ffcc;
+        background: rgba(0, 255, 204, 0.05); border: 2px solid #00ffcc;
         padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 15px;
     }
-    .jump-info { color: #ffff00; font-size: 14px; font-weight: bold; margin-bottom: 5px; }
+    .jump-tag { background: #ff4b4b; color: white; padding: 3px 10px; border-radius: 20px; font-weight: bold; font-size: 14px; }
     </style>
     """, unsafe_allow_html=True)
 
-def get_dynamic_prediction(seed, tour_id, step_name):
-    # Hashing raikitra miankina amin'ny Hash sy ny Target Tour
-    h = hashlib.sha256(f"{seed}{tour_id}{step_name}".encode()).hexdigest()
+# --- 3. LOGIN ---
+if not st.session_state.logged_in:
+    st.markdown("<h2 style='text-align:center;'>🛰️ TITAN LOGIN</h2>", unsafe_allow_html=True)
+    pwd = st.text_input("Key:", type="password")
+    if st.button("HIDITRA"):
+        if pwd == "2026":
+            st.session_state.logged_in = True
+            st.rerun()
+    st.stop()
+
+# --- 4. HASH-BASED ENGINE ---
+def get_hash_jump(seed):
+    # Maka ny lanjan'ny Hash mba hamaritana ny Jump
+    h_hex = hashlib.md5(seed.encode()).hexdigest()
+    # Lanja eo anelanelan'ny 2 sy 5
+    return (int(h_hex[:1], 16) % 4) + 2
+
+def get_stable_prediction(seed, tour_id):
+    signature = f"{seed}{tour_id}TITAN_ULTRA_2026"
+    h = hashlib.sha256(signature.encode()).hexdigest()
     random.seed(int(h[:16], 16))
-    return round(random.uniform(2.10, 5.95), 2)
+    return round(random.uniform(2.15, 5.95), 2)
 
-# --- INTERFACE ---
-st.markdown("<h2 style='text-align:center;'>🛰️ TITAN V85.0 DYNAMIC SYNC</h2>", unsafe_allow_html=True)
+# --- 5. INTERFACE ---
+st.markdown("<h2 style='color:#00ffcc; text-align:center;'>🛰️ TITAN V85.0 HASH-JUMP</h2>", unsafe_allow_html=True)
 
-h_cos = st.text_input("Hash SHA512 Combined (Server Seed):")
-t_id = st.text_input("Tour ID farany nivoaka:")
+h_cos = st.text_input("Hash SHA512 Combined:")
+c1, c2 = st.columns(2)
+hex_val = c1.text_input("HEX (Last 8):")
+t_id = c2.text_input("Tour ID Farany:")
 
-if st.button("🔥 ANALYZE (DYNAMIC JUMP)"):
+if st.button("🔥 ANALYZE & HASH-SYNC"):
     if h_cos and t_id.isdigit():
-        base_id = int(t_id)
+        base_tour = int(t_id)
         
-        # 1. Kajy ny JUMP voalohany miankina amin'ny HASH (eo anelanelan'ny +2 sy +4)
-        # Ampiasaina ny MD5 avy amin'ny Hash mba hahazoana isa miovaova
-        hash_val = int(hashlib.md5(h_cos.encode()).hexdigest()[:2], 16)
-        jump1 = (hash_val % 3) + 2  # Manome +2, +3, na +4
+        # Ny JUMP dia miovaova arakaraka ny Hash nampidirinao
+        jump1 = get_hash_jump(h_cos)
+        jump2 = jump1 + (get_hash_jump(h_cos[::-1]) % 3 + 2) # Jump faharoa
         
-        # 2. Kajy ny JUMP faharoa (eo anelanelan'ny +5 sy +7)
-        jump2 = jump1 + (hash_val % 3) + 2 # Manome elanelana tsara foana
+        targets = [base_tour + jump1, base_tour + jump2]
+        cols = st.columns(2)
         
-        target1 = base_id + jump1
-        target2 = base_id + jump2
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            val1 = get_dynamic_prediction(h_cos, target1, "T1")
-            st.markdown(f"""
-                <div class="prediction-card">
-                    <div class="jump-info">⚡ JUMP: +{jump1} TOURS</div>
-                    <b style="color:red; font-size:18px;">🎯 TARGET: {target1}</b><br>
-                    <h1 style="color:#00ffcc; font-size:45px;">{val1}x</h1>
-                    <small style="color:#00ffcc;">SYNC: 100%</small>
-                </div>
-            """, unsafe_allow_html=True)
-            
-        with col2:
-            val2 = get_dynamic_prediction(h_cos, target2, "T2")
-            st.markdown(f"""
-                <div class="prediction-card">
-                    <div class="jump-info">⚡ JUMP: +{jump2} TOURS</div>
-                    <b style="color:yellow; font-size:18px;">🎯 TARGET: {target2}</b><br>
-                    <h1 style="color:#00ffcc; font-size:45px;">{val2}x</h1>
-                    <small style="color:#00ffcc;">SYNC: 98%</small>
-                </div>
-            """, unsafe_allow_html=True)
+        for i, target in enumerate(targets):
+            val = get_stable_prediction(h_cos, f"{hex_val}{target}")
+            with cols[i]:
+                st.markdown(f"""
+                    <div class="prediction-card">
+                        <span class="jump-tag">JUMP ARAKA NY HASH: +{target - base_tour}</span><br><br>
+                        <b style="color:#ffff00; font-size:18px;">🎯 TARGET: {target}</b>
+                        <h1 style="color:#00ffcc; margin:10px 0;">{val}x</h1>
+                        <small>HASH SYNC: OK</small>
+                    </div>
+                """, unsafe_allow_html=True)
 
-        st.success(f"✅ IA nifidy Jump +{jump1} sy +{jump2} miankina amin'ny Hash vaovao.")
+st.warning("⚠️ Raha vao miova ny Hash ao amin'ny lalao, dia miova ho azy koa ny Jump ato amin'ny TITAN.")

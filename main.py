@@ -5,7 +5,6 @@ import random
 # --- 1. CONFIGURATION ---
 st.set_page_config(page_title="TITAN V85.0 WAR-MACHINE", layout="wide")
 
-# Session State ho an'ny fitahirizana data
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'mines_grid' not in st.session_state: st.session_state.mines_grid = ""
 if 'history' not in st.session_state: st.session_state.history = []
@@ -28,44 +27,43 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. SIDEBAR (RESET & ADMIN) ---
+# --- 3. SIDEBAR (RESET SYSTEM) ---
 with st.sidebar:
     st.markdown("### 🛰️ SYSTEM CONTROL")
-    admin_key = st.text_input("Admin Access:", type="password")
-    if admin_key == "2026":
+    admin_check = st.text_input("Admin Access:", type="password")
+    if admin_check == "2026":
         if st.button("🗑️ RESET ALL DATA"):
             st.session_state.history = []
             st.session_state.mines_grid = ""
-            st.success("Voadio ny rafitra!")
             st.rerun()
-    st.info("Ity sidebar ity no ampiasaina raha hamafa ny tantaran'ny tour rehetra.")
+    st.info("Ampiasao ny sidebar hamafana ny History rehetra.")
 
 # --- 4. LOGIN (Key: 2026) ---
 if not st.session_state.logged_in:
     st.markdown("<h2 style='text-align:center;'>🛰️ TITAN LOGIN</h2>", unsafe_allow_html=True)
-    pwd = st.text_input("Admin Key:", type="password", key="main_login")
+    pwd = st.text_input("Admin Key:", type="password", key="login")
     if st.button("HIDITRA"):
         if pwd == "2026":
             st.session_state.logged_in = True
             st.rerun()
     st.stop()
 
-# --- 5. ENGINE AVANCÉ ---
-def get_hash_data(seed, context):
-    # SHA256 ho an'ny stabilitat 100%
-    h = hashlib.sha256(f"{seed}{context}TITAN_V85_WAR".encode()).hexdigest()
+# --- 5. ENGINE MATANJAKA ---
+def get_war_data(seed, context, mode="cosmos"):
+    h = hashlib.sha256(f"{seed}{context}TITAN_WAR_V85".encode()).hexdigest()
     random.seed(int(h[:16], 16))
-    val = round(random.uniform(2.10, 5.80), 2)
-    accuracy = random.randint(88, 99)
-    moyen = round(val * 0.72, 2)
-    return {"val": val, "acc": accuracy, "moyen": moyen}
-
-def get_jump(seed):
-    h_hex = hashlib.md5(seed.encode()).hexdigest()
-    return (int(h_hex[:1], 16) % 3) + 2
+    if mode == "cosmos":
+        val = round(random.uniform(2.10, 5.80), 2)
+        acc = random.randint(88, 99)
+        moyen = round(val * 0.72, 2)
+        return {"val": val, "acc": acc, "moyen": moyen}
+    else:
+        # Lojika Mines 8/5
+        count = 8 if "M12" in context else 5
+        return random.sample(range(25), count)
 
 # --- 6. INTERFACE ---
-st.markdown("<h2 style='color:#00ffcc; text-align:center;'>🛰️ TITAN V85.0 ULTRA-PRO</h2>", unsafe_allow_html=True)
+st.markdown("<h2 style='color:#00ffcc; text-align:center;'>🛰️ TITAN V85.0 ULTRA-PUISSANTE</h2>", unsafe_allow_html=True)
 t1, t2, t3 = st.tabs(["🚀 COSMOS (STATS)", "💣 MINES 8/5", "📜 HISTORY"])
 
 with t1:
@@ -77,41 +75,34 @@ with t1:
     if st.button("🔥 ANALYZE & SYNC"):
         if h_cos and t_id.isdigit():
             base_tour = int(t_id)
-            jump = get_jump(h_cos)
+            jump = (int(hashlib.md5(h_cos.encode()).hexdigest()[:1], 16) % 3) + 2
             
             targets = [base_tour + jump, base_tour + jump + 2]
             cols = st.columns(2)
-            
             for i, target in enumerate(targets):
-                data = get_hash_data(h_cos, f"{hex_val}{target}")
+                data = get_war_data(h_cos, f"{hex_val}{target}", "cosmos")
                 with cols[i]:
                     st.markdown(f"""
                         <div class="prediction-card">
                             <span class="jump-tag">JUMP +{target - base_tour}</span><br>
-                            <b style="font-size:14px;">TARGET: {target}</b>
+                            <b>TARGET: {target}</b>
                             <h1 style="color:#00ffcc; margin:5px 0;">{data['val']}x</h1>
                             <div class="stat-box">🎯 PRECISION: {data['acc']}%</div>
                             <div class="percent-bar"><div class="percent-fill" style="width:{data['acc']}%"></div></div>
-                            <div style="font-size:11px; color:#aaa;">
-                                MOYEN: <b style="color:#00ffcc;">{data['moyen']}x</b> | 
-                                MAX: <b style="color:#ff4b4b;">{data['val']}x</b>
-                            </div>
+                            <div style="font-size:11px; color:#aaa;">MOYEN: {data['moyen']}x | MAX: {data['val']}x</div>
                         </div>
                     """, unsafe_allow_html=True)
             st.session_state.history.insert(0, f"Tour {targets[0]}: {data['val']}x ({data['acc']}%)")
 
 with t2:
-    nb_m = st.select_slider("Mines:", options=[1, 2, 3], value=3)
-    m1, m2 = st.columns(2)
-    ms, mc = m1.text_input("Server Seed:"), m2.text_input("Client Seed:")
+    nb_m = st.select_slider("Isan'ny Mines:", options=[1, 2, 3], value=3)
+    ma, mb = st.columns(2)
+    ms, mc = ma.text_input("Server Seed:"), mb.text_input("Client Seed:")
     
     if st.button("🔍 SCAN 8/5 DIAMANTS"):
         if ms and mc:
-            sig = hashlib.sha256(f"{ms}{mc}{nb_m}".encode()).hexdigest()
-            random.seed(int(sig[:16], 16))
-            count = 8 if nb_m < 3 else 5
-            safe = random.sample(range(25), count)
-            
+            m_ctx = "M12" if nb_m < 3 else "M3"
+            safe = get_war_data(f"{ms}{mc}", m_ctx, "mines")
             grid = '<div class="mines-grid">'
             for i in range(25):
                 is_s = i in safe
@@ -122,11 +113,8 @@ with t2:
         st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
 
 with t3:
-    st.markdown("### 📜 TANTARAN'NY TOUR")
-    if not st.session_state.history:
-        st.write("Tsy mbola nisy scan natao.")
-    for h in st.session_state.history[:10]:
-        st.write(f"✅ {h}")
+    st.markdown("### 📜 TANTARAN'NY SCAN")
+    for h in st.session_state.history[:10]: st.write(f"✅ {h}")
     if st.button("🗑️ RESET HISTORY"):
         st.session_state.history = []
         st.rerun()

@@ -3,11 +3,14 @@ import hashlib
 import random
 
 # --- 1. CONFIGURATION ---
-st.set_page_config(page_title="TITAN V85.0 HASH-JUMP", layout="wide")
+st.set_page_config(page_title="TITAN V85.0 FULL PRO", layout="wide")
 
+# Admin Code sy History
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
+if 'mines_grid' not in st.session_state: st.session_state.mines_grid = ""
+if 'history' not in st.session_state: st.session_state.history = []
 
-# --- 2. STYLE NEON ---
+# --- 2. STYLE NEON PREMIUM ---
 st.markdown("""
     <style>
     .stApp { background-color: #000; color: #00ffcc; font-family: monospace; }
@@ -15,62 +18,88 @@ st.markdown("""
         background: rgba(0, 255, 204, 0.05); border: 2px solid #00ffcc;
         padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 15px;
     }
-    .jump-tag { background: #ff4b4b; color: white; padding: 3px 10px; border-radius: 20px; font-weight: bold; font-size: 14px; }
+    .jump-tag { background: #ff4b4b; color: white; padding: 2px 10px; border-radius: 10px; font-weight: bold; font-size: 12px; }
+    .mines-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; max-width: 280px; margin: auto; }
+    .mine-cell { aspect-ratio: 1/1; background: #111; border: 1px solid #333; display: flex; align-items: center; justify-content: center; font-size: 20px; border-radius: 4px; }
+    .cell-star { border: 2px solid #ffff00 !important; color: #ffff00; box-shadow: 0 0 10px #ffff00; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. LOGIN ---
+# --- 3. LOGIN SYSTEM (Admin Code: 2026) ---
 if not st.session_state.logged_in:
     st.markdown("<h2 style='text-align:center;'>🛰️ TITAN LOGIN</h2>", unsafe_allow_html=True)
-    pwd = st.text_input("Key:", type="password")
-    if st.button("HIDITRA"):
-        if pwd == "2026":
-            st.session_state.logged_in = True
-            st.rerun()
+    _, col, _ = st.columns([1, 2, 1])
+    with col:
+        pwd = st.text_input("Admin Key:", type="password")
+        if st.button("HIDITRA"):
+            if pwd == "2026":
+                st.session_state.logged_in = True
+                st.rerun()
     st.stop()
 
-# --- 4. HASH-BASED ENGINE ---
+# --- 4. CORE ENGINE (Calcul Matanjaka) ---
 def get_hash_jump(seed):
-    # Maka ny lanjan'ny Hash mba hamaritana ny Jump
+    # Jump miovaova arakaraka ny Hash
     h_hex = hashlib.md5(seed.encode()).hexdigest()
-    # Lanja eo anelanelan'ny 2 sy 5
-    return (int(h_hex[:1], 16) % 4) + 2
+    return (int(h_hex[:1], 16) % 3) + 2 # Manome +2, +3, na +4
 
-def get_stable_prediction(seed, tour_id):
-    signature = f"{seed}{tour_id}TITAN_ULTRA_2026"
+def titan_engine(seed, context, mode="cosmos"):
+    signature = f"{seed}{context}TITAN_ULTRA_V85"
     h = hashlib.sha256(signature.encode()).hexdigest()
     random.seed(int(h[:16], 16))
-    return round(random.uniform(2.15, 5.95), 2)
+    if mode == "cosmos":
+        return round(random.uniform(2.15, 5.95), 2)
+    else:
+        # Lojika Mines 8/5
+        count = 8 if "M12" in context else 5
+        return random.sample(range(25), count)
 
-# --- 5. INTERFACE ---
-st.markdown("<h2 style='color:#00ffcc; text-align:center;'>🛰️ TITAN V85.0 HASH-JUMP</h2>", unsafe_allow_html=True)
+# --- 5. MAIN INTERFACE ---
+st.markdown("<h2 style='color:#00ffcc; text-align:center;'>🛰️ TITAN V85.0 ULTRA-PRO</h2>", unsafe_allow_html=True)
+t1, t2, t3 = st.tabs(["🚀 COSMOS (HASH-JUMP)", "💣 MINES 8/5", "📜 HISTORY"])
 
-h_cos = st.text_input("Hash SHA512 Combined:")
-c1, c2 = st.columns(2)
-hex_val = c1.text_input("HEX (Last 8):")
-t_id = c2.text_input("Tour ID Farany:")
+with t1:
+    h_cos = st.text_input("Hash SHA512 Combined:")
+    c1, c2 = st.columns(2)
+    hex_val = c1.text_input("HEX (Last 8):")
+    t_id = c2.text_input("Tour ID Farany:")
+    
+    if st.button("🔥 ANALYZE & SYNC"):
+        if h_cos and t_id.isdigit():
+            base_tour = int(t_id)
+            jump = get_hash_jump(h_cos) # Jump arakaraka ny hash
+            target = base_tour + jump
+            
+            val1 = titan_engine(h_cos, f"{hex_val}{target}", "cosmos")
+            val2 = titan_engine(h_cos, f"{hex_val}{target+2}", "cosmos")
+            
+            col_a, col_b = st.columns(2)
+            with col_a:
+                st.markdown(f'<div class="prediction-card"><span class="jump-tag">JUMP +{jump}</span><br><br><b>TARGET: {target}</b><h1>{val1}x</h1></div>', unsafe_allow_html=True)
+            with col_b:
+                st.markdown(f'<div class="prediction-card"><span class="jump-tag">NEXT</span><br><br><b>TARGET: {target+2}</b><h1>{val2}x</h1></div>', unsafe_allow_html=True)
+            st.session_state.history.insert(0, f"T-{target}: {val1}x")
 
-if st.button("🔥 ANALYZE & HASH-SYNC"):
-    if h_cos and t_id.isdigit():
-        base_tour = int(t_id)
-        
-        # Ny JUMP dia miovaova arakaraka ny Hash nampidirinao
-        jump1 = get_hash_jump(h_cos)
-        jump2 = jump1 + (get_hash_jump(h_cos[::-1]) % 3 + 2) # Jump faharoa
-        
-        targets = [base_tour + jump1, base_tour + jump2]
-        cols = st.columns(2)
-        
-        for i, target in enumerate(targets):
-            val = get_stable_prediction(h_cos, f"{hex_val}{target}")
-            with cols[i]:
-                st.markdown(f"""
-                    <div class="prediction-card">
-                        <span class="jump-tag">JUMP ARAKA NY HASH: +{target - base_tour}</span><br><br>
-                        <b style="color:#ffff00; font-size:18px;">🎯 TARGET: {target}</b>
-                        <h1 style="color:#00ffcc; margin:10px 0;">{val}x</h1>
-                        <small>HASH SYNC: OK</small>
-                    </div>
-                """, unsafe_allow_html=True)
+with t2:
+    nb_m = st.select_slider("Mines:", options=[1, 2, 3], value=3)
+    m1, m2 = st.columns(2)
+    ms, mc = m1.text_input("Server Seed:"), m2.text_input("Client Seed:")
+    
+    if st.button("🔍 SCAN 8/5 DIAMANTS"):
+        if ms and mc:
+            m_ctx = "M12" if nb_m < 3 else "M3"
+            safe = titan_engine(f"{ms}{mc}", m_ctx, "mines")
+            grid = '<div class="mines-grid">'
+            for i in range(25):
+                is_s = i in safe
+                grid += f'<div class="mine-cell {"cell-star" if is_s else ""}">{"⭐" if is_s else "⬛"}</div>'
+            st.session_state.mines_grid = grid + '</div>'
+            
+    if st.session_state.mines_grid:
+        st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
 
-st.warning("⚠️ Raha vao miova ny Hash ao amin'ny lalao, dia miova ho azy koa ny Jump ato amin'ny TITAN.")
+with t3:
+    for h in st.session_state.history[:10]: st.write(f"✅ {h}")
+    if st.button("🗑️ RESET"):
+        st.session_state.history = []
+        st.rerun()

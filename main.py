@@ -47,10 +47,10 @@ if not st.session_state.logged_in:
             st.rerun()
     st.stop()
 
-# --- 5. CORE LOGIC ENGINE (1-8 DIAMANTS) ---
-def titan_core_engine(seed, context, mode, count=1):
+# --- 5. CORE LOGIC ENGINE (6 DIAMANTS FIXED) ---
+def titan_core_engine(seed, context, mode, count=6):
     # Logic SHA-512 Base
-    raw_hash = hashlib.sha512(f"{seed}{context}TITAN_V85_ULTRA".encode()).hexdigest()
+    raw_hash = hashlib.sha512(f"{seed}{context}TITAN_V85_ULTRA_6D".encode()).hexdigest()
     
     if mode == "cosmos":
         random.seed(int(raw_hash[:16], 16))
@@ -58,11 +58,10 @@ def titan_core_engine(seed, context, mode, count=1):
         acc = random.randint(94, 99)
         return {"val": val, "acc": acc}
     else:
-        # Fikajiana ny toerana hisian'ny diamondra (count = 1 hatramin'ny 8)
+        # Fikajiana toerana 6 raikitra foana ho an'ny diamondra
         safe_spots = []
         for i in range(count):
-            # Mampiasa ampahany amin'ny hash mba hamaritana ny toerana 0-24
-            val = int(raw_hash[i*6:(i+1)*6], 16) % 25
+            val = int(raw_hash[i*8:(i+1)*8], 16) % 25
             while val in safe_spots:
                 val = (val + 1) % 25
             safe_spots.append(val)
@@ -90,8 +89,8 @@ with t1:
 
 with t2:
     st.markdown("### 🔍 MINES SHA-512 SCANNER")
-    # Ity ny slider nampiana: Isan'ny diamondra mipoitra (1-8)
-    nb_diamants = st.select_slider("Isan'ny Diamondra (Target):", options=[1, 2, 3, 4, 5, 6, 7, 8], value=5)
+    # Averina amin'ny isan'ny mine 1-3 ny slider
+    nb_mines = st.select_slider("Isan'ny Mine (Target):", options=[1, 2, 3], value=1)
     
     col_a, col_b = st.columns(2)
     s_seed = col_a.text_input("Server Seed:")
@@ -101,8 +100,8 @@ with t2:
         if s_seed and c_seed:
             with st.spinner("Synchronizing Grid..."):
                 time.sleep(0.4)
-                # Ny engine izao dia mamoaka diamondra araka ny isany nofidinao (1-8)
-                safe_spots = titan_core_engine(s_seed, c_seed, "mines", count=nb_diamants)
+                # Na inona na inona nb_mines, diamondra 6 foana no tadiavina (count=6)
+                safe_spots = titan_core_engine(s_seed, c_seed, "mines", count=6)
                 grid_html = '<div class="mines-grid">'
                 for i in range(25):
                     is_safe = i in safe_spots
@@ -111,7 +110,7 @@ with t2:
             
     if st.session_state.mines_grid:
         st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
-        st.success(f"✅ Pattern {nb_diamants} Diamant(s) Synchronisé!")
+        st.success(f"✅ Pattern {nb_mines} Mine(s) Synchronisé (6 Diamondra)!")
 
 with t3:
     st.markdown("### 📜 SYSTEM LOGS")

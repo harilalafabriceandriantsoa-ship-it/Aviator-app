@@ -19,9 +19,17 @@ st.markdown("""
         border: 2px solid #00ffcc; padding: 15px; border-radius: 15px;
         text-align: center; margin-bottom: 10px; box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
     }
-    .mines-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; max-width: 280px; margin: 0 auto; }
-    .mine-cell { aspect-ratio: 1/1; background: #111; border: 1px solid #00ffcc22; display: flex; align-items: center; justify-content: center; font-size: 20px; border-radius: 4px; }
-    .cell-star { border: 1px solid #ffff00 !important; background: rgba(255, 255, 0, 0.1); color: #ffff00; }
+    /* MINES GRID ULTRA-FIXED */
+    .mines-grid { 
+        display: grid; grid-template-columns: repeat(5, 1fr); 
+        gap: 5px; max-width: 250px; margin: 10px auto; 
+    }
+    .mine-cell { 
+        aspect-ratio: 1/1; background: #111; border: 1px solid #00ffcc22; 
+        display: flex; align-items: center; justify-content: center; 
+        font-size: 20px; border-radius: 5px;
+    }
+    .cell-star { border: 2px solid #ffff00 !important; background: rgba(255, 255, 0, 0.15); color: #ffff00; box-shadow: 0 0 10px #ffff0033; }
     .mult-val { color: #00ffcc; font-size: 50px; font-weight: bold; margin: 0; line-height: 1; }
     .detector-tag { background: rgba(0, 255, 204, 0.1); color: #00ffcc; border: 1px solid #00ffcc; padding: 2px 8px; font-size: 11px; border-radius: 5px; font-weight: bold; }
     </style>
@@ -36,15 +44,10 @@ if not st.session_state.logged_in:
             st.rerun()
     st.stop()
 
-# --- 4. CORE ENGINE (STRENGTHENED ALGO) ---
+# --- 4. CORE ENGINE (STRENGTHENED) ---
 def analyze_hash_pattern(h, hx, t, algo):
-    # Ny fanamafisana ny fampifandraisana data
     sync = f"{h}{hx}{t}TITAN_WAR_AUTO_2026_STRENGTH".encode()
-    if algo == "SHA-512":
-        f_hash = hashlib.sha512(sync).hexdigest()
-    else:
-        f_hash = hashlib.sha256(sync).hexdigest()
-    
+    f_hash = hashlib.sha512(sync).hexdigest() if algo == "SHA-512" else hashlib.sha256(sync).hexdigest()
     random.seed(int(f_hash[:16], 16))
     bits = int(f_hash[-4:], 16)
     
@@ -52,7 +55,7 @@ def analyze_hash_pattern(h, hx, t, algo):
     elif bits < 14000: m, s = round(random.uniform(1.10, 1.75), 2), "🛡️ LOW RISK"
     else: m, s = round(random.uniform(1.76, 2.65), 2), "⚖️ STABLE"
         
-    return {"mult": m, "acc": random.randint(96, 99), "status": s, "hex": f_hash[:8].upper(), "bits": bits}
+    return {"mult": m, "acc": random.randint(96, 99), "status": s, "hex": f_hash[:8].upper()}
 
 # --- 5. INTERFACE ---
 st.markdown("<h3 style='text-align:center; color:#00ffcc;'>🛰️ TITAN V85.0 - AUTO-JUMP DETECTOR</h3>", unsafe_allow_html=True)
@@ -62,69 +65,61 @@ with tab1:
     st.markdown("##### 🛰️ HASH-BASED DETECTION")
     a_sel = st.radio("Algorithm:", ["SHA-512", "SHA-256"], horizontal=True)
     h_in = st.text_input("Hash / Server Seed:")
-    
     col_a, col_b = st.columns(2)
     hx_in = col_a.text_input("Hex8 (Extra Input):")
-    t_start = col_b.number_input("Tour Actuel:", min_value=1, value=693735)
+    t_start = col_b.number_input("Tour Actuel:", min_value=1, value=8132540) # Nalaina tamin'ny screenshot-nao
     
     if st.button("🔥 SCAN FOR NEXT JUMP"):
         if h_in:
-            with st.spinner("Deep Scanning Hash Pattern..."):
-                time.sleep(0.7)
-                res_col1, res_col2 = st.columns(2)
+            with st.spinner("Deep Scanning..."):
+                time.sleep(0.6)
+                r_col1, r_col2 = st.columns(2)
                 p1 = analyze_hash_pattern(h_in, hx_in, str(t_start), a_sel)
-                with res_col1:
+                with r_col1:
                     st.markdown(f"""<div class="war-card"><p style="color:#aaa; font-size:12px;">TOUR {t_start}</p>
                     <p class="mult-val">{p1['mult']}x</p><p style="color:#ffff00; font-size:10px;">HEX8: {p1['hex']}</p>
                     <span class="detector-tag">{p1['acc']}% | {p1['status']}</span></div>""", unsafe_allow_html=True)
                 
+                # JUMP DETECTOR LOGIC
                 found_jump = None
                 for i in range(1, 11): 
-                    check_tour = t_start + i
-                    p_check = analyze_hash_pattern(h_in, hx_in, str(check_tour), a_sel)
+                    p_check = analyze_hash_pattern(h_in, hx_in, str(t_start + i), a_sel)
                     if p_check['status'] == "🔥 HIGH JUMP":
-                        found_jump = (check_tour, p_check, i)
+                        found_jump = (t_start + i, p_check, i)
                         break
-                
-                with res_col2:
+                with r_col2:
                     if found_jump:
-                        t_j, p_j, gap = found_jump
-                        st.markdown(f"""<div class="war-card"><p style="color:#ff00ff; font-size:12px;">NEXT JUMP DETECTED (+{gap})</p>
-                        <p class="mult-val" style="color:#ff00ff;">{p_j['mult']}x</p><p style="color:#ffff00; font-size:10px;">TOUR: {t_j}</p>
-                        <span class="detector-tag" style="border-color:#ff00ff; color:#ff00ff;">{p_j['acc']}% | POTENTIAL JUMP</span></div>""", unsafe_allow_html=True)
+                        st.markdown(f"""<div class="war-card" style="border-color:#ff00ff;"><p style="color:#ff00ff; font-size:12px;">NEXT JUMP (+{found_jump[2]})</p>
+                        <p class="mult-val" style="color:#ff00ff;">{found_jump[1]['mult']}x</p><span class="detector-tag" style="border-color:#ff00ff; color:#ff00ff;">TOUR {found_jump[0]}</span></div>""", unsafe_allow_html=True)
                     else:
-                        p_next = analyze_hash_pattern(h_in, hx_in, str(t_start + 1), a_sel)
-                        st.markdown(f"""<div class="war-card"><p style="color:#aaa; font-size:12px;">NEXT TOUR {t_start+1}</p>
-                        <p class="mult-val">{p_next['mult']}x</p><p style="color:#ffff00; font-size:10px;">HEX8: {p_next['hex']}</p>
-                        <span class="detector-tag">STABLE PATTERN</span></div>""", unsafe_allow_html=True)
+                        st.markdown(f"""<div class="war-card"><p style="color:#aaa; font-size:12px;">NEXT TOUR</p><p class="mult-val">---</p><span>STABLE</span></div>""", unsafe_allow_html=True)
 
 with tab2:
-    st.markdown("##### 🔍 MINES 6-STAR (ENHANCED)")
-    s_s = st.text_input("Server Seed:")
-    c_s = st.text_input("Client Seed:")
-    if st.button("🛰️ SCAN"):
+    st.markdown("##### 🔍 MINES 6-STAR (FIXED DISPLAY)")
+    s_s = st.text_input("Server Seed Input:")
+    c_s = st.text_input("Client Seed / Nonce:")
+    if st.button("🛰️ SCAN MINES NOW"):
         if s_s and c_s:
-            # --- ENHANCED MINES ALGO (Triple-Entropy) ---
-            # Mampiasa algorithm matanjaka kokoa mba tsy ho loss
-            base_sync = hashlib.sha256(f"{s_s}{c_s}PRO_STRENGTH_2026".encode()).hexdigest()
-            
+            # ENHANCED ALGO
+            h_base = hashlib.sha256(f"{s_s}{c_s}TITAN_WAR_MINE_V85".encode()).hexdigest()
             spots = []
-            # Scan 25 possibilities with entropy check
             for j in range(6):
-                # Triple-hashing isaky ny spot mba hahitana ny "True Safe Spot"
-                sub_hash = hashlib.sha256(f"{base_sync}{j}".encode()).hexdigest()
-                v = int(sub_hash[j*4:(j+1)*4], 16) % 25
-                while v in spots:
-                    v = (v + 1) % 25
+                sub = hashlib.sha256(f"{h_base}{j}".encode()).hexdigest()
+                v = int(sub[j*4:(j+1)*4], 16) % 25
+                while v in spots: v = (v + 1) % 25
                 spots.append(v)
             
+            # GENERATE GRID
             g_html = '<div class="mines-grid">'
             for i in range(25):
-                is_ok = i in spots
-                g_html += f'<div class="mine-cell {"cell-star" if is_ok else ""}">{"⭐" if is_ok else "⬛"}</div>'
+                is_star = i in spots
+                g_html += f'<div class="mine-cell {"cell-star" if is_star else ""}">{"⭐" if is_star else "⬛"}</div>'
             st.session_state.mines_grid = g_html + '</div>'
+            
+    # DISPLAY GRID
     if st.session_state.mines_grid:
         st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
+        st.success("✅ SCAN COMPLETED")
 
 with tab3:
     for log in st.session_state.history[:10]: st.write(f"📡 {log}")

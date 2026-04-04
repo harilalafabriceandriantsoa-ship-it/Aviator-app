@@ -30,6 +30,11 @@ st.markdown("""
         border: 2px solid #ffff00 !important; background: rgba(255, 255, 0, 0.1);
         box-shadow: 0 0 20px #ffff00; color: #ffff00;
     }
+    .hex-display {
+        font-size: 11px; color: #00ffcc; word-break: break-all; margin-top: 15px;
+        background: rgba(0, 255, 204, 0.1); padding: 10px; border-radius: 5px;
+        border: 1px solid #00ffcc44;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -47,7 +52,7 @@ if not st.session_state.logged_in:
 
 # --- 4. CORE WAR-ENGINE (UNIVERSAL LOGIC) ---
 def titan_war_engine(seed, context, algo="SHA-512", count=6):
-    # Combine seeds for high-level cryptography
+    # Ity no mampifandray ny Hash sy ny Numéro de tour
     data_stream = f"{seed}{context}TITAN_WAR_2026_ULTRA".encode()
     
     if algo == "SHA-512":
@@ -57,59 +62,59 @@ def titan_war_engine(seed, context, algo="SHA-512", count=6):
         raw_hash = hashlib.sha256(data_stream).hexdigest()
         chunk = 4
 
-    # Mines Logic: Calculate 6 Fixed Safe Spots
+    # Mines Logic (6 Spots)
     safe_spots = []
     for i in range(count):
-        # High precision offset calculation
         val = int(raw_hash[i*chunk:(i+1)*chunk], 16) % 25
         while val in safe_spots:
             val = (val + 1) % 25
         safe_spots.append(val)
         
-    # Cosmos Logic: Multiplier & Precision
+    # Cosmos Logic (Jump & Multiplier)
     random.seed(int(raw_hash[:16], 16))
-    mult = round(random.uniform(1.50, 4.80), 2)
+    mult = round(random.uniform(1.55, 4.95), 2)
     acc = random.randint(96, 99)
-    status = "JUMP DETECTED" if int(raw_hash[-2:], 16) > 200 else "STABLE"
+    status = "JUMP DETECTED" if int(raw_hash[-2:], 16) > 180 else "STABLE"
     
     return {"spots": safe_spots, "mult": mult, "acc": acc, "status": status, "hash": raw_hash}
 
 # --- 5. INTERFACE ---
 st.markdown("<h2 style='color:#00ffcc; text-align:center;'>🛰️ TITAN V85.0 - UNIVERSAL WAR-MACHINE</h2>", unsafe_allow_html=True)
-t1, t2, t3 = st.tabs(["🚀 COSMOS ANALYZER", "💣 MINES SCANNER", "📜 SYSTEM LOGS"])
+t1, t2, t3 = st.tabs(["🚀 COSMOS SCANNER", "💣 MINES SCANNER", "📜 SYSTEM LOGS"])
 
 with t1:
-    st.markdown("### 🚀 COSMOS JUMP DETECTOR")
-    algo_c = st.radio("Select Algorithm:", ["SHA-512", "SHA-256"], horizontal=True, key="cosmos_algo")
-    h_val = st.text_input("Server Hash (From Provably Fair):")
-    t_id = st.text_input("Round ID (Nonce):")
+    st.markdown("### 🚀 COSMOS (HASH + TOUR + HEX)")
+    algo_c = st.radio("Algo Selection:", ["SHA-512", "SHA-256"], horizontal=True, key="c_algo")
+    h_val = st.text_input("1. Server Hash / Combined Seed:")
+    t_num = st.number_input("2. Numéro de Tour (Nonce):", min_value=1, value=1, step=1)
     
-    if st.button("🔥 EXECUTE COSMOS ANALYSIS"):
-        if h_val and t_id:
-            with st.spinner("Decoding Satellite Data..."):
+    if st.button("🔥 EXECUTE FULL COSMOS SCAN"):
+        if h_val:
+            with st.spinner("Extracting Hex Signature..."):
                 time.sleep(0.6)
-                data = titan_war_engine(h_val, t_id, algo_c)
+                data = titan_war_engine(h_val, str(t_num), algo_c)
                 st.markdown(f"""
                     <div class="war-card">
-                        <p style="color:#aaa;">PREDICTED MULTIPLIER</p>
+                        <p style="color:#aaa;">TOUR: {t_num}</p>
                         <h1 style="color:#00ffcc; font-size:70px;">{data['mult']}x</h1>
                         <p>🎯 PRECISION: {data['acc']}% | STATUS: <span style="color:#ffff00;">{data['status']}</span></p>
+                        <div class="hex-display"><b>HEX SIGNATURE:</b><br>{data['hash']}</div>
                     </div>
                 """, unsafe_allow_html=True)
-                st.session_state.history.insert(0, f"Cosmos: {data['mult']}x ({data['status']})")
+                st.session_state.history.insert(0, f"Cosmos T{t_num}: {data['mult']}x | Hex: {data['hash'][:10]}...")
 
 with t2:
     st.markdown("### 🔍 MINES DEEP SCANNER")
-    algo_m = st.radio("Select Algorithm:", ["SHA-512", "SHA-256"], horizontal=True, key="mines_algo")
-    nb_mines = st.select_slider("Target Mines in Game:", options=[1, 2, 3], value=3)
+    algo_m = st.radio("Algo Selection:", ["SHA-512", "SHA-256"], horizontal=True, key="m_algo")
+    nb_mines = st.select_slider("Mines Target:", options=[1, 2, 3], value=3)
     
     c1, c2 = st.columns(2)
-    s_seed = c1.text_input("Server Seed (Past):")
-    c_seed = c2.text_input("Client Seed (Active):")
+    s_seed = c1.text_input("Server Seed:")
+    c_seed = c2.text_input("Client Seed:")
     
-    if st.button("🛰️ START DEEP SCAN"):
+    if st.button("🛰️ START MINES SCAN"):
         if s_seed and c_seed:
-            with st.spinner("Injecting SHA-Logic..."):
+            with st.spinner("Synchronizing 6-Diamond Grid..."):
                 time.sleep(0.5)
                 data = titan_war_engine(s_seed, c_seed, algo_m)
                 grid_html = '<div class="mines-grid">'
@@ -117,11 +122,11 @@ with t2:
                     is_safe = i in data['spots']
                     grid_html += f'<div class="mine-cell {"cell-star" if is_safe else ""}">{"⭐" if is_safe else "⬛"}</div>'
                 st.session_state.mines_grid = grid_html + '</div>'
-                st.session_state.history.insert(0, f"Mines Scan ({algo_m}): Pattern Locked")
+                st.session_state.history.insert(0, f"Mines Scan: 6 Stars Generated")
             
     if st.session_state.mines_grid:
         st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
-        st.success(f"✅ WAR-PATTERN SYNCHRONIZED (6 DIAMONDS)")
+        st.success(f"✅ WAR-PATTERN SYNCHRONIZED!")
 
 with t3:
     st.markdown("### 📜 SYSTEM COMMAND LOGS")

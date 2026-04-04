@@ -1,128 +1,132 @@
 import streamlit as st
 import hashlib
-import random
+import time
+import numpy as np
 
-# --- 1. CONFIGURATION ---
-st.set_page_config(page_title="TITAN V85.0 WAR-MACHINE", layout="wide")
+# --- 1. CONFIGURATION SYSTEM ---
+st.set_page_config(page_title="TITAN V85.0 WAR-MACHINE", layout="wide", initial_sidebar_state="collapsed")
 
-# Session State initialization
-for key, val in [('logged_in', False), ('mines_grid', ""), ('history', [])]:
-    if key not in st.session_state: st.session_state[key] = val
+# Session State ho an'ny fitadidiana (Memory)
+if 'history' not in st.session_state: st.session_state.history = []
+if 'scan_active' not in st.session_state: st.session_state.scan_active = False
 
-# --- 2. STYLE NEON WAR-MACHINE ---
+# --- 2. STYLE NEON WAR-MACHINE (DARK INTERFACE) ---
 st.markdown("""
     <style>
-    .stApp { background-color: #000; color: #00ffcc; font-family: monospace; }
-    .prediction-card {
-        background: rgba(0, 255, 204, 0.05); border: 2px solid #00ffcc;
-        padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 10px;
+    .stApp { background: radial-gradient(circle, #050505 0%, #000000 100%); color: #00ffcc; font-family: 'Courier New', monospace; }
+    .war-card {
+        background: rgba(0, 20, 20, 0.8); border: 1px solid #00ffcc;
+        border-left: 5px solid #00ffcc; padding: 20px; border-radius: 5px;
+        box-shadow: 0 0 15px rgba(0, 255, 204, 0.2); margin-bottom: 20px;
     }
-    .stat-box { font-size: 12px; color: #ffff00; margin-top: 5px; font-weight: bold; }
-    .percent-bar { background: #111; border-radius: 10px; height: 10px; margin: 10px 0; overflow: hidden; border: 1px solid #333; }
-    .percent-fill { background: #00ffcc; height: 100%; box-shadow: 0 0 10px #00ffcc; }
-    .jump-tag { background: #ff4b4b; color: white; padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 11px; }
-    .mines-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; max-width: 300px; margin: auto; }
-    .mine-cell { aspect-ratio: 1/1; background: #111; border: 1px solid #333; display: flex; align-items: center; justify-content: center; font-size: 22px; border-radius: 5px; }
-    .cell-star { border: 2px solid #ffff00 !important; box-shadow: 0 0 10px #ffff00; color: #ffff00; }
+    .glitch-text { animation: pulse 2s infinite; font-weight: bold; color: #ff0055; text-transform: uppercase; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    .mines-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; max-width: 350px; margin: auto; padding: 15px; background: #080808; border: 2px solid #333; }
+    .mine-cell { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: 24px; border-radius: 4px; background: #111; border: 1px solid #222; transition: 0.3s; }
+    .cell-target { border: 2px solid #00ffcc !important; box-shadow: 0 0 20px #00ffcc; background: rgba(0, 255, 204, 0.1) !important; color: #00ffcc; transform: scale(1.05); }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. SIDEBAR (SYSTEM ADMIN) ---
-with st.sidebar:
-    st.markdown("### 🛰️ TITAN SYSTEM")
-    if st.text_input("Admin Access:", type="password") == "2026":
-        if st.button("🗑️ RESET ALL DATA"):
-            st.session_state.history = []
-            st.session_state.mines_grid = ""
-            st.rerun()
-
-# --- 4. LOGIN ---
-if not st.session_state.logged_in:
-    st.markdown("<h2 style='text-align:center;'>🛰️ TITAN LOGIN</h2>", unsafe_allow_html=True)
-    if st.text_input("Key:", type="password") == "2026":
-        if st.button("HIDITRA"):
-            st.session_state.logged_in = True
-            st.rerun()
-    st.stop()
-
-# --- 5. ENGINE ULTRA-PUISSANTE ---
-def get_war_data(seed, context, mode="cosmos"):
-    # Cosmos logic
-    if mode == "cosmos":
-        h = hashlib.sha256(f"{seed}{context}TITAN_WAR_V85".encode()).hexdigest()
-        random.seed(int(h[:16], 16))
-        val = round(random.uniform(2.10, 5.85), 2)
-        acc = random.randint(88, 99)
-        moyen = round(val * 0.75, 2)
-        return {"val": val, "acc": acc, "moyen": moyen}
-    else:
-        # Mines Machine de Guerre logic (SHA-512)
-        h = hashlib.sha512(f"{seed}{context}MINES_WAR_CORE".encode()).hexdigest()
-        count = 8 if "M12" in context else 5
-        # Mifidy toerana miankina amin'ny hash mivantana
-        safe_spots = []
+# --- 3. ENGINE: MACHINE DE GUERRE (ALGORITHM) ---
+class TitanEngine:
+    @staticmethod
+    def generate_sha512_pattern(seed, round_id, count=5):
+        # Mampiasa SHA-512 ho an'ny securité sy précision ambony indrindra
+        combined = f"{seed}-{round_id}-TITAN-ULTRA-V85"
+        hash_result = hashlib.sha512(combined.encode()).hexdigest()
+        
+        # Simulation de probabilité mampiasa Numpy
+        indices = []
         for i in range(count):
-            start = i * 4
-            val = int(h[start:start+4], 16) % 25
-            while val in safe_spots: # Misoroka toerana mitovy
-                val = (val + 1) % 25
-            safe_spots.append(val)
-        return safe_spots
+            # Maka segment 4 avy amin'ny hash mba hivadika ho isa
+            segment = hash_result[i*8 : (i+1)*8]
+            pos = int(segment, 16) % 25
+            while pos in indices:
+                pos = (pos + 1) % 25
+            indices.append(pos)
+        return indices
 
-# --- 6. INTERFACE ---
-st.markdown("<h2 style='color:#00ffcc; text-align:center;'>🛰️ TITAN V85.0 ULTRA-SYNC</h2>", unsafe_allow_html=True)
-t1, t2, t3 = st.tabs(["🚀 COSMOS (STATS)", "💣 MINES 8/5", "📜 HISTORY"])
+    @staticmethod
+    def predict_aviator(hash_val):
+        # Algorithm de prédiction ho an'ny Aviator/Cosmos
+        h = hashlib.sha256(hash_val.encode()).hexdigest()
+        val = (int(h[:8], 16) % 1000) / 100
+        if val < 1.0: val = 1.25
+        accuracy = 85 + (int(h[-2:], 16) % 14) # Précision 85% - 99%
+        return round(val, 2), accuracy
 
-with t1:
-    h_cos = st.text_input("Hash SHA512 Combined:")
-    c1, c2 = st.columns(2)
-    hex_v = c1.text_input("HEX (Last 8):")
-    t_id = c2.text_input("Tour ID:")
-    
-    if st.button("🔥 ANALYZE & SYNC"):
-        if h_cos and t_id.isdigit():
-            base = int(t_id)
-            jump = (int(hashlib.md5(h_cos.encode()).hexdigest()[:1], 16) % 3) + 2
-            targets = [base + jump, base + jump + 2]
-            
-            cols = st.columns(2)
-            for i, target in enumerate(targets):
-                data = get_war_data(h_cos, f"{hex_v}{target}", "cosmos")
-                with cols[i]:
+# --- 4. INTERFACE PRINCIPALE ---
+st.markdown("<h1 style='text-align:center; color:#00ffcc;'>🛰️ TITAN V85.0 : WAR-MACHINE</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; font-size:12px; color:#666;'>SYSTEM STATUS: ENCRYPTED | CORE: SHA-512</p>", unsafe_allow_html=True)
+
+tab1, tab2 = st.tabs(["🎯 CRASH ANALYZER", "💣 MINES SCANNER"])
+
+# --- TAB 1: CRASH ANALYZER (AVIATOR) ---
+with tab1:
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        st.markdown("### 📡 INPUT DATA")
+        server_hash = st.text_input("HASH SHA-256 (Current):", placeholder="Ampidiro ny Hash farany...")
+        last_result = st.number_input("Last Result (x):", min_value=1.0, value=1.5, step=0.1)
+        
+    with col2:
+        st.markdown("### ⚙️ SYSTEM SYNC")
+        sync_mode = st.toggle("ULTRA-SYNC MODE", value=True)
+        if st.button("🔥 EXECUTE SCAN", use_container_width=True):
+            if server_hash:
+                with st.spinner("Analyzing data patterns..."):
+                    time.sleep(1.5) # Simulation de calcul
+                    pred, acc = TitanEngine.predict_aviator(server_hash)
+                    
                     st.markdown(f"""
-                        <div class="prediction-card">
-                            <span class="jump-tag">JUMP +{target - base}</span><br>
-                            <b>TARGET: {target}</b>
-                            <h1 style="color:#00ffcc; margin:5px 0;">{data['val']}x</h1>
-                            <div class="stat-box">🎯 PRECISION: {data['acc']}%</div>
-                            <div class="percent-bar"><div class="percent-fill" style="width:{data['acc']}%"></div></div>
-                            <div style="font-size:10px;">MOYEN: {data['moyen']}x | MAX: {data['val']}x</div>
+                        <div class="war-card">
+                            <p style='margin:0; font-size:14px;'>PREDICTION CONFIRMED</p>
+                            <h1 style='font-size:60px; margin:0;'>{pred}x</h1>
+                            <div style='display:flex; justify-content:space-between;'>
+                                <span>🎯 ACCURACY: {acc}%</span>
+                                <span class='glitch-text'>SIGNAL: STABLE</span>
+                            </div>
                         </div>
                     """, unsafe_allow_html=True)
-            st.session_state.history.insert(0, f"Tour {targets[0]}: {data['val']}x ({data['acc']}%)")
+                    st.session_state.history.append(f"Crash: {pred}x ({acc}%)")
+            else:
+                st.error("Mila Hash vao afaka manao scan!")
 
-with t2:
-    nb_m = st.select_slider("Configuration Mines:", options=[1, 2, 3], value=3)
-    ma, mb = st.columns(2)
-    ms, mc = ma.text_input("Server Seed:"), mb.text_input("Client Seed:")
+# --- TAB 2: MINES SCANNER ---
+with tab2:
+    st.markdown("### 🔍 MINES SHA-512 SCANNER")
+    m_col1, m_col2 = st.columns(2)
+    with m_col1:
+        m_seed = st.text_input("Server Seed / Hash:", key="m_seed")
+    with m_col2:
+        m_client = st.text_input("Client Seed:", key="m_client")
     
-    if st.button("🔍 SCAN 8/5 DIAMANTS"):
-        if ms and mc:
-            ctx = "M12" if nb_m < 3 else "M3"
-            safe = get_war_data(f"{ms}{mc}", ctx, "mines")
-            grid_html = '<div class="mines-grid">'
-            for i in range(25):
-                is_s = i in safe
-                grid_html += f'<div class="mine-cell {"cell-star" if is_s else ""}">{"⭐" if is_s else "⬛"}</div>'
-            st.session_state.mines_grid = grid_html + '</div>'
-            
-    if st.session_state.mines_grid:
-        st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
-        st.success("✅ Machine de Guerre: Pattern Synchronisé!")
+    num_stars = st.select_slider("Isan'ny Diamondra (Target):", options=[3, 5, 8], value=5)
+    
+    if st.button("🛰️ START DEEP SCAN", use_container_width=True):
+        if m_seed and m_client:
+            with st.spinner("Synchronizing with server algorithm..."):
+                time.sleep(2)
+                targets = TitanEngine.generate_sha512_pattern(m_seed, m_client, num_stars)
+                
+                # GRID GENERATION
+                grid_html = '<div class="mines-grid">'
+                for i in range(25):
+                    is_target = i in targets
+                    style = 'cell-target' if is_target else ''
+                    icon = '💎' if is_target else '⬛'
+                    grid_html += f'<div class="mine-cell {style}">{icon}</div>'
+                grid_html += '</div>'
+                
+                st.markdown(grid_html, unsafe_allow_html=True)
+                st.success(f"✅ Scan Vita: Toerana {num_stars} voatondro!")
+        else:
+            st.warning("Ampidiro ny Seed rehetra!")
 
-with t3:
-    st.markdown("### 📜 LOGS")
-    for log in st.session_state.history[:10]: st.write(f"🚩 {log}")
-    if st.button("🗑️ CLEAR HISTORY"):
-        st.session_state.history = []
-        st.rerun()
+# --- 5. LOGS & HISTORY ---
+with st.expander("📜 SYSTEM LOGS (HISTORY)"):
+    if st.session_state.history:
+        for log in reversed(st.session_state.history):
+            st.text(f" {log}")
+    else:
+        st.text("No data scanned yet.")

@@ -5,12 +5,12 @@ import random
 # --- 1. CONFIGURATION SYSTEM ---
 st.set_page_config(page_title="TITAN V85.0 WAR-MACHINE", layout="wide")
 
-# Initialization ny fitadidiana (Memory)
+# Initialization ny fitadidiana
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'history' not in st.session_state: st.session_state.history = []
 if 'mines_grid' not in st.session_state: st.session_state.mines_grid = ""
 
-# --- 2. STYLE NEON MACHINE DE GUERRE ---
+# --- 2. STYLE NEON ---
 st.markdown("""
     <style>
     .stApp { background-color: #000; color: #00ffcc; font-family: monospace; }
@@ -24,7 +24,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. SIDEBAR ADMIN (KEY & RESET) ---
+# --- 3. SIDEBAR ADMIN ---
 with st.sidebar:
     st.markdown("### 🛰️ TITAN ADMIN PANEL")
     admin_key = st.text_input("Admin Access Key:", type="password")
@@ -35,22 +35,20 @@ with st.sidebar:
             st.session_state.mines_grid = ""
             st.session_state.logged_in = False
             st.rerun()
-    else:
-        st.warning("Mila Key Admin raha hanatontosa Reset.")
 
-# --- 4. LOGIN INTERFACE ---
+# --- 4. LOGIN ---
 if not st.session_state.logged_in:
     st.markdown("<h1 style='text-align:center;'>🛰️ TITAN LOGIN</h1>", unsafe_allow_html=True)
-    login_key = st.text_input("Ampidiro ny Key Activant:", type="password")
+    login_key = st.text_input("Key:", type="password") # Key: 2026
     if st.button("HIDITRA AMIN'NY TITAN"):
         if login_key == "2026":
             st.session_state.logged_in = True
             st.rerun()
         else:
-            st.error("❌ Key diso! Jereo ny fanomezana avy amin'ny Admin.")
+            st.error("❌ Key diso!")
     st.stop()
 
-# --- 5. ENGINE CORE (SHA-512) ---
+# --- 5. ENGINE CORE ---
 def titan_engine(seed, context, mode, count=5):
     if mode == "cosmos":
         h = hashlib.sha256(f"{seed}{context}WAR_V85".encode()).hexdigest()
@@ -59,13 +57,11 @@ def titan_engine(seed, context, mode, count=5):
         acc = random.randint(92, 99)
         return {"val": val, "acc": acc}
     else:
-        # Mines Machine de Guerre logic (Algorithm SHA-512)
         h = hashlib.sha512(f"{seed}{context}MINES_V85_CORE".encode()).hexdigest()
         safe_spots = []
         for i in range(count):
-            # Mifidy toerana miankina amin'ny hash mivantana
             val = int(h[i*5:i*5+5], 16) % 25
-            while val in safe_spots: # Misoroka toerana mitovy
+            while val in safe_spots:
                 val = (val + 1) % 25
             safe_spots.append(val)
         return safe_spots
@@ -75,7 +71,8 @@ st.markdown("<h2 style='color:#00ffcc; text-align:center;'>🛰️ TITAN V85.0 U
 t1, t2, t3 = st.tabs(["🚀 COSMOS ANALYZER", "💣 MINES SCANNER", "📜 HISTORY"])
 
 with t1:
-    st.markdown("### 🛰️ COSMOS / AVIATOR PREDICTION")
+    # Novana: Cosmos Prediction fotsiny, tsy misy soratra Aviator intsony
+    st.markdown("### 🚀 COSMOS PREDICTION")
     h_val = st.text_input("Server Hash (Current):")
     t_id = st.text_input("Next Round ID:")
     if st.button("🔥 ANALYZE PATTERN"):
@@ -88,12 +85,12 @@ with t1:
                     <p>🎯 PRECISION: {data['acc']}%</p>
                 </div>
             """, unsafe_allow_html=True)
-            st.session_state.history.insert(0, f"Round {t_id}: {data['val']}x ({data['acc']}%)")
+            st.session_state.history.insert(0, f"Cosmos {t_id}: {data['val']}x")
 
 with t2:
     st.markdown("### 🔍 MINES SHA-512 SCANNER")
-    # Isan'ny diamondra azo fidiana (3 hatramin'ny 8)
-    nb_diamants = st.select_slider("Isan'ny Diamondra (Target):", options=[3, 4, 5, 6, 7, 8], value=5)
+    # Novana: Ny isan'ny mine azo isafidianana izao dia 1 hatramin'ny 3
+    nb_mines = st.select_slider("Isan'ny Mine (Target):", options=[1, 2, 3], value=1)
     
     col_a, col_b = st.columns(2)
     s_seed = col_a.text_input("Server Seed:")
@@ -101,7 +98,9 @@ with t2:
     
     if st.button("🛰️ START DEEP SCAN"):
         if s_seed and c_seed:
-            safe = titan_engine(s_seed, c_seed, "mines", count=nb_diamants)
+            # Rehefa mine 1-3 no fidinao, dia diamondra 22-24 no tadiavin'ilay algorithm
+            diamant_count = 25 - nb_mines
+            safe = titan_engine(s_seed, c_seed, "mines", count=diamant_count)
             grid_html = '<div class="mines-grid">'
             for i in range(25):
                 is_s = i in safe
@@ -110,7 +109,7 @@ with t2:
             
     if st.session_state.mines_grid:
         st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
-        st.success(f"✅ Machine de Guerre: Pattern {nb_diamants} Diamants Synchronisé!")
+        st.success(f"✅ Pattern {nb_mines} Mine(s) Synchronisé!")
 
 with t3:
     st.markdown("### 📜 SYSTEM LOGS")

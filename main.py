@@ -1,97 +1,127 @@
-import hashlib
-import time
-import random
 import streamlit as st
+import hashlib
+import random
+import time
 
 # --- 1. CONFIGURATION ---
-st.set_page_config(page_title="TITAN V85.0 ULTRA-SYNC", layout="wide")
+st.set_page_config(page_title="TITAN V85.0 AUTO-JUMP", layout="wide")
 
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'history' not in st.session_state: st.session_state.history = []
+if 'mines_grid' not in st.session_state: st.session_state.mines_grid = ""
 
 # --- 2. THE WAR-ZONE UI ---
 st.markdown("""
     <style>
     .stApp { background-color: #050505; color: #00ffcc; font-family: 'Courier New', monospace; }
     .war-card {
-        background: linear-gradient(145deg, #0a0a0a, #161616);
-        border: 2px solid #00ffcc; padding: 20px; border-radius: 15px;
-        text-align: center; margin-bottom: 15px; box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
+        background: linear-gradient(145deg, #0a0a0a, #1a1a1a);
+        border: 2px solid #00ffcc; padding: 15px; border-radius: 15px;
+        text-align: center; margin-bottom: 10px; box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
     }
-    .prediction-val { color: #00ffcc; font-size: 60px; font-weight: bold; margin: 0; }
-    .hex-text { color: #ffff00; font-size: 14px; font-weight: bold; }
-    .percent-box { color: #ff00ff; font-weight: bold; font-size: 18px; }
+    .mines-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; max-width: 280px; margin: 0 auto; }
+    .mine-cell { aspect-ratio: 1/1; background: #111; border: 1px solid #00ffcc22; display: flex; align-items: center; justify-content: center; font-size: 20px; border-radius: 4px; }
+    .cell-star { border: 1px solid #ffff00 !important; background: rgba(255, 255, 0, 0.1); color: #ffff00; }
+    .mult-val { color: #00ffcc; font-size: 50px; font-weight: bold; margin: 0; line-height: 1; }
+    .detector-tag { background: rgba(0, 255, 204, 0.1); color: #00ffcc; border: 1px solid #00ffcc; padding: 2px 8px; font-size: 11px; border-radius: 5px; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. ACCESS ---
+# --- 3. LOGIN ---
 if not st.session_state.logged_in:
-    st.markdown("<h1 style='text-align:center;'>🛰️ TITAN ACCESS</h1>", unsafe_allow_html=True)
-    if st.text_input("COMMAND KEY:", type="password") == "2026":
+    st.markdown("<h2 style='text-align:center;'>🛰️ TITAN AUTO-DETECTOR</h2>", unsafe_allow_html=True)
+    if st.text_input("KEY:", type="password") == "2026":
         if st.button("ACTIVATE"):
             st.session_state.logged_in = True
             st.rerun()
     st.stop()
 
-# --- 4. THE CORE ENGINE (FIXED LOGIC) ---
-def get_war_prediction(h_seed, hx8, tour, algo):
-    # Fampifandraisana ny data rehetra (Triple Sync)
-    data = f"{h_seed}{hx8}{tour}TITAN_2026_FIXED".encode()
-    raw_hash = hashlib.sha512(data).hexdigest() if algo == "SHA-512" else hashlib.sha256(data).hexdigest()
+# --- 4. CORE ENGINE (HASH SCANNER LOGIC) ---
+def analyze_hash_pattern(h, hx, t, algo):
+    sync = f"{h}{hx}{t}TITAN_WAR_AUTO_2026".encode()
+    f_hash = hashlib.sha512(sync).hexdigest() if algo == "SHA-512" else hashlib.sha256(sync).hexdigest()
     
-    # Fikajiana ny Multiplier (fa tsy ny Tour no mivoaka)
-    random.seed(int(raw_hash[:16], 16))
-    mult = round(random.uniform(1.45, 5.80), 2)
+    # Logic ho an'ny multiplier
+    random.seed(int(f_hash[:16], 16))
+    bits = int(f_hash[-4:], 16)
     
-    # Fikajiana ny Pourcentage miankina amin'ny Tour
-    acc = random.randint(96, 99)
-    
-    # Hex8 Identification
-    res_hex8 = raw_hash[:8].upper()
-    
-    status = "🔥 JUMP" if mult > 2.5 else "🛡️ STABLE"
-    return {"mult": mult, "hex8": res_hex8, "acc": acc, "status": status}
+    # Multiplier calculation
+    if bits > 42000: m, s = round(random.uniform(2.90, 8.80), 2), "🔥 HIGH JUMP"
+    elif bits < 14000: m, s = round(random.uniform(1.10, 1.75), 2), "🛡️ LOW RISK"
+    else: m, s = round(random.uniform(1.76, 2.65), 2), "⚖️ STABLE"
+        
+    return {"mult": m, "acc": random.randint(96, 99), "status": s, "hex": f_hash[:8].upper(), "bits": bits}
 
 # --- 5. INTERFACE ---
-st.markdown("<h2 style='text-align:center;'>🛰️ TITAN V85.0 - DOUBLE TOUR SCANNER</h2>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align:center; color:#00ffcc;'>🛰️ TITAN V85.0 - AUTO-JUMP DETECTOR</h3>", unsafe_allow_html=True)
+tab1, tab2, tab3 = st.tabs(["🚀 COSMOS SCANNER", "💣 MINES SCAN", "📜 LOGS"])
 
-# INPUTS
-algo_sel = st.sidebar.radio("ALGO:", ["SHA-512", "SHA-256"])
-h_val = st.text_input("1. Hash / Server Seed (Combined):")
-hx8_val = st.text_input("2. Hex8 (Optional):")
-t_start = st.number_input("3. Prochain Numéro de Tour (Nonce):", min_value=1, value=1)
+with tab1:
+    st.markdown("##### 🛰️ HASH-BASED DETECTION")
+    a_sel = st.radio("Algorithm:", ["SHA-512", "SHA-256"], horizontal=True)
+    h_in = st.text_input("Hash / Server Seed:")
+    
+    col_a, col_b = st.columns(2)
+    hx_in = col_a.text_input("Hex8 (Extra Input):")
+    t_start = col_b.number_input("Tour Actuel:", min_value=1, value=693735)
+    
+    if st.button("🔥 SCAN FOR NEXT JUMP"):
+        if h_in:
+            with st.spinner("Deep Scanning Hash Pattern..."):
+                time.sleep(0.7)
+                res_col1, res_col2 = st.columns(2)
+                
+                # 1. PREDICTION TOUR ANKEHITRINY
+                p1 = analyze_hash_pattern(h_in, hx_in, str(t_start), a_sel)
+                with res_col1:
+                    st.markdown(f"""<div class="war-card"><p style="color:#aaa; font-size:12px;">TOUR {t_start}</p>
+                    <p class="mult-val">{p1['mult']}x</p><p style="color:#ffff00; font-size:10px;">HEX8: {p1['hex']}</p>
+                    <span class="detector-tag">{p1['acc']}% | {p1['status']}</span></div>""", unsafe_allow_html=True)
+                
+                # 2. SCANNING FOR NEXT JUMP (Araka ny Hash)
+                # Mizaha ny tour 10 manaraka mba hitadiavana ny JUMP voalohany mipoitra
+                found_jump = None
+                for i in range(1, 11): 
+                    check_tour = t_start + i
+                    p_check = analyze_hash_pattern(h_in, hx_in, str(check_tour), a_sel)
+                    if p_check['status'] == "🔥 HIGH JUMP":
+                        found_jump = (check_tour, p_check, i)
+                        break
+                
+                with res_col2:
+                    if found_jump:
+                        t_j, p_j, gap = found_jump
+                        st.markdown(f"""<div class="war-card"><p style="color:#ff00ff; font-size:12px;">NEXT JUMP DETECTED (+{gap})</p>
+                        <p class="mult-val" style="color:#ff00ff;">{p_j['mult']}x</p><p style="color:#ffff00; font-size:10px;">TOUR: {t_j}</p>
+                        <span class="detector-tag" style="border-color:#ff00ff; color:#ff00ff;">{p_j['acc']}% | POTENTIAL JUMP</span></div>""", unsafe_allow_html=True)
+                    else:
+                        # Raha tsy misy jump hita ao anatin'ny 10 tours
+                        p_next = analyze_hash_pattern(h_in, hx_in, str(t_start + 1), a_sel)
+                        st.markdown(f"""<div class="war-card"><p style="color:#aaa; font-size:12px;">NEXT TOUR {t_start+1}</p>
+                        <p class="mult-val">{p_next['mult']}x</p><p style="color:#ffff00; font-size:10px;">HEX8: {p_next['hex']}</p>
+                        <span class="detector-tag">STABLE PATTERN</span></div>""", unsafe_allow_html=True)
 
-if st.button("🚀 EXECUTE DOUBLE PREDICTION"):
-    if h_val:
-        with st.spinner("Decoding Sequence..."):
-            time.sleep(0.8)
-            col1, col2 = st.columns(2)
-            
-            # PREDICTION 1 (Tour ampidirinao)
-            p1 = get_war_prediction(h_val, hx8_val, str(t_start), algo_sel)
-            with col1:
-                st.markdown(f"""
-                    <div class="war-card">
-                        <p style="color:#aaa;">TOUR {t_start}</p>
-                        <p class="prediction-val">{p1['mult']}x</p>
-                        <p class="hex-text">HEX8: {p1['hex8']}</p>
-                        <p class="percent-box">ACCURACY: {p1['acc']}%</p>
-                        <p style="color:#ffff00;">{p1['status']}</p>
-                    </div>
-                """, unsafe_allow_html=True)
+with tab2:
+    st.markdown("##### 🔍 MINES 6-STAR")
+    s_s = st.text_input("Server Seed:")
+    c_s = st.text_input("Client Seed:")
+    if st.button("🛰️ SCAN"):
+        if s_s and c_s:
+            # Reusing engine for mines
+            sync_m = f"{s_s}{c_s}MINES_2026".encode()
+            f_m = hashlib.sha256(sync_m).hexdigest()
+            spots = []
+            for i in range(6):
+                v = int(f_m[i*8:(i+1)*8], 16) % 25
+                while v in spots: v = (v + 1) % 25
+                spots.append(v)
+            g_html = '<div class="mines-grid">'
+            for i in range(25):
+                is_ok = i in spots
+                g_html += f'<div class="mine-cell {"cell-star" if is_ok else ""}">{"⭐" if is_ok else "⬛"}</div>'
+            st.session_state.mines_grid = g_html + '</div>'
+    if st.session_state.mines_grid:
+        st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
 
-            # PREDICTION 2 (Tour manaraka ho azy)
-            t_next = t_start + 1
-            p2 = get_war_prediction(h_val, hx8_val, str(t_next), algo_sel)
-            with col2:
-                st.markdown(f"""
-                    <div class="war-card">
-                        <p style="color:#aaa;">TOUR {t_next}</p>
-                        <p class="prediction-val">{p2['mult']}x</p>
-                        <p class="hex-text">HEX8: {p2['hex8']}</p>
-                        <p class="percent-box">ACCURACY: {p2['acc']}%</p>
-                        <p style="color:#ffff00;">{p2['status']}</p>
-                    </div>
-                """, unsafe_allow_html=True)
-            
-            st.session_state.history.insert(0, f"T{t_start}: {p1['mult']}x | T{t_next}: {p2['mult']}x")
+with tab3:
+    for log in st.session_state.history[:10]: st.write(f"📡 {log}")

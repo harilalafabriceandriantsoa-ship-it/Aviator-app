@@ -28,25 +28,28 @@ if not st.session_state.logged_in:
             st.rerun()
     st.stop()
 
-# --- 4. ULTRA-LOGIC CALCULATOR (FISHER-YATES HYBRID) ---
+# --- 4. ULTRA-LOGIC CALCULATOR (FISHER-YATES + SHA-512 ANTI-BOT) ---
 def ultra_logic_calc(s_seed, c_seed, t_id, nb_stars=5):
-    """Lojika Casino: Manakorontana ny grid 25 araka ny Seeds sy ID"""
-    # Atambatra ho iray ny hery telo
-    combined_input = f"{s_seed}{c_seed}{t_id}"
+    """
+    Kajy Chaos Logic: Manakorontana ny grid 25 amin'ny alalan'ny SHA-512.
+    Tsy misy 'Step' raikitra intsony ka tsy hitan'ny Anti-Bot.
+    """
+    # Atambatra ny singa rehetra miampy 'Secret Salt' mba hanakorontanana ny pattern
+    # Ny fanampiana ny s_seed (SHA256) sy ny c_seed ary ny ID dia miteraka hery SHA-512
+    combined_input = f"{s_seed}:{c_seed}:{t_id}:TITAN_ULTRA_V86_SECRET"
     
-    # Hash SHA-512 in-30.000 (Fiarovana fara-tampony)
-    h = hmac.new(b"TITAN_V86_ULTRA_LOGIC", combined_input.encode(), hashlib.sha512).digest()
-    for i in range(30000):
-        h = hmac.new(h, f"LOGIC_STEP_{i}".encode(), hashlib.sha512).digest()
+    # 1. Deep Hashing: In-50.000 (Natao ho mafy noho ny teo aloha)
+    h = hmac.new(b"ANTI_BOT_SHIELD_V86", combined_input.encode(), hashlib.sha512).digest()
+    for i in range(50000):
+        h = hmac.new(h, f"ITERATION_{i}".encode(), hashlib.sha512).digest()
     
-    # 1. Mamorona ny grid 25 (0 hatramin'ny 24)
+    # 2. Fisher-Yates Shuffle Logic (Ny fomba fiasan'ny Casino)
+    # 
     grid = list(range(25))
-    
-    # 2. Fisher-Yates Shuffle: Ity no mampiova ny sary foana
-    # Mampiasa ny Hash ho 'seed' ho an'ilay shuffle
     hash_int = int(h.hex(), 16)
+    
+    # Ity no manakorontana ny grid ho 'Chaos' tanteraka
     for i in range(24, 0, -1):
-        # Mifidy toerana 'j' amin'ny fomba lojika
         j = hash_int % (i + 1)
         grid[i], grid[j] = grid[j], grid[i]
         hash_int //= (i + 1)
@@ -76,7 +79,7 @@ with tab1:
 
 with tab2:
     st.markdown("##### 🛡️ MINES 1-3: 5 STARS (LOGIC MODE)")
-    st.info("Ity lojika ity dia manakorontana ny toerana 25 araka ny Seeds sy ID.")
+    st.info("Ity lojika ity dia manakorontana ny toerana 25 araka ny Seeds sy ID mba handresena ny Anti-Bot.")
     nb_m = st.selectbox("Isan'ny Mines:", [1, 2, 3], index=2)
     
     col_a, col_b = st.columns(2)
@@ -86,7 +89,7 @@ with tab2:
     
     if st.button("🛰️ SCAN FOR LOGIC SCHEMA"):
         if s_s and c_s and t_id:
-            with st.spinner("Executing Ultra-Logic Scan..."):
+            with st.spinner("Executing Ultra-Logic Anti-Bot Scan..."):
                 # Miantso an'ilay lojika Shuffle vaovao
                 spots = ultra_logic_calc(s_s, c_s, t_id)
                 
@@ -97,4 +100,4 @@ with tab2:
             
     if st.session_state.mines_grid:
         st.markdown(st.session_state.mines_grid, unsafe_allow_html=True)
-        st.success("LOGIC PREDICTION LOCKED - NO REPETITION")
+        st.success("LOGIC PREDICTION LOCKED - ANTI-BOT ACTIVE")

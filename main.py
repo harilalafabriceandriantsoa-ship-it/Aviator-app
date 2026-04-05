@@ -28,27 +28,30 @@ if not st.session_state.logged_in:
             st.rerun()
     st.stop()
 
-# --- 4. ULTRA-LOGIC CALCULATOR (NO MORE STEP REPETITION) ---
+# --- 4. ULTRA-LOGIC CALCULATOR (FISHER-YATES HYBRID) ---
 def ultra_logic_calc(s_seed, c_seed, t_id, nb_stars=5):
-    """Mampiasa lojika casino (Fisher-Yates) mba hampiova schema foana"""
+    """Lojika Casino: Manakorontana ny grid 25 araka ny Seeds sy ID"""
+    # Atambatra ho iray ny hery telo
     combined_input = f"{s_seed}{c_seed}{t_id}"
-    # Hash SHA-512 in-30.000 (nohamafisina)
+    
+    # Hash SHA-512 in-30.000 (Fiarovana fara-tampony)
     h = hmac.new(b"TITAN_V86_ULTRA_LOGIC", combined_input.encode(), hashlib.sha512).digest()
     for i in range(30000):
         h = hmac.new(h, f"LOGIC_STEP_{i}".encode(), hashlib.sha512).digest()
     
-    # 1. Mamorona ny toerana 0 hatramin'ny 24
+    # 1. Mamorona ny grid 25 (0 hatramin'ny 24)
     grid = list(range(25))
     
-    # 2. Fisher-Yates Shuffle miorina amin'ny Hash
-    # Ity no lojika mahatonga ny schema ho vaovao foana isaky ny miova ny ID
+    # 2. Fisher-Yates Shuffle: Ity no mampiova ny sary foana
+    # Mampiasa ny Hash ho 'seed' ho an'ilay shuffle
     hash_int = int(h.hex(), 16)
     for i in range(24, 0, -1):
+        # Mifidy toerana 'j' amin'ny fomba lojika
         j = hash_int % (i + 1)
         grid[i], grid[j] = grid[j], grid[i]
         hash_int //= (i + 1)
         
-    # 3. Maka ny kintana 5 voalohany avy amin'ilay grid efa nikorontana
+    # 3. Maka ny kintana 5 voalohany amin'ilay grid efa nikorontana
     return grid[:nb_stars]
 
 # --- 5. INTERFACE ---
@@ -65,7 +68,6 @@ with tab1:
         if h_in:
             with st.spinner("Deep Scan (10,000 passes)..."):
                 off = (int(hashlib.md5(h_in.encode()).hexdigest()[:1], 16) % 2) + 2
-                # Ampiasaina ny lojika hybrid koa eto
                 res_hash = hashlib.sha512(f"{h_in}{hx_in}{t_act+off}".encode()).hexdigest()
                 random.seed(int(res_hash[:16], 16))
                 f = int(res_hash[-12:], 16) / 281474976710655.0

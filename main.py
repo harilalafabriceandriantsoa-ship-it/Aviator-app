@@ -3,7 +3,7 @@ import hashlib, hmac, random, datetime
 
 # --- CONFIGURATION ---
 LOGIN_KEY = "2026"
-st.set_page_config(page_title="TITAN V87 - ULTRA MACHINE", layout="wide")
+st.set_page_config(page_title="TITAN V89 - ULTRA MACHINE", layout="wide")
 
 # --- STYLE ---
 st.markdown("""
@@ -16,9 +16,9 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- MINES ENGINE (fortified) ---
-def mines_ultra_engine(hash_val, hex_val, tour_id, choice=1):
-    base = f"{hash_val}:{hex_val}:{tour_id}:{choice}:MINES_V87"
+# --- MINES ENGINE (server seed + client seed + choice) ---
+def mines_ultra_engine(server_seed, client_seed, nonce, choice=1):
+    base = f"{server_seed}:{client_seed}:{nonce}:{choice}:MINES_V89"
     h1 = hashlib.sha512(base.encode()).digest()
     h2 = hashlib.blake2b(h1).digest()
     h3 = hashlib.sha3_256(h2).digest()
@@ -33,9 +33,9 @@ def mines_ultra_engine(hash_val, hex_val, tour_id, choice=1):
     random.shuffle(grid)
     return grid[:5]
 
-# --- COSMOS ENGINE (hash, hex, tour actuel only) ---
-def cosmos_ultra_engine(hash_val, hex_val, tour_id, iters=120000):
-    base = f"{hash_val}:{hex_val}:{tour_id}:COSMOSX_V87"
+# --- COSMOS ENGINE (hash, hex, tour actuel + jump variable) ---
+def cosmos_ultra_engine(hash_val, hex_val, tour_id, iters=100000):
+    base = f"{hash_val}:{hex_val}:{tour_id}:COSMOSX_V89"
     h1 = hmac.new(b"COSMOS_CORE", base.encode(), hashlib.sha512).digest()
     for i in range(iters):
         h1 = hmac.new(h1, f"STEP_{i}".encode(), hashlib.sha512).digest()
@@ -43,9 +43,15 @@ def cosmos_ultra_engine(hash_val, hex_val, tour_id, iters=120000):
     sha3 = hashlib.sha3_256(blake).digest()
     final = bytes(a ^ b ^ c for a, b, c in zip(h1, blake, sha3))
     hex_out = final.hex()
-    return {"hex": hex_out, "tour": tour_id}
+    p_int = int(hex_out[:12], 16)
+    # Jump variable logic arakaraka ny hash
+    jumps = []
+    for k in range(3):
+        jumps.append((p_int % (5 + k)) + (2 + k))
+        p_int //= (7 + k)
+    return {"hex": hex_out, "tour": tour_id, "jumps": jumps}
 
-# --- AVIATOR ENGINE (unchanged) ---
+# --- AVIATOR ENGINE (heure d’entrée + logic) ---
 def aviator_studio_engine(hex_val, heure):
     h_int = int(hex_val[:16], 16)
     mask = int(heure.replace(":", ""))
@@ -60,7 +66,7 @@ def aviator_studio_engine(hex_val, heure):
     }
 
 # --- LOGIN ---
-st.markdown("<h2 style='text-align:center;'>🔐 TITAN V87 - ADMIN LOGIN</h2>", unsafe_allow_html=True)
+st.markdown("<h2 style='text-align:center;'>🔐 TITAN V89 - ADMIN LOGIN</h2>", unsafe_allow_html=True)
 admin_input = st.text_input("Enter Admin Code:", type="password")
 
 if admin_input == LOGIN_KEY:
@@ -69,14 +75,16 @@ if admin_input == LOGIN_KEY:
     tab1, tab2, tab3 = st.tabs(["🌌 COSMOSX", "✈️ AVIATOR STUDIO", "💣 MINES ULTRA"])
 
     with tab1:
-        st.markdown("##### 🌌 COSMOSX SCAN (Hash + Hex + Tour)")
+        st.markdown("##### 🌌 COSMOSX PREDICTION (Hash + Hex + Tour + Jumps)")
         h_val = st.text_input("Hash Value:", key="cosmos_hash")
         x_val = st.text_input("Hex Value:", key="cosmos_hex")
         t_id = st.number_input("Tour Actuel:", min_value=1, value=10001, key="cosmos_t")
         if st.button("🚀 EXECUTE COSMOS", key="btn_cosmos"):
-            res = cosmos_ultra_engine(h_val, x_val, t_id)
-            st.code(f"HEX: {res['hex'][:48]}...", language="bash")
-            st.write("Tour Actuel:", res["tour"])
+            res1 = cosmos_ultra_engine(h_val, x_val, t_id)
+            res2 = cosmos_ultra_engine(h_val, x_val, t_id+1)
+            st.code(f"HEX: {res1['hex'][:48]}...", language="bash")
+            st.write("Tour 1:", res1["tour"], "Jumps:", res1["jumps"])
+            st.write("Tour 2:", res2["tour"], "Jumps:", res2["jumps"])
 
     with tab2:
         st.markdown("##### ✈️ AVIATOR STUDIO PREDICTION")
@@ -89,13 +97,13 @@ if admin_input == LOGIN_KEY:
             st.write(f"Accuracy: {int(res['accuracy']*100)}%")
 
     with tab3:
-        st.markdown("##### 💣 MINES ULTRA LOGIC")
-        h_val = st.text_input("Hash Value:", key="mines_hash")
-        x_val = st.text_input("Hex Value:", key="mines_hex")
-        t_id = st.text_input("Tour ID:", key="mines_tour")
-        m_choice = st.slider("Select Mines Pattern:", 1, 3, 1, key="m_choice")
+        st.markdown("##### 💣 MINES ULTRA LOGIC (Server Seed + Client Seed + Choice)")
+        m_s = st.text_input("Server Seed:", key="m_s")
+        m_c = st.text_input("Client Seed:", key="m_c")
+        m_nonce = st.text_input("Nonce / ID Partie:", key="m_n")
+        m_choice = st.slider("Select Mines Pattern (1–3):", 1, 3, 1, key="m_choice")
         if st.button("🛰️ SCAN MINES", key="btn_mines"):
-            schema = mines_ultra_engine(h_val, x_val, t_id, m_choice)
+            schema = mines_ultra_engine(m_s, m_c, m_nonce, m_choice)
             grid_html = '<div class="mines-grid">'
             for i in range(25):
                 grid_html += f'<div class="mine-cell {"cell-star" if i in schema else ""}">{"⭐" if i in schema else "⬛"}</div>'

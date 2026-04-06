@@ -1,9 +1,5 @@
 import streamlit as st
-import hashlib, hmac, random, os
-from dotenv import load_dotenv
-
-# Load .env file (tsy voatery ampiasaina intsony raha login key mivantana)
-load_dotenv()
+import hashlib, hmac, random
 
 # --- LOGIN KEY DIRECT ---
 LOGIN_KEY = "2026"   # Afaka ovaina eto ny code key

@@ -1,6 +1,6 @@
 import streamlit as st
 import hashlib, hmac, random, os
-from dotenv import load_dotenv
+from dotenv import load_dotenv   # marina ny import
 
 # Load .env file (mitahiry ny admin code sy seeds)
 load_dotenv()

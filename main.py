@@ -1,13 +1,12 @@
 import streamlit as st
 import hashlib, hmac, random, os
-from dotenv import load_dotenv   # marina ny import
+from dotenv import load_dotenv
 
-# Load .env file (mitahiry ny admin code sy seeds)
+# Load .env file (tsy voatery ampiasaina intsony raha login key mivantana)
 load_dotenv()
 
-ADMIN_CODE = os.getenv("ADMIN_CODE")  # ianao ihany no mahafantatra
-COSMOS_SERVER_SEED = os.getenv("COSMOS_SERVER_SEED")
-COSMOS_CLIENT_SEED = os.getenv("COSMOS_CLIENT_SEED")
+# --- LOGIN KEY DIRECT ---
+LOGIN_KEY = "2026"   # Afaka ovaina eto ny code key
 
 st.set_page_config(page_title="APP 2026 - COSMOSX, AVIATOR & MINES", layout="wide")
 
@@ -54,7 +53,7 @@ st.markdown("<h2 style='text-align:center;'>🔐 APP 2026 - ADMIN LOGIN</h2>", u
 admin_input = st.text_input("Enter Admin Code:", type="password")
 
 if admin_input:
-    if hashlib.sha256(admin_input.encode()).hexdigest() == hashlib.sha256(ADMIN_CODE.encode()).hexdigest():
+    if admin_input == LOGIN_KEY:   # mampiasa login key mivantana
         st.success("✅ Admin login successful")
         
         # Tabs rehefa tafiditra
@@ -62,8 +61,8 @@ if admin_input:
 
         with tab1:
             st.markdown("##### 🌌 COSMOSX PREDICTION")
-            s_seed = st.text_input("Server Seed (code key):", value=COSMOS_SERVER_SEED)
-            c_seed = st.text_input("Client Seed (code key):", value=COSMOS_CLIENT_SEED)
+            s_seed = st.text_input("Server Seed (code key):")
+            c_seed = st.text_input("Client Seed (code key):")
             t_id = st.number_input("Tour ID (Numéro de tour actuel - code key):", min_value=1, value=2026001)
             if st.button("🚀 RUN COSMOSX"):
                 result = cosmos_prediction(s_seed, c_seed, t_id)

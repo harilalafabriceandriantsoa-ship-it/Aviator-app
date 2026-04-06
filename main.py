@@ -104,4 +104,9 @@ with tab3:
     vn = st.text_input("Verifier Game ID:", key="verifier_game_id")
     if st.button("🔎 VERIFY SCHEMA", key="btn_verify_schema"):
         schema = mines_schema(vs, vc, vn)
-        st.success(f"Schema Verified: {schema}")
+        grid_html = '<div class="mines-grid">'
+        for i in range(25):
+            grid_html += f'<div class="mine-cell {"cell-star" if i in schema else ""}">{"⭐" if i in schema else "⬛"}</div>'
+        grid_html += '</div>'
+        st.markdown(grid_html, unsafe_allow_html=True)
+        st.info("Verifier is the official source of truth. If results differ, trust this schema.")

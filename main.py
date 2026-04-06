@@ -53,7 +53,8 @@ def lethal_engine(s_seed, c_seed, t_id, iters=None):
     final = bytes(a ^ b for a, b in zip(h, blake))
     return final.hex()
 
-def mines_schema(server_seed, client_seed, nonce):
+def mines_schema(server_seed, client_seed, nonce, mines_count=3):
+    """Generate schema with adjustable mine count (default 3)."""
     h = hashlib.sha512(f"{server_seed}:{client_seed}:{nonce}".encode()).hexdigest()
     hash_int = int(h, 16)
     grid = list(range(25))
@@ -65,7 +66,11 @@ def mines_schema(server_seed, client_seed, nonce):
     # Shuffle 2
     random.seed(int(h[-16:], 16))
     random.shuffle(grid)
-    return grid[:5]
+    return grid[:mines_count]
+
+def rotate_seed(seed: str) -> str:
+    """Rotate seed if loss occurs."""
+    return seed[::-1]  # simple rotation logic
 
 # --- 5. INTERFACE ---
 st.markdown("<h3 style='text-align:center;'>🛰️ TITAN V86.7 - DYNAMIC DEATH MACHINE</h3>", unsafe_allow_html=True)
@@ -85,25 +90,32 @@ with tab1:
         st.write("Dynamic Jumps:", [j1, j2, j3])
 
 with tab2:
-    st.markdown("##### 🛡️ MINES SCHEMA")
+    st.markdown("##### 🛡️ MINES SCHEMA (1–3 mines)")
     s_s = st.text_input("Server Seed:", key="mines_server_seed")
     c_s = st.text_input("Client Seed:", key="mines_client_seed")
     t_id = st.text_input("Game ID:", key="mines_game_id")
+    mines_count = st.slider("Select Mines Count (1–3):", 1, 3, 3, key="mines_count")
     if st.button("🛰️ GENERATE SCHEMA", key="btn_generate_schema"):
-        schema = mines_schema(s_s, c_s, t_id)
+        schema = mines_schema(s_s, c_s, t_id, mines_count)
         grid_html = '<div class="mines-grid">'
         for i in range(25):
             grid_html += f'<div class="mine-cell {"cell-star" if i in schema else ""}">{"⭐" if i in schema else "⬛"}</div>'
         grid_html += '</div>'
         st.markdown(grid_html, unsafe_allow_html=True)
 
+        # Rotate seed if loss detected (example logic)
+        if len(schema) == 0:
+            s_s = rotate_seed(s_s)
+            st.warning("Loss detected. Server Seed rotated for next round.")
+
 with tab3:
     st.markdown("##### 🔍 VERIFIER")
     vs = st.text_input("Verifier Server Seed:", key="verifier_server_seed")
     vc = st.text_input("Verifier Client Seed:", key="verifier_client_seed")
     vn = st.text_input("Verifier Game ID:", key="verifier_game_id")
+    mines_count_v = st.slider("Verifier Mines Count (1–3):", 1, 3, 3, key="verifier_mines_count")
     if st.button("🔎 VERIFY SCHEMA", key="btn_verify_schema"):
-        schema = mines_schema(vs, vc, vn)
+        schema = mines_schema(vs, vc, vn, mines_count_v)
         grid_html = '<div class="mines-grid">'
         for i in range(25):
             grid_html += f'<div class="mine-cell {"cell-star" if i in schema else ""}">{"⭐" if i in schema else "⬛"}</div>'

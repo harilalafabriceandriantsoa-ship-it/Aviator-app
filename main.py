@@ -23,8 +23,8 @@ st.markdown("""
 # --- 3. LOGIN ---
 if not st.session_state.logged_in:
     st.markdown("<h2 style='text-align:center;'>💀 TITAN DYNAMIC MACHINE</h2>", unsafe_allow_html=True)
-    if st.text_input("ENTER MASTER KEY:", type="password") == "2026":
-        if st.button("ACTIVATE LETHAL MODE"):
+    if st.text_input("ENTER MASTER KEY:", type="password", key="login_key") == "2026":
+        if st.button("ACTIVATE LETHAL MODE", key="btn_login"):
             st.session_state.logged_in = True
             st.rerun()
     st.stop()
@@ -73,10 +73,10 @@ tab1, tab2, tab3 = st.tabs(["🚀 COSMOS", "💣 MINES", "🔍 VERIFIER"])
 
 with tab1:
     st.markdown("##### 🛡️ COSMOS JUMP")
-    h_in = st.text_input("Server Seed / Hash:")
-    hx_in = st.text_input("Client Seed:")
-    t_act = st.number_input("Tour Actuel:", min_value=1, value=8137473)
-    if st.button("🚀 EXECUTE DYNAMIC SCAN"):
+    h_in = st.text_input("Server Seed / Hash:", key="cosmos_server_seed")
+    hx_in = st.text_input("Client Seed:", key="cosmos_client_seed")
+    t_act = st.number_input("Tour Actuel:", min_value=1, value=8137473, key="cosmos_tour")
+    if st.button("🚀 EXECUTE DYNAMIC SCAN", key="btn_cosmos_scan"):
         pilot_hash = lethal_engine(h_in, hx_in, t_act, 15000)
         p_int = int(pilot_hash[:8], 16)
         j1 = (p_int % 3) + 2
@@ -86,10 +86,10 @@ with tab1:
 
 with tab2:
     st.markdown("##### 🛡️ MINES SCHEMA")
-    s_s = st.text_input("Server Seed:")
-    c_s = st.text_input("Client Seed:")
-    t_id = st.text_input("Game ID:")
-    if st.button("🛰️ GENERATE SCHEMA"):
+    s_s = st.text_input("Server Seed:", key="mines_server_seed")
+    c_s = st.text_input("Client Seed:", key="mines_client_seed")
+    t_id = st.text_input("Game ID:", key="mines_game_id")
+    if st.button("🛰️ GENERATE SCHEMA", key="btn_generate_schema"):
         schema = mines_schema(s_s, c_s, t_id)
         grid_html = '<div class="mines-grid">'
         for i in range(25):
@@ -99,9 +99,9 @@ with tab2:
 
 with tab3:
     st.markdown("##### 🔍 VERIFIER")
-    vs = st.text_input("Verifier Server Seed:")
-    vc = st.text_input("Verifier Client Seed:")
-    vn = st.text_input("Verifier Game ID:")
-    if st.button("🔎 VERIFY SCHEMA"):
+    vs = st.text_input("Verifier Server Seed:", key="verifier_server_seed")
+    vc = st.text_input("Verifier Client Seed:", key="verifier_client_seed")
+    vn = st.text_input("Verifier Game ID:", key="verifier_game_id")
+    if st.button("🔎 VERIFY SCHEMA", key="btn_verify_schema"):
         schema = mines_schema(vs, vc, vn)
         st.success(f"Schema Verified: {schema}")

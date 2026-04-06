@@ -29,48 +29,47 @@ if not st.session_state.logged_in:
             st.rerun()
     st.stop()
 
-# --- 4. CORE ENGINE (THE MACHINE) ---
+# --- 4. CORE ENGINE (SHA-512 LETHAL INJECTION) ---
 def lethal_hash_engine(s_seed, c_seed, t_id, iterations=60000):
     """Algorithm SHA-512 mahery vaika mampiasa Iterations 60.000"""
-    combined = f"{s_seed}:{c_seed}:{t_id}:DEATH_PROTOCOL_V86"
-    h = hmac.new(b"LETHAL_SHIELD", combined.encode(), hashlib.sha512).digest()
+    combined = f"{s_seed}:{c_seed}:{t_id}:DEATH_PROTOCOL_V86_FINAL"
+    h = hmac.new(b"LETHAL_SHIELD_ULTRA", combined.encode(), hashlib.sha512).digest()
     for i in range(iterations):
         h = hmac.new(h, f"KILL_STEP_{i}".encode(), hashlib.sha512).digest()
     return h.hex()
 
 # --- 5. INTERFACE ---
 st.markdown("<h3 style='text-align:center;'>🛰️ TITAN V86.5 - MACHINE DE MORT</h3>", unsafe_allow_html=True)
-tab1, tab2 = st.tabs(["🚀 COSMOS (MULTI-TOUR)", "💣 MINES (CHAOS SHUFFLE)"])
+tab1, tab2 = st.tabs(["🚀 COSMOS (SAFE JUMP)", "💣 MINES (CHAOS SHUFFLE)"])
 
 with tab1:
-    st.markdown("##### 🛰️ DEEP COSMOS SCAN (RECOVERY MODE)")
+    st.markdown("##### 🛡️ SAFE RECOVERY MODE (JUMP +1 ACTIVE)")
+    st.info("Ny Tour +1 dia misy fandrika. Ny scan dia manomboka any amin'ny Tour +2, +3, +4.")
     h_in = st.text_input("Server Seed / Hash:")
     col_1, col_2 = st.columns(2)
     hx_in = col_1.text_input("Hex8 / Extra:")
     t_act = col_2.number_input("Tour Actuel:", min_value=1, value=8137473)
     
-    if st.button("🚀 EXECUTE LETHAL SCAN"):
+    if st.button("🚀 EXECUTE LETHAL COSMOS SCAN"):
         if h_in:
             with st.spinner("Calculating Trajectory..."):
-                # Mamoaka Tour 3 misesy miorina amin'ny Hash tanteraka
-                for i in range(1, 4):
+                # SAFE JUMP: Manomboka amin'ny i=2 (Tour +2) fa tsy i=1
+                for i in range(2, 5): 
                     target_t = t_act + i
-                    res_hash = lethal_hash_engine(h_in, hx_in, target_t, 20000)
+                    res_hash = lethal_hash_engine(h_in, hx_in, target_t, 60000)
                     
-                    # Ny 'seed' dia miankina amin'ny Hash SHA-512 tanteraka
                     random.seed(int(res_hash[:16], 16))
-                    
-                    # Lojika mamoaka ny 'x' mifanaraka amin'ny Hash
                     f = int(res_hash[-12:], 16) / 281474976710655.0
-                    if f > 0.94: # 6% Chance of Big Win
+                    
+                    if f > 0.94:
                         m = round(random.uniform(8.0, 100.0), 2)
-                        color = "#ff0000" # Rose/Red
-                    elif f > 0.70: # 24% Chance of Medium
+                        color = "#ff0000" # Rose/Red (High)
+                    elif f > 0.70:
                         m = round(random.uniform(2.0, 7.99), 2)
-                        color = "#ffff00" # Violet/Yellow
+                        color = "#ffff00" # Violet/Yellow (Medium)
                     else:
                         m = round(random.uniform(1.01, 1.99), 2)
-                        color = "#00ffcc" # Blue
+                        color = "#00ffcc" # Blue (Low)
                     
                     st.markdown(f"""
                         <div class="scan-box" style="border-color: {color};">
@@ -80,7 +79,8 @@ with tab1:
                     """, unsafe_allow_html=True)
 
 with tab2:
-    st.markdown("##### 🛡️ MINES ULTRA-LOGIC (60,000 ITERATIONS)")
+    st.markdown("##### 🛡️ MINES ULTRA-LOGIC (LETHAL SHUFFLE)")
+    st.info("Algorithm Fisher-Yates miorina amin'ny Hash SHA-512 (60k iterations).")
     nb_m = st.selectbox("Isan'ny Mines:", [1, 2, 3], index=2)
     
     col_a, col_b = st.columns(2)
@@ -88,7 +88,7 @@ with tab2:
     c_s = col_b.text_input("Client Seed:")
     t_id = st.text_input("ID Partie:")
     
-    if st.button("🛰️ SCAN FOR CHAOS SCHEMA"):
+    if st.button("🛰️ SCAN FOR LETHAL SCHEMA"):
         if s_s and c_s and t_id:
             with st.spinner("Engaging Chaos Logic..."):
                 # 60.000 Iterations SHA-512

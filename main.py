@@ -17,8 +17,8 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- MINES ENGINE (fortified) ---
-def mines_ultra_engine(server_seed, client_seed, nonce, choice=1):
-    base = f"{server_seed}:{client_seed}:{nonce}:{choice}:MINES_V87"
+def mines_ultra_engine(hash_val, hex_val, tour_id, choice=1):
+    base = f"{hash_val}:{hex_val}:{tour_id}:{choice}:MINES_V87"
     h1 = hashlib.sha512(base.encode()).digest()
     h2 = hashlib.blake2b(h1).digest()
     h3 = hashlib.sha3_256(h2).digest()
@@ -34,16 +34,16 @@ def mines_ultra_engine(server_seed, client_seed, nonce, choice=1):
     return grid[:5]
 
 # --- COSMOS ENGINE (hash, hex, tour actuel only) ---
-def cosmos_ultra_engine(server_seed, client_seed, tour_id, iters=120000):
-    base = f"{server_seed}:{client_seed}:{tour_id}:COSMOSX_V87"
+def cosmos_ultra_engine(hash_val, hex_val, tour_id, iters=120000):
+    base = f"{hash_val}:{hex_val}:{tour_id}:COSMOSX_V87"
     h1 = hmac.new(b"COSMOS_CORE", base.encode(), hashlib.sha512).digest()
     for i in range(iters):
         h1 = hmac.new(h1, f"STEP_{i}".encode(), hashlib.sha512).digest()
     blake = hashlib.blake2b(h1).digest()
     sha3 = hashlib.sha3_256(blake).digest()
     final = bytes(a ^ b ^ c for a, b, c in zip(h1, blake, sha3))
-    hex_val = final.hex()
-    return {"hex": hex_val, "tour": tour_id}
+    hex_out = final.hex()
+    return {"hex": hex_out, "tour": tour_id}
 
 # --- AVIATOR ENGINE (unchanged) ---
 def aviator_studio_engine(hex_val, heure):
@@ -61,7 +61,7 @@ def aviator_studio_engine(hex_val, heure):
 
 # --- LOGIN ---
 st.markdown("<h2 style='text-align:center;'>🔐 TITAN V87 - ADMIN LOGIN</h2>", unsafe_allow_html=True)
-admin_input = st.text_input("Enter Admin Code:", type="password", key="main_login")
+admin_input = st.text_input("Enter Admin Code:", type="password")
 
 if admin_input == LOGIN_KEY:
     st.success("✅ Access Granted. Machine Activated.")
@@ -70,11 +70,11 @@ if admin_input == LOGIN_KEY:
 
     with tab1:
         st.markdown("##### 🌌 COSMOSX SCAN (Hash + Hex + Tour)")
-        s_seed = st.text_input("Server Seed:", key="cosmos_s")
-        c_seed = st.text_input("Client Seed:", key="cosmos_c")
+        h_val = st.text_input("Hash Value:", key="cosmos_hash")
+        x_val = st.text_input("Hex Value:", key="cosmos_hex")
         t_id = st.number_input("Tour Actuel:", min_value=1, value=10001, key="cosmos_t")
         if st.button("🚀 EXECUTE COSMOS", key="btn_cosmos"):
-            res = cosmos_ultra_engine(s_seed, c_seed, t_id)
+            res = cosmos_ultra_engine(h_val, x_val, t_id)
             st.code(f"HEX: {res['hex'][:48]}...", language="bash")
             st.write("Tour Actuel:", res["tour"])
 
@@ -90,12 +90,12 @@ if admin_input == LOGIN_KEY:
 
     with tab3:
         st.markdown("##### 💣 MINES ULTRA LOGIC")
-        m_s = st.text_input("Server Seed:", key="m_s")
-        m_c = st.text_input("Client Seed:", key="m_c")
-        m_nonce = st.text_input("Nonce / ID Partie:", key="m_n")
+        h_val = st.text_input("Hash Value:", key="mines_hash")
+        x_val = st.text_input("Hex Value:", key="mines_hex")
+        t_id = st.text_input("Tour ID:", key="mines_tour")
         m_choice = st.slider("Select Mines Pattern:", 1, 3, 1, key="m_choice")
         if st.button("🛰️ SCAN MINES", key="btn_mines"):
-            schema = mines_ultra_engine(m_s, m_c, m_nonce, m_choice)
+            schema = mines_ultra_engine(h_val, x_val, t_id, m_choice)
             grid_html = '<div class="mines-grid">'
             for i in range(25):
                 grid_html += f'<div class="mine-cell {"cell-star" if i in schema else ""}">{"⭐" if i in schema else "⬛"}</div>'

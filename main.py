@@ -1,5 +1,5 @@
 import streamlit as st
-import hashlib, hmac, random, statistics, datetime
+import hashlib, random, statistics
 import numpy as np
 
 try:
@@ -40,25 +40,43 @@ def draw_styled_board(schema):
     st.pyplot(fig)
 
 # --- COSMOS ENGINE ---
-def cosmos_premium_engine(server_seed, client_seed, tour_target):
-    base = f"{server_seed}:{client_seed}:{tour_target}:2026"
+def cosmos_premium_engine(server_seed, client_seed, tour_actuel):
+    base = f"{server_seed}:{client_seed}:{tour_actuel}:COSMOSX_V101"
     h = hashlib.sha512(base.encode()).digest()
     for i in range(1000):
         h = hashlib.sha512(h + str(i).encode()).digest()
     hex_res = h.hex()
+
+    # Kajy offset sy jumps variable avy amin'ny hash
+    p_int = int(hex_res[:16], 16)
+    jump1 = (p_int % 10) + 3   # variable jump
+    jump2 = (p_int % 15) + 5   # variable jump
+
+    # Tour vaovao
+    tour1 = tour_actuel + jump1
+    tour2 = tour_actuel + jump2
+
+    # Metrics
     vals = [int(hex_res[i:i+2],16)/10 for i in range(0,20,2)]
+    min_val = min(vals)
+    max_val = max(vals)
+    mean_val = round(statistics.mean(vals),2)
+    accuracy = round((mean_val/max_val)*100,2)
+
     return {
-        "min": min(vals),
-        "mean": round(statistics.mean(vals),2),
-        "max": max(vals),
-        "accuracy": round(91+(random.random()*8),2),
-        "prediction": round(statistics.median(vals),2),
-        "hex": hex_res[:64]
+        "hex": hex_res[:64],
+        "tour_actuel": tour_actuel,
+        "tour1": tour1,
+        "tour2": tour2,
+        "min": min_val,
+        "mean": mean_val,
+        "max": max_val,
+        "accuracy": accuracy
     }
 
 # --- MINES ENGINE ---
 def mines_premium_engine(s_seed,c_seed,nb_mines):
-    base = f"{s_seed}:{c_seed}:{nb_mines}:STYLÉ_2026"
+    base = f"{s_seed}:{c_seed}:{nb_mines}:MINES_V101"
     h = hashlib.sha512(base.encode()).digest()
     random.seed(int.from_bytes(h[:8],"big")+nb_mines)
     grid = list(range(25))
@@ -100,15 +118,15 @@ else:
             st.success(f"Safe Slots: {schema}")
 
     with tab2:
-        tour_actuel = st.number_input("Tour Actuel:",min_value=1,value=100)
-        if st.button("🌠 ANALYZE"):
-            res1 = cosmos_premium_engine(s_seed,c_seed,tour_actuel)
-            res2 = cosmos_premium_engine(s_seed,c_seed,tour_actuel+1)
+        tour_actuel = st.number_input("Tour Actuel:",min_value=1,value=12)
+        if st.button("🌠 ANALYZE COSMOS"):
+            res = cosmos_premium_engine(s_seed,c_seed,tour_actuel)
             m1,m2,m3,m4 = st.columns(4)
-            m1.metric("MIN",f"{res1['min']}x")
-            m2.metric("MEAN",f"{res1['mean']}x")
-            m3.metric("MAX",f"{res1['max']}x")
-            m4.metric("ACCURACY",f"{res1['accuracy']}%")
-            st.info(f"Prediction Tour {tour_actuel}: **{res1['prediction']}x**")
-            st.info(f"Prediction Tour {tour_actuel+1}: **{res2['prediction']}x**")
-            st.code(res1['hex'],language="bash") 
+            m1.metric("MIN",f"{res['min']}x")
+            m2.metric("MEAN",f"{res['mean']}x")
+            m3.metric("MAX",f"{res['max']}x")
+            m4.metric("ACCURACY",f"{res['accuracy']}%")
+            st.info(f"Tour Actuel {res['tour_actuel']}")
+            st.info(f"Tour 1 → {res['tour1']}")
+            st.info(f"Tour 2 → {res['tour2']}")
+            st.code(res['hex'],language="bash")

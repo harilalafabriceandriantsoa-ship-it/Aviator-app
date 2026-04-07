@@ -1,134 +1,95 @@
 import streamlit as st
 import hashlib, hmac, random, statistics, datetime
-import matplotlib.pyplot as plt
 import numpy as np
 
-# --- COSMOS ENGINE ---
-def cosmos_premium_engine(server_seed, client_seed, nonce, salt="T1", iters=500000):
+# Natao ao anatin'ny 'try-except' ny matplotlib mba tsy hampijanon-javatra raha mbola tsy tafiditra
+try:
+    import matplotlib.pyplot as plt
+    plt.style.use('dark_background')
+    HAS_PLOT = True
+except ImportError:
+    HAS_PLOT = False
+
+st.set_page_config(page_title="TITAN V101 Premium", layout="wide")
+
+# --- ENGINE FUNCTIONS ---
+def safe_int_conversion(hex_val):
+    """Miantoka fa tsy miteraka ValueError ny conversion"""
+    try:
+        if not hex_val or len(hex_val) < 16:
+            return 0
+        return int(hex_val[:16], 16)
+    except ValueError:
+        return 0
+
+def cosmos_premium_engine(server_seed, client_seed, nonce, salt="T1"):
     heure = datetime.datetime.now().strftime("%H:%M:%S")
-    base = f"{server_seed}:{client_seed}:{nonce}:{salt}:{heure}:COSMOSX_V101"
-    h1 = hmac.new(b"COSMOS_CORE", base.encode(), hashlib.sha512).digest()
-    for i in range(iters):
-        h1 = hmac.new(h1, f"STEP_{i}".encode(), hashlib.sha512).digest()
-    blake = hashlib.blake2b(h1).digest()
-    sha3 = hashlib.sha3_256(blake).digest()
-    sha384 = hashlib.sha384(sha3).digest()
-    sha256 = hashlib.sha256(sha3).digest()
-    final = bytes(a ^ b ^ c ^ d for a, b, c, d in zip(h1, blake, sha3, sha256))
-    hex_out = final.hex()
-    p_int = int(hex_out[:16], 16)
+    base = f"{server_seed}:{client_seed}:{nonce}:{salt}:{heure}:V101"
+    h1 = hmac.new(b"CORE", base.encode(), hashlib.sha512).digest()
+    
+    final_hex = hashlib.sha512(h1).hexdigest()
+    p_int = safe_int_conversion(final_hex)
+    
     offset = (p_int % 29) + (9 if salt == "T1" else 15)
     jumps = [(p_int % 7) + 2, (p_int % 11) + 3, (p_int % 13) + 4]
-
+    
     values = [offset] + jumps
-    min_val = min(values)
-    max_val = max(values)
-    mean_val = statistics.mean(values)
-    accuracy = round((mean_val / max_val) * 100, 2)
+    accuracy = round((statistics.mean(values) / max(values)) * 100, 2) if max(values) > 0 else 0
 
     return {
-        "hex": hex_out,
+        "hex": final_hex[:64],
         "tour": nonce + offset,
         "jumps": jumps,
-        "min": min_val,
-        "max": max_val,
-        "mean": mean_val,
+        "min": min(values),
+        "max": max(values),
+        "mean": round(statistics.mean(values), 2),
         "accuracy": accuracy
     }
 
-# --- MINES ENGINE ---
-def mines_premium_engine(server_seed, client_seed, nonce, iters=500000):
+def mines_premium_engine(s_seed, c_seed, nonce):
     heure = datetime.datetime.now().strftime("%H:%M:%S")
-    choice_salt = f"CHOICE5:{heure}"
-    base = f"{server_seed}:{client_seed}:{nonce}:{choice_salt}:MINES_V101"
-
-    h1 = hashlib.sha512(base.encode()).digest()
-    h2 = hashlib.blake2b(h1).digest()
-    h3 = hashlib.sha3_256(h2).digest()
-    h4 = hashlib.sha384(h3).digest()
-    h5 = hashlib.sha256(h4).digest()
-
-    h_mut = h1
-    for i in range(iters):
-        h_mut = hashlib.sha512(h_mut + f"STEP{i}".encode()).digest()
-
-    combined = h1 + h2 + h3 + h4 + h5 + h_mut
-    hash_int = int.from_bytes(combined, "big")
-
+    base = f"{s_seed}:{c_seed}:{nonce}:{heure}:MINES_V101"
+    h = hashlib.sha512(base.encode()).digest()
+    
+    random.seed(int.from_bytes(h[:8], "big"))
     grid = list(range(25))
-    for i in range(24, 0, -1):
-        j = hash_int % (i + 1)
-        grid[i], grid[j] = grid[j], grid[i]
-        hash_int //= (i + 1)
-    random.seed(int.from_bytes(h3[:16], "big") ^ 5)
     random.shuffle(grid)
-    random.shuffle(grid)
-    random.shuffle(grid)
-
-    schema = grid[:5]
-
-    # IA Premium: probabilités dynamique
-    probs = []
-    for k in range(5):
-        p = round(((5 - k) / (25 - k)) * 100, 2)
-        probs.append(p)
-
-    # Anti win-loss pattern
-    if len(set(schema)) < 5:
-        random.shuffle(grid)
-        schema = grid[:5]
-
+    
+    schema = sorted(grid[:5])
+    probs = [round(((5 - k) / (25 - k)) * 100, 2) for k in range(5)]
     return schema, probs
 
-# --- VISUALISATION ---
-def visualize_mines(schema, probs):
-    grid = np.zeros((5,5))
-    for pos in schema:
-        row, col = divmod(pos, 5)
-        grid[row][col] = 1
-
-    fig, ax = plt.subplots(1,2, figsize=(10,5))
-
-    # Grid 5x5
-    ax[0].imshow(grid, cmap="cool", interpolation="nearest")
-    ax[0].set_title("Schema Diamants (Mines Premium)")
-    for i in range(5):
-        for j in range(5):
-            if grid[i][j] == 1:
-                ax[0].text(j, i, "💎", ha="center", va="center", fontsize=14)
-
-    # Probabilities bar chart
-    clicks = [1,2,3,4,5]
-    ax[1].bar(clicks, probs, color="cyan")
-    ax[1].set_title("Probabilités dynamique")
-    ax[1].set_xlabel("Click")
-    ax[1].set_ylabel("Vintana (%)")
-
-    st.pyplot(fig)
-
-def visualize_cosmos(cosmos):
-    metrics = ["Min","Mean","Max","Accuracy"]
-    values = [cosmos["min"], cosmos["mean"], cosmos["max"], cosmos["accuracy"]]
-    fig, ax = plt.subplots()
-    ax.bar(metrics, values, color="magenta")
-    ax.set_title("Cosmos Premium Metrics")
-    st.pyplot(fig)
-
-# --- STREAMLIT INTERFACE ---
+# --- UI ---
 st.title("🌌 TITAN V101 Premium IA")
-st.markdown("Interface moderne sy stylé ho an'ny Cosmos sy Mines Premium")
 
-server_seed = st.text_input("Server Seed", "d17354bbdbbdbfefb1ef2d210fb3ea2c3aeb4e6be5c27ac08a3e49b49fdf0b91")
-client_seed = st.text_input("Client Seed", "SaSd3AAerLJrfAw053Bf")
-nonce = st.number_input("Nonce", min_value=1, value=1)
+s_seed = st.text_input("Server Seed", "d17354bbdbbdbfefb1ef2d210fb3ea2c3aeb4e6be5c27ac08a3e49b49fdf0b91")
+c_seed = st.text_input("Client Seed", "SaSd3AAerLJrfAw053Bf")
+n_val = st.number_input("Nonce / Current Tour", min_value=1, value=1)
 
-if st.button("🚀 Run Mines Premium"):
-    schema, probs = mines_premium_engine(server_seed, client_seed, nonce)
-    st.write("Schema diamants:", schema)
-    st.write("Probabilités dynamique:", probs)
-    visualize_mines(schema, probs)
+tab1, tab2 = st.tabs(["💣 MINES", "🌌 COSMOS"])
 
-if st.button("🌠 Run Cosmos Premium"):
-    cosmos = cosmos_premium_engine(server_seed, client_seed, nonce)
-    st.write("Cosmos:", cosmos)
-    visualize_cosmos(cosmos)
+with tab1:
+    if st.button("🚀 SCAN MINES"):
+        schema, probs = mines_premium_engine(s_seed, c_seed, n_val)
+        
+        if HAS_PLOT:
+            fig, ax1 = plt.subplots(figsize=(5, 5))
+            img = np.zeros((5, 5))
+            for pos in schema:
+                r, c = divmod(pos, 5)
+                img[r, c] = 1
+            ax1.imshow(img, cmap='Blues')
+            for p in schema:
+                r, c = divmod(p, 5)
+                ax1.text(c, r, "💎", ha="center", va="center", fontsize=20)
+            st.pyplot(fig)
+        
+        st.write(f"**Schema:** {schema}")
+        st.write(f"**Vintana:** {probs}")
+
+with tab2:
+    if st.button("🌠 SCAN COSMOS"):
+        res = cosmos_premium_engine(s_seed, c_seed, n_val)
+        st.metric("Predicted Tour", res['tour'])
+        st.metric("Accuracy", f"{res['accuracy']}%")
+        st.code(res['hex'])

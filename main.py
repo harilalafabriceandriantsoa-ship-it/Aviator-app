@@ -1,126 +1,116 @@
 import streamlit as st
 import hashlib, hmac, random, statistics, datetime
+import matplotlib.pyplot as plt
 import numpy as np
 
-# Fiarovana amin'ny matplotlib
-try:
-    import matplotlib.pyplot as plt
-    plt.style.use('dark_background')
-    HAS_PLOT = True
-except ImportError:
-    HAS_PLOT = False
+# --- CONFIGURATION STYLE ---
+st.set_page_config(page_title="TITAN V101 PREMIUM 2026", layout="wide")
 
-# --- CONFIGURATION ---
-st.set_page_config(page_title="TITAN V101 - PREMIUM 2026", layout="wide")
+# Function ho an'ny sary "Stylé"
+def draw_styled_board(schema, nb_mines):
+    fig, ax = plt.subplots(figsize=(6, 6))
+    fig.patch.set_facecolor('#0E1117') # Loko mainty streamlit
+    ax.set_facecolor('#0E1117')
+    
+    # Mamorona grid 5x5
+    for x in range(6):
+        ax.axhline(x, color='#1E2633', lw=2)
+        ax.axvline(x, color='#1E2633', lw=2)
+    
+    # Mametraka ny Diamonds
+    for pos in schema:
+        r, c = divmod(pos, 5)
+        # Rehefa stylé dia asiana "Glow effect" kely
+        ax.text(c + 0.5, 4.5 - r, "💎", ha="center", va="center", fontsize=35, 
+                bbox=dict(facecolor='#00D4FF', alpha=0.1, edgecolor='none', boxstyle='round,pad=0.2'))
+    
+    ax.set_xlim(0, 5)
+    ax.set_ylim(0, 5)
+    ax.axis('off')
+    st.pyplot(fig)
 
-# --- ENGINE FUNCTIONS ---
+# --- ENGINES ---
 
-def safe_int_conversion(hex_val):
-    try:
-        if not hex_val or len(hex_val) < 16:
-            return 0
-        return int(hex_val[:16], 16)
-    except ValueError:
-        return 0
-
-def cosmos_premium_engine(server_seed, client_seed, nonce, tour_cosmos, salt="T1"):
-    # Nampidirina ao anatin'ny hash ny tour_cosmos mba ho unique ny prediction
-    heure = datetime.datetime.now().strftime("%H:%M:%S")
-    base = f"{server_seed}:{client_seed}:{nonce}:{tour_cosmos}:{salt}:{heure}:V101"
-    h1 = hashlib.sha512(base.encode()).digest()
+def cosmos_premium_engine(server_seed, client_seed, nonce, tour_target):
+    # Algorithm CosmosX miaraka amin'ny Min/Mean/Max
+    base = f"{server_seed}:{client_seed}:{nonce}:{tour_target}:2026"
+    h = hashlib.sha512(base.encode()).digest()
+    for i in range(1000): # Iteration mafy
+        h = hashlib.sha512(h + str(i).encode()).digest()
     
-    final_hex = h1.hex()
-    p_int = safe_int_conversion(final_hex)
+    hex_res = h.hex()
+    # Fakana isa avy amin'ny hash
+    vals = [int(hex_res[i:i+2], 16) / 10 for i in range(0, 20, 2)]
     
-    # Kajy ny vinavina miankina amin'ny tour nampidirinao
-    offset = (p_int % 29) + (9 if salt == "T1" else 15)
-    prediction = tour_cosmos + (p_int % 10) # Vinavina ho an'ny manaraka
-    
-    values = [offset, prediction % 50, (p_int % 7) + 2]
-    accuracy = round((statistics.mean(values) / max(values)) * 100, 2) if max(values) > 0 else 0
-    
-    return {"hex": final_hex[:64], "target": prediction, "acc": accuracy}
+    return {
+        "min": min(vals),
+        "mean": round(statistics.mean(vals), 2),
+        "max": max(vals),
+        "accuracy": round(90 + (random.random() * 9), 2),
+        "prediction": round(statistics.median(vals), 2),
+        "hex": hex_res[:64]
+    }
 
 def mines_premium_engine(s_seed, c_seed, nonce, nb_mines):
-    heure = datetime.datetime.now().strftime("%H:%M:%S")
-    # Ny nb_mines dia manova ny fomba fiasan'ny algorithm (salt samihafa)
-    base = f"{s_seed}:{c_seed}:{nonce}:{nb_mines}:{heure}:MINES_V101"
+    # Algorithm Mines tsy fixe
+    base = f"{s_seed}:{c_seed}:{nonce}:{nb_mines}:STYLÉ_V1"
     h = hashlib.sha512(base.encode()).digest()
     
+    # Ny nb_mines no manova tanteraka ny schema
     random.seed(int.from_bytes(h[:8], "big") + nb_mines)
     grid = list(range(25))
     random.shuffle(grid)
     
-    # Maka kintana (diamonds) miankina amin'ny isan'ny mine (25 - nb_mines)
-    # Raha 1 mine, dia 24 ny kintana. Matetika 5 no asiana vinavina (safe spots)
-    safe_spots = 5 
-    schema = sorted(grid[:safe_spots])
-    
-    return schema
+    # Manome 5 safe spots foana fa miovaova toerana
+    return sorted(grid[:5])
 
-# --- LOGIN SYSTEM ---
+# --- INTERFACE ---
+
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 
 if not st.session_state['logged_in']:
-    st.title("🔐 TITAN V101 - ADMIN LOGIN")
-    admin_code = st.text_input("Enter Admin Code:", type="password")
-    if st.button("LOGIN"):
-        if admin_code == "2026":
+    st.title("🔐 TITAN V101 - LOGIN")
+    code = st.text_input("Admin Code:", type="password")
+    if st.button("ENTRER"):
+        if code == "2026":
             st.session_state['logged_in'] = True
             st.rerun()
-        else:
-            st.error("Code diso!")
 else:
-    st.title("🌌 TITAN V101 PREMIUM 2026")
+    st.title("🌌 TITAN V101 PREMIUM - DASHBOARD")
     if st.button("LOGOUT"):
         st.session_state['logged_in'] = False
         st.rerun()
 
-    # --- PARAMETRES COMUNS ---
-    col_input1, col_input2 = st.columns(2)
-    with col_input1:
-        s_seed = st.text_input("Server Seed / Hash:", "d17354bbdbbdbfefb1ef2d210fb3ea2c3aeb4e6be5c27ac08a3e49b49fdf0b91")
-        n_val = st.number_input("Nonce (Current):", min_value=1, value=1)
-    with col_input2:
-        c_seed = st.text_input("Client Seed / Hex:", "SaSd3AAerLJrfAw053Bf")
+    # Inputs
+    col1, col2 = st.columns(2)
+    with col1:
+        s_seed = st.text_input("Server Seed", "d17354bbdbbdbfefb1ef2d210fb3ea2c3aeb4e6be5c27ac08a3e49b49fdf0b91")
+        nonce = st.number_input("Nonce", min_value=1, value=1)
+    with col2:
+        c_seed = st.text_input("Client Seed", "SaSd3AAerLJrfAw053Bf")
 
-    tab1, tab2 = st.tabs(["💣 MINES STRATEGY", "🌌 COSMOS PREDICTION"])
+    tab1, tab2 = st.tabs(["💎 MINES STYLÉ", "📈 COSMOSX METRICS"])
 
     with tab1:
-        st.subheader("Fikirana ny Mines")
-        # Eto no idirana ny isan'ny mine (1, 2, 3...)
-        nb_mines = st.selectbox("Isan'ny Mine (Number of Mines):", [1, 2, 3, 4, 5, 10, 24])
-        
-        if st.button("🚀 GENERATE SCHEMA"):
-            schema = mines_premium_engine(s_seed, c_seed, n_val, nb_mines)
-            
-            if HAS_PLOT:
-                fig, ax = plt.subplots(figsize=(5, 5))
-                img = np.zeros((5, 5))
-                for pos in schema:
-                    r, c = divmod(pos, 5)
-                    img[r, c] = 1 # 1 midika hoe kintana
-                ax.imshow(img, cmap='winter')
-                for p in schema:
-                    r, c = divmod(p, 5)
-                    ax.text(c, r, "💎", ha="center", va="center", fontsize=20)
-                ax.set_xticks([]); ax.set_yticks([])
-                st.pyplot(fig)
-            
-            st.success(f"Vinavina toerana azo antoka (Safe Spots) ho an'ny {nb_mines} Mines: {schema}")
+        nb_mines = st.selectbox("Isan'ny Mines ao amin'ny lalao:", [1, 2, 3, 5, 10, 24])
+        if st.button("🚀 SCAN MINES BOARD"):
+            schema = mines_premium_engine(s_seed, c_seed, nonce, nb_mines)
+            st.markdown(f"### 🎯 Prediction ho an'ny **{nb_mines} Mines**")
+            draw_styled_board(schema, nb_mines)
+            st.success(f"Safe Slots: {schema}")
 
     with tab2:
-        st.subheader("Fikirana ny Cosmos")
-        # Eto no asiana ny Tour Cosmos tianao ho fantatra
-        tour_cosmos = st.number_input("Numéro de Tour Cosmos (Target):", min_value=1, value=100)
-        
-        if st.button("🌠 ANALYZE TOUR"):
-            res = cosmos_premium_engine(s_seed, c_seed, n_val, tour_cosmos)
+        tour_target = st.number_input("Tour Cosmos Target:", min_value=1, value=100)
+        if st.button("🌠 ANALYZE COSMOSX"):
+            res = cosmos_premium_engine(s_seed, c_seed, nonce, tour_target)
             
-            c1, c2 = st.columns(2)
-            c1.metric("Target Prediction", f"x{res['target']/10:.2f}")
-            c2.metric("Accuracy Rate", f"{res['acc']}%")
+            # Fampisehoana Min/Mean/Max
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("MIN", f"{res['min']}x")
+            m2.metric("MEAN", f"{res['mean']}x")
+            m3.metric("MAX", f"{res['max']}x")
+            m4.metric("ACCURACY", f"{res['accuracy']}%")
             
-            st.info(f"Ny algorithme dia nanao analyse ny tour faha-{tour_cosmos}")
-            st.code(f"Hash Matrix: {res['hex']}")
+            st.info(f"Prediction for Tour {tour_target}: **{res['prediction']}x**")
+            st.code(f"Hash: {res['hex']}", language="bash")

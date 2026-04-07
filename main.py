@@ -1,80 +1,19 @@
 import streamlit as st
-import hashlib, hmac, random, datetime
-import statistics
-
-# --- CONFIGURATION ---
-LOGIN_KEY = "2026"
-st.set_page_config(page_title="TITAN V101 ULTRA STYLÉ", layout="wide")
-
-# --- STYLE ---
-st.markdown("""
-    <style>
-    .stApp {
-        background: linear-gradient(135deg, #0f0f0f, #1a1a1a);
-        color: #00ffcc;
-        font-family: 'Courier New', monospace;
-    }
-    h2, h3, h4, h5 {
-        color: #00ffcc;
-        text-shadow: 0 0 10px #00ffcc;
-    }
-    .stButton>button {
-        background: linear-gradient(90deg, #00ffcc, #0066ff);
-        color: #fff;
-        border-radius: 12px;
-        border: none;
-        padding: 10px 20px;
-        font-weight: bold;
-        box-shadow: 0 0 20px #00ffcc;
-    }
-    .stButton>button:hover {
-        background: linear-gradient(90deg, #0066ff, #00ffcc);
-        box-shadow: 0 0 30px #0066ff;
-    }
-    .mines-grid {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 10px;
-        max-width: 330px;
-        margin: auto;
-        padding: 20px;
-    }
-    .mine-cell {
-        aspect-ratio: 1/1;
-        background: #111;
-        border: 1px solid #00ffcc44;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 28px;
-        border-radius: 12px;
-        transition: 0.3s;
-    }
-    .mine-cell:hover {
-        transform: scale(1.1);
-        box-shadow: 0 0 15px #00ffcc;
-    }
-    .cell-star {
-        border: 2px solid #ff0000 !important;
-        background: rgba(255, 0, 0, 0.3);
-        color: #ff0000 !important;
-        box-shadow: 0 0 30px #ff0000;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+import hashlib, hmac, random, statistics, datetime
+import matplotlib.pyplot as plt
+import numpy as np
 
 # --- COSMOS ENGINE ---
-def cosmos_ultra_engine(hash_val, hex_val, tour_id, salt, heure=None, iters=250000):
-    if heure is None:
-        heure = datetime.datetime.now().strftime("%H:%M:%S")
-    base = f"{hash_val}:{hex_val}:{tour_id}:{salt}:{heure}:COSMOSX_V101"
+def cosmos_premium_engine(server_seed, client_seed, nonce, salt="T1", iters=500000):
+    heure = datetime.datetime.now().strftime("%H:%M:%S")
+    base = f"{server_seed}:{client_seed}:{nonce}:{salt}:{heure}:COSMOSX_V101"
     h1 = hmac.new(b"COSMOS_CORE", base.encode(), hashlib.sha512).digest()
     for i in range(iters):
         h1 = hmac.new(h1, f"STEP_{i}".encode(), hashlib.sha512).digest()
     blake = hashlib.blake2b(h1).digest()
     sha3 = hashlib.sha3_256(blake).digest()
     sha384 = hashlib.sha384(sha3).digest()
-    sha256 = hashlib.sha256(sha384).digest()
+    sha256 = hashlib.sha256(sha3).digest()
     final = bytes(a ^ b ^ c ^ d for a, b, c, d in zip(h1, blake, sha3, sha256))
     hex_out = final.hex()
     p_int = int(hex_out[:16], 16)
@@ -89,7 +28,7 @@ def cosmos_ultra_engine(hash_val, hex_val, tour_id, salt, heure=None, iters=2500
 
     return {
         "hex": hex_out,
-        "tour": tour_id + offset,
+        "tour": nonce + offset,
         "jumps": jumps,
         "min": min_val,
         "max": max_val,
@@ -97,10 +36,9 @@ def cosmos_ultra_engine(hash_val, hex_val, tour_id, salt, heure=None, iters=2500
         "accuracy": accuracy
     }
 
-# --- MINES ENGINE (fixe 5 diamants foana, IA ultra) ---
-def mines_ultra_engine(server_seed, client_seed, nonce, heure=None, iters=250000):
-    if heure is None:
-        heure = datetime.datetime.now().strftime("%H:%M:%S")
+# --- MINES ENGINE ---
+def mines_premium_engine(server_seed, client_seed, nonce, iters=500000):
+    heure = datetime.datetime.now().strftime("%H:%M:%S")
     choice_salt = f"CHOICE5:{heure}"
     base = f"{server_seed}:{client_seed}:{nonce}:{choice_salt}:MINES_V101"
 
@@ -122,77 +60,75 @@ def mines_ultra_engine(server_seed, client_seed, nonce, heure=None, iters=250000
         j = hash_int % (i + 1)
         grid[i], grid[j] = grid[j], grid[i]
         hash_int //= (i + 1)
-    
-    random.seed(int.from_bytes(h3[:16], "big") ^ nonce)
+    random.seed(int.from_bytes(h3[:16], "big") ^ 5)
     random.shuffle(grid)
-    
+    random.shuffle(grid)
+    random.shuffle(grid)
+
     schema = grid[:5]
 
-    # Probabilités dynamique
+    # IA Premium: probabilités dynamique
     probs = []
     for k in range(5):
         p = round(((5 - k) / (25 - k)) * 100, 2)
         probs.append(p)
 
+    # Anti win-loss pattern
+    if len(set(schema)) < 5:
+        random.shuffle(grid)
+        schema = grid[:5]
+
     return schema, probs
 
-# --- LOGIN ---
-st.markdown("<h2 style='text-align:center;'>🔐 TITAN V101 ULTRA STYLÉ</h2>", unsafe_allow_html=True)
-admin_input = st.text_input("Enter Admin Code:", type="password", key="main_auth")
+# --- VISUALISATION ---
+def visualize_mines(schema, probs):
+    grid = np.zeros((5,5))
+    for pos in schema:
+        row, col = divmod(pos, 5)
+        grid[row][col] = 1
 
-if admin_input == LOGIN_KEY:
-    st.success("✅ TITAN V101 Activated.")
-    tab1, tab2 = st.tabs(["🌌 COSMOSX", "💣 MINES ULTRA"])
+    fig, ax = plt.subplots(1,2, figsize=(10,5))
 
-    with tab1:
-        st.markdown("##### 🌌 COSMOSX (V101: IA reinforcement)")
-        h_v = st.text_input("Hash Value:", key="c_hash")
-        x_v = st.text_input("Hex Value:", key="c_hex")
-        t_v = st.number_input("Tour Actuel:", min_value=1, value=1, key="c_tour")
-        c_h = st.text_input("Heure (HH:mm:ss):", value=datetime.datetime.now().strftime("%H:%M:%S"), key="c_time")
-        
-        if st.button("🚀 SCAN COSMOS"):
-            if h_v and x_v:
-                for s in ["T1", "T2"]:
-                    res1 = cosmos_ultra_engine(h_v, x_v, t_v, s, c_h)
-                    res2 = cosmos_ultra_engine(h_v, x_v, t_v+1, s, c_h)
-                    st.markdown(f"**--- SERVER {s} ---**")
-                    st.write(f"**Tour 1:** {res1['tour']} | Jumps: {res1['jumps']} | Accuracy: {res1['accuracy']}%")
-                    st.write(f"**Tour 2:** {res2['tour']} | Jumps: {res2['jumps']} | Accuracy: {res2['accuracy']}%")
-                    st.code(res1['hex'][:48], language="bash")
+    # Grid 5x5
+    ax[0].imshow(grid, cmap="cool", interpolation="nearest")
+    ax[0].set_title("Schema Diamants (Mines Premium)")
+    for i in range(5):
+        for j in range(5):
+            if grid[i][j] == 1:
+                ax[0].text(j, i, "💎", ha="center", va="center", fontsize=14)
 
-    with tab2:
-        st.markdown("##### 💣 MINES ULTRA LOGIC (V101: fixe 5 diamants foana)")
-        col_m1, col_m2 = st.columns(2)
-        with col_m1:
-            m_s = st.text_input("Server Seed:", key="ms")
-            m_c = st.text_input("Client Seed:", key="mc")
-        with col_m2:
-            m_n = st.number_input("Nonce:", min_value=0, value=0, key="mn")
-            m_h = st.text_input("Heure (HH:mm:ss):", value=datetime.datetime.now().strftime("%H:%M:%S"), key="m_time")
-        
-        m_sl = st.slider("Nombre de mine (Simulation):", 1, 4, 1)
+    # Probabilities bar chart
+    clicks = [1,2,3,4,5]
+    ax[1].bar(clicks, probs, color="cyan")
+    ax[1].set_title("Probabilités dynamique")
+    ax[1].set_xlabel("Click")
+    ax[1].set_ylabel("Vintana (%)")
 
-        if st.button("🛰️ SCAN MINES"):
-            if m_s and m_c:
-                schema, probs = mines_ultra_engine(m_s, m_c, m_n, m_h)
-                
-                # Fampisehoana ny Grid
-                grid_html = '<div class="mines-grid">'
-                for i in range(25):
-                    is_star = i in schema
-                    if is_star:
-                        grid_html += '<div class="mine-cell cell-star">⭐</div>'
-                    else:
-                        grid_html += '<div class="mine-cell"></div>'
-                grid_html += '</div>'
-                
-                st.markdown(grid_html, unsafe_allow_html=True)
-                
-                st.markdown(f"**Probabilités IA:** {probs[0]}% → {probs[1]}% → {probs[2]}%...")
-                st.info("V101 Note: 5 Safe Diamonds located. Pattern repetition blocked.")
-            else:
-                st.warning("Fenoy ny Seeds aloha.")
+    st.pyplot(fig)
 
-elif admin_input != "":
-    st.error("❌ Code diso.")
+def visualize_cosmos(cosmos):
+    metrics = ["Min","Mean","Max","Accuracy"]
+    values = [cosmos["min"], cosmos["mean"], cosmos["max"], cosmos["accuracy"]]
+    fig, ax = plt.subplots()
+    ax.bar(metrics, values, color="magenta")
+    ax.set_title("Cosmos Premium Metrics")
+    st.pyplot(fig)
+
+# --- STREAMLIT INTERFACE ---
+st.title("🌌 TITAN V101 Premium IA")
+st.markdown("Interface moderne sy stylé ho an'ny Cosmos sy Mines Premium")
+
+server_seed = st.text_input("Server Seed", "d17354bbdbbdbfefb1ef2d210fb3ea2c3aeb4e6be5c27ac08a3e49b49fdf0b91")
+client_seed = st.text_input("Client Seed", "SaSd3AAerLJrfAw053Bf")
+nonce = st.number_input("Nonce", min_value=1, value=1)
+
+if st.button("🚀 Run Mines Premium"):
+    schema, probs = mines_premium_engine(server_seed, client_seed, nonce)
+    st.write("Schema diamants:", schema)
+    st.write("Probabilités dynamique:", probs)
+    visualize_mines(schema, probs)
+
+if st.button("🌠 Run Cosmos Premium"):
+    cosmos = cosmos_premium_engine(server_seed, client_seed, nonce)
+    st.write("Cosmos:", cosmos)
+    visualize_cosmos(cosmos)

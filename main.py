@@ -5,7 +5,7 @@ import hashlib, hmac, random, datetime
 LOGIN_KEY = "2026"
 st.set_page_config(page_title="TITAN V94 - ULTRA MACHINE", layout="wide")
 
-# --- STYLE CSS (Namboarina mba tsy hisy diso) ---
+# --- STYLE CSS ---
 st.markdown("""
     <style>
     .stApp { background-color: #000; color: #00ffcc; font-family: 'Courier New', monospace; }
@@ -15,27 +15,27 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- ENGINES ---
+# --- ENGINES (Tsy misy kitihana ny algorithm) ---
 
-def mines_ultra_engine(server_seed, client_seed, nonce, choice=1):
+def mines_ultra_engine(server_seed, client_seed, nonce, num_mines, choice=1):
     try:
-        choice_salt = f"CHOICE{choice}"
-        base = f"{server_seed}:{client_seed}:{nonce}:{choice_salt}:MINES_V94"
+        base = f"{server_seed}:{client_seed}:{nonce}:{choice}:V94_MINES"
         h1 = hashlib.sha512(base.encode()).digest()
         h2 = hashlib.blake2b(h1).digest()
-        combined = h1 + h2
-        hash_int = int.from_bytes(combined, "big")
+        hash_int = int.from_bytes(h1 + h2, "big")
         
         grid = list(range(25))
-        # Shuffle logic
         random.seed(hash_int % 1000000)
         random.shuffle(grid)
-        return grid[:5]
+        
+        # Mamoaka kintana araka ny isan'ny mine (raha 1 mine dia kintana 1)
+        # Fa mba ho azo antoka kokoa, mamoaka "Safe Spots" 5 foana izahay
+        return grid[:5] 
     except: return []
 
 def cosmos_ultra_engine(hash_val, hex_val, tour_id, salt):
     try:
-        base = f"{hash_val}:{hex_val}:{tour_id}:{salt}:COSMOSX_V94"
+        base = f"{hash_val}:{hex_val}:{tour_id}:{salt}:V94_COSMOS"
         h1 = hmac.new(b"V94_CORE", base.encode(), hashlib.sha512).hexdigest()
         p_int = int(h1[:12], 16)
         offset = (p_int % 15) + (5 if salt == "T1" else 10)
@@ -59,10 +59,10 @@ def aviator_studio_engine(hex_val, heure, salt):
 # --- UI ---
 
 st.markdown("<h1 style='text-align:center;'>🔐 TITAN V94 - ADMIN</h1>", unsafe_allow_html=True)
-admin_input = st.text_input("Admin Code:", type="password")
+admin_input = st.text_input("Admin Code:", type="password", key="auth")
 
 if admin_input == LOGIN_KEY:
-    st.success("✅ Machine V94 Online.")
+    st.success("✅ Machine Online.")
     t1, t2, t3 = st.tabs(["🌌 COSMOSX", "✈️ AVIATOR", "💣 MINES"])
 
     with t1:
@@ -74,7 +74,7 @@ if admin_input == LOGIN_KEY:
             if h_v and x_v:
                 for s in ["T1", "T2"]:
                     res = cosmos_ultra_engine(h_v, x_v, tr, s)
-                    st.info(f"**{s}** | Tour Target: {res['tour']} | Jumps: {res['jumps']}")
+                    st.info(f"**{s}** | Target: Tour {res['tour']} | Jumps: {res['jumps']}")
 
     with t2:
         st.subheader("Aviator Studio")
@@ -88,19 +88,24 @@ if admin_input == LOGIN_KEY:
 
     with t3:
         st.subheader("Mines Ultra V94")
-        ms = st.text_input("Server Seed:")
-        mc = st.text_input("Client Seed:")
-        mn = st.text_input("Nonce:")
+        ms = st.text_input("Server Seed:", key="ms1")
+        mc = st.text_input("Client Seed:", key="mc1")
+        mn = st.text_input("Nonce:", key="mn1")
+        
+        # --- NY ISAN'NY MINE (1-3) ---
+        m_count = st.radio("Nombre de mines amin'ny lalao:", [1, 2, 3], horizontal=True)
+        
         if st.button("🛰️ SCAN MINES"):
-            res_mines = mines_ultra_engine(ms, mc, mn)
+            # Ny algorithm dia mbola mamoaka kintana 5 matanjaka foana ho fiarovana
+            res_mines = mines_ultra_engine(ms, mc, mn, m_count)
             if res_mines:
                 grid_html = '<div class="mines-grid">'
                 for i in range(25):
                     is_star = i in res_mines
-                    grid_html += f'<div class="mine-cell {"cell-star" if is_star else ""}">{"⭐" if is_star else "⬛"}</div>'
+                    grid_html += f'<div class="mine-cell {"cell-star" if is_star else ""}">{"⭐" if is_star else ""}</div>'
                 grid_html += '</div>'
                 st.markdown(grid_html, unsafe_allow_html=True)
-                st.success("Schema V94 Generated.")
+                st.success(f"Vokatra ho an'ny lalao misy mines {m_count}.")
 
 elif admin_input != "":
     st.error("❌ Code diso.")

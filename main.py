@@ -3,7 +3,7 @@ import hashlib, hmac, random, datetime
 
 # --- CONFIGURATION ---
 LOGIN_KEY = "2026"
-st.set_page_config(page_title="TITAN V97 - COSMOS & MINES ULTRA", layout="wide")
+st.set_page_config(page_title="TITAN V99 - COSMOS & MINES ULTRA", layout="wide")
 
 # --- STYLE ---
 st.markdown("""
@@ -15,11 +15,11 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- COSMOS ENGINE (V97: multi-salt, deep iteration, dynamic offset/jumps) ---
+# --- COSMOS ENGINE (V99: multi-salt, deep iteration, dynamic offset/jumps) ---
 def cosmos_ultra_engine(hash_val, hex_val, tour_id, salt, heure=None, iters=250000):
     if heure is None:
         heure = datetime.datetime.now().strftime("%H:%M:%S")
-    base = f"{hash_val}:{hex_val}:{tour_id}:{salt}:{heure}:COSMOSX_V97"
+    base = f"{hash_val}:{hex_val}:{tour_id}:{salt}:{heure}:COSMOSX_V99"
     h1 = hmac.new(b"COSMOS_CORE", base.encode(), hashlib.sha512).digest()
     for i in range(iters):
         h1 = hmac.new(h1, f"STEP_{i}".encode(), hashlib.sha512).digest()
@@ -34,12 +34,12 @@ def cosmos_ultra_engine(hash_val, hex_val, tour_id, salt, heure=None, iters=2500
     jumps = [(p_int % 7) + 2, (p_int % 11) + 3, (p_int % 13) + 4]
     return {"hex": hex_out, "tour": tour_id + offset, "jumps": jumps}
 
-# --- MINES ENGINE (V97: fixe 5 diamants, multi-hash, proof-of-work, triple shuffle, heure salt) ---
-def mines_ultra_engine(server_seed, client_seed, nonce, heure=None, iters=250000):
+# --- MINES ENGINE (V99: fixe 5 diamants foana, na dia misafidy 1,2,3 aza) ---
+def mines_ultra_engine(server_seed, client_seed, nonce, choice=1, heure=None, iters=250000):
     if heure is None:
         heure = datetime.datetime.now().strftime("%H:%M:%S")
-    choice_salt = f"CHOICE5:{heure}"
-    base = f"{server_seed}:{client_seed}:{nonce}:{choice_salt}:MINES_V97"
+    choice_salt = f"CHOICE{choice}:{heure}"
+    base = f"{server_seed}:{client_seed}:{nonce}:{choice_salt}:MINES_V99"
 
     # Multi-hash layering
     h1 = hashlib.sha512(base.encode()).digest()
@@ -62,24 +62,24 @@ def mines_ultra_engine(server_seed, client_seed, nonce, heure=None, iters=250000
         j = hash_int % (i + 1)
         grid[i], grid[j] = grid[j], grid[i]
         hash_int //= (i + 1)
-    random.seed(int.from_bytes(h3[:16], "big") ^ 5)
+    random.seed(int.from_bytes(h3[:16], "big") ^ choice)
     random.shuffle(grid)
     random.shuffle(grid)
     random.shuffle(grid)
 
-    # Fixe 5 diamants foana
+    # Na dia misafidy 1,2,3 aza, dia foana = 5 diamants
     return grid[:5]
 
 # --- LOGIN ---
-st.markdown("<h2 style='text-align:center;'>🔐 TITAN V97 - COSMOS & MINES ULTRA</h2>", unsafe_allow_html=True)
+st.markdown("<h2 style='text-align:center;'>🔐 TITAN V99 - COSMOS & MINES ULTRA</h2>", unsafe_allow_html=True)
 admin_input = st.text_input("Enter Admin Code:", type="password", key="main_auth")
 
 if admin_input == LOGIN_KEY:
-    st.success("✅ TITAN V97 Activated.")
+    st.success("✅ TITAN V99 Activated.")
     tab1, tab2 = st.tabs(["🌌 COSMOSX", "💣 MINES ULTRA"])
 
     with tab1:
-        st.markdown("##### 🌌 COSMOSX (V97: multi-salt, deep iteration, dynamic offset/jumps)")
+        st.markdown("##### 🌌 COSMOSX (V99: multi-salt, deep iteration, dynamic offset/jumps)")
         h_v = st.text_input("Hash Value:", key="c_hash")
         x_v = st.text_input("Hex Value:", key="c_hex")
         t_v = st.number_input("Tour Actuel:", min_value=1, value=8137473, key="c_tour")
@@ -92,13 +92,14 @@ if admin_input == LOGIN_KEY:
                     st.code(res['hex'][:48], language="bash")
 
     with tab2:
-        st.markdown("##### 💣 MINES ULTRA LOGIC (V97: fixe 5 diamants, multi-hash, proof-of-work, triple shuffle, heure salt)")
+        st.markdown("##### 💣 MINES ULTRA LOGIC (V99: fixe 5 diamants foana, na dia misafidy 1,2,3 aza)")
         m_s = st.text_input("Server Seed:", key="ms")
         m_c = st.text_input("Client Seed:", key="mc")
         m_n = st.text_input("Nonce:", key="mn")
+        m_sl = st.slider("Nombre de mine (1–3):", 1, 3, 1)
         m_h = st.text_input("Heure (HH:mm:ss):", value=datetime.datetime.now().strftime("%H:%M:%S"), key="m_time")
         if st.button("🛰️ SCAN MINES"):
-            schema = mines_ultra_engine(m_s, m_c, m_n, m_h)
+            schema = mines_ultra_engine(m_s, m_c, m_n, m_sl, m_h)
             grid_html = '<div class="mines-grid">'
             for i in range(25):
                 grid_html += f'<div class="mine-cell {"cell-star" if i in schema else ""}">{"⭐" if i in schema else ""}</div>'

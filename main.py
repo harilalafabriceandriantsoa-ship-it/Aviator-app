@@ -16,7 +16,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- COSMOS ENGINE (V100: multi-salt, deep iteration, dynamic offset/jumps, IA reinforcement) ---
+# --- COSMOS ENGINE (V100: multi-salt, deep iteration, IA reinforcement) ---
 def cosmos_ultra_engine(hash_val, hex_val, tour_id, salt, heure=None, iters=250000):
     if heure is None:
         heure = datetime.datetime.now().strftime("%H:%M:%S")
@@ -51,11 +51,11 @@ def cosmos_ultra_engine(hash_val, hex_val, tour_id, salt, heure=None, iters=2500
         "accuracy": accuracy
     }
 
-# --- MINES ENGINE (V100: fixe 5 diamants foana, IA reinforcement) ---
-def mines_ultra_engine(server_seed, client_seed, nonce, heure=None, iters=250000):
+# --- MINES ENGINE (V100: safidy nombre de mine 1,2,3,5 + IA reinforcement) ---
+def mines_ultra_engine(server_seed, client_seed, nonce, choice=5, heure=None, iters=250000):
     if heure is None:
         heure = datetime.datetime.now().strftime("%H:%M:%S")
-    choice_salt = f"CHOICE5:{heure}"
+    choice_salt = f"CHOICE{choice}:{heure}"
     base = f"{server_seed}:{client_seed}:{nonce}:{choice_salt}:MINES_V100"
 
     # Multi-hash layering
@@ -79,13 +79,18 @@ def mines_ultra_engine(server_seed, client_seed, nonce, heure=None, iters=250000
         j = hash_int % (i + 1)
         grid[i], grid[j] = grid[j], grid[i]
         hash_int //= (i + 1)
-    random.seed(int.from_bytes(h3[:16], "big") ^ 5)
+    random.seed(int.from_bytes(h3[:16], "big") ^ choice)
     random.shuffle(grid)
     random.shuffle(grid)
     random.shuffle(grid)
 
-    # Fixe 5 diamants foana
-    return grid[:5]
+    # IA reinforcement: calcul probabilités dynamique
+    probs = []
+    for k in range(choice):
+        p = round(((choice - k) / (25 - k)) * 100, 2)
+        probs.append(p)
+
+    return grid[:choice], probs
 
 # --- LOGIN ---
 st.markdown("<h2 style='text-align:center;'>🔐 TITAN V100 - COSMOS & MINES ULTRA</h2>", unsafe_allow_html=True)
@@ -111,17 +116,19 @@ if admin_input == LOGIN_KEY:
                     st.code(res1['hex'][:48], language="bash")
 
     with tab2:
-        st.markdown("##### 💣 MINES ULTRA LOGIC (V100: fixe 5 diamants, IA reinforcement)")
+        st.markdown("##### 💣 MINES ULTRA LOGIC (V100: safidy nombre de mine 1,2,3,5 + IA reinforcement)")
         m_s = st.text_input("Server Seed:", key="ms")
         m_c = st.text_input("Client Seed:", key="mc")
         m_n = st.text_input("Nonce:", key="mn")
+        m_sl = st.slider("Nombre de mine (1–5):", 1, 5, 5)
         m_h = st.text_input("Heure (HH:mm:ss):", value=datetime.datetime.now().strftime("%H:%M:%S"), key="m_time")
         if st.button("🛰️ SCAN MINES"):
-            schema = mines_ultra_engine(m_s, m_c, m_n, m_h)
+            schema, probs = mines_ultra_engine(m_s, m_c, m_n, m_sl, m_h)
             grid_html = '<div class="mines-grid">'
             for i in range(25):
                 grid_html += f'<div class="mine-cell {"cell-star" if i in schema else ""}">{"⭐" if i in schema else ""}</div>'
             st.markdown(grid_html + '</div>', unsafe_allow_html=True)
+            st.write(f"Probabilités dynamique (IA): {probs}%")
 
 elif admin_input != "":
     st.error("❌ Code diso.")

@@ -4,7 +4,7 @@ import statistics
 
 # --- CONFIGURATION ---
 LOGIN_KEY = "2026"
-st.set_page_config(page_title="TITAN V100 - COSMOS & MINES ULTRA", layout="wide")
+st.set_page_config(page_title="TITAN V100 ULTRA", layout="wide")
 
 # --- STYLE ---
 st.markdown("""
@@ -51,11 +51,11 @@ def cosmos_ultra_engine(hash_val, hex_val, tour_id, salt, heure=None, iters=2500
         "accuracy": accuracy
     }
 
-# --- MINES ENGINE (V100: safidy nombre de mine 1,2,3,5 + IA reinforcement) ---
-def mines_ultra_engine(server_seed, client_seed, nonce, choice=5, heure=None, iters=250000):
+# --- MINES ENGINE (V100: fixe 5 diamants foana + IA reinforcement) ---
+def mines_ultra_engine(server_seed, client_seed, nonce, heure=None, iters=250000):
     if heure is None:
         heure = datetime.datetime.now().strftime("%H:%M:%S")
-    choice_salt = f"CHOICE{choice}:{heure}"
+    choice_salt = f"CHOICE5:{heure}"
     base = f"{server_seed}:{client_seed}:{nonce}:{choice_salt}:MINES_V100"
 
     # Multi-hash layering
@@ -79,21 +79,24 @@ def mines_ultra_engine(server_seed, client_seed, nonce, choice=5, heure=None, it
         j = hash_int % (i + 1)
         grid[i], grid[j] = grid[j], grid[i]
         hash_int //= (i + 1)
-    random.seed(int.from_bytes(h3[:16], "big") ^ choice)
+    random.seed(int.from_bytes(h3[:16], "big") ^ 5)
     random.shuffle(grid)
     random.shuffle(grid)
     random.shuffle(grid)
+
+    # Fixe 5 diamants foana
+    schema = grid[:5]
 
     # IA reinforcement: calcul probabilités dynamique
     probs = []
-    for k in range(choice):
-        p = round(((choice - k) / (25 - k)) * 100, 2)
+    for k in range(5):
+        p = round(((5 - k) / (25 - k)) * 100, 2)
         probs.append(p)
 
-    return grid[:choice], probs
+    return schema, probs
 
 # --- LOGIN ---
-st.markdown("<h2 style='text-align:center;'>🔐 TITAN V100 - COSMOS & MINES ULTRA</h2>", unsafe_allow_html=True)
+st.markdown("<h2 style='text-align:center;'>🔐 TITAN V100 ULTRA</h2>", unsafe_allow_html=True)
 admin_input = st.text_input("Enter Admin Code:", type="password", key="main_auth")
 
 if admin_input == LOGIN_KEY:
@@ -101,7 +104,7 @@ if admin_input == LOGIN_KEY:
     tab1, tab2 = st.tabs(["🌌 COSMOSX", "💣 MINES ULTRA"])
 
     with tab1:
-        st.markdown("##### 🌌 COSMOSX (V100: multi-salt, deep iteration, IA reinforcement)")
+        st.markdown("##### 🌌 COSMOSX (V100: IA reinforcement)")
         h_v = st.text_input("Hash Value:", key="c_hash")
         x_v = st.text_input("Hex Value:", key="c_hex")
         t_v = st.number_input("Tour Actuel:", min_value=1, value=1, key="c_tour")
@@ -116,14 +119,13 @@ if admin_input == LOGIN_KEY:
                     st.code(res1['hex'][:48], language="bash")
 
     with tab2:
-        st.markdown("##### 💣 MINES ULTRA LOGIC (V100: safidy nombre de mine 1,2,3,5 + IA reinforcement)")
+        st.markdown("##### 💣 MINES ULTRA LOGIC (V100: fixe 5 diamants + IA reinforcement)")
         m_s = st.text_input("Server Seed:", key="ms")
         m_c = st.text_input("Client Seed:", key="mc")
         m_n = st.text_input("Nonce:", key="mn")
-        m_sl = st.slider("Nombre de mine (1–5):", 1, 5, 5)
         m_h = st.text_input("Heure (HH:mm:ss):", value=datetime.datetime.now().strftime("%H:%M:%S"), key="m_time")
         if st.button("🛰️ SCAN MINES"):
-            schema, probs = mines_ultra_engine(m_s, m_c, m_n, m_sl, m_h)
+            schema, probs = mines_ultra_engine(m_s, m_c, m_n, m_h)
             grid_html = '<div class="mines-grid">'
             for i in range(25):
                 grid_html += f'<div class="mine-cell {"cell-star" if i in schema else ""}">{"⭐" if i in schema else ""}</div>'

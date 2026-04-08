@@ -1,6 +1,5 @@
 import streamlit as st
-import hashlib, hmac, random, datetime
-import statistics
+import hashlib, hmac, random, datetime, statistics
 
 # --- CONFIGURATION ---
 LOGIN_KEY = "2026"
@@ -14,7 +13,7 @@ st.markdown("""
         color: #00ffcc;
         font-family: 'Courier New', monospace;
     }
-    h2, h3, h4, h5 {
+    h2, h3, h4 {
         color: #00ffcc;
         text-shadow: 0 0 10px #00ffcc;
     }
@@ -55,17 +54,23 @@ st.markdown("""
         transform: scale(1.1);
         box-shadow: 0 0 15px #00ffcc;
     }
-    .cell-star {
-        border: 2px solid #ff0000 !important;
-        background: rgba(255, 0, 0, 0.3);
-        color: #ff0000;
-        box-shadow: 0 0 30px #ff0000;
+    .cell-diamond {
+        border: 2px solid #00d4ff !important;
+        background: rgba(0, 212, 255, 0.3);
+        color: #00d4ff;
+        box-shadow: 0 0 30px #00d4ff;
+    }
+    .cell-mine {
+        border: 2px solid #ff0044 !important;
+        background: rgba(255, 0, 68, 0.3);
+        color: #ff0044;
+        box-shadow: 0 0 30px #ff0044;
     }
     </style>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 # --- COSMOS ENGINE ---
-def cosmos_ultra_engine(hash_val, hex_val, tour_id, salt, heure=None, iters=250000):
+def cosmos_ultra_engine(hash_val, hex_val, tour_id, salt, heure=None, iters=200000):
     if heure is None:
         heure = datetime.datetime.now().strftime("%H:%M:%S")
     base = f"{hash_val}:{hex_val}:{tour_id}:{salt}:{heure}:COSMOSX_V100"
@@ -78,33 +83,41 @@ def cosmos_ultra_engine(hash_val, hex_val, tour_id, salt, heure=None, iters=2500
     sha256 = hashlib.sha256(sha384).digest()
     final = bytes(a ^ b ^ c ^ d for a, b, c, d in zip(h1, blake, sha3, sha256))
     hex_out = final.hex()
+
     p_int = int(hex_out[:16], 16)
     offset = (p_int % 29) + (9 if salt == "T1" else 15)
-    jumps = [(p_int % 7) + 2, (p_int % 11) + 3, (p_int % 13) + 4]
 
-    values = [offset] + jumps
-    min_val = min(values)
-    max_val = max(values)
-    mean_val = statistics.mean(values)
-    accuracy = round((mean_val / max_val) * 100, 2)
+    # Côte de prédiction
+    constante = 4294967295
+    rtp = 0.97
+    dec_val = int(hex_out[-8:], 16)
+    resultat = (constante * rtp) / dec_val
+    if resultat < 1.0:
+        resultat = 1.0
+    resultat = round(resultat, 2)
+
+    # Metrics (raikitra amin'ny seed)
+    vals = [int(hex_out[i:i+4], 16)/10000 for i in range(0,20,4)]
+    min_val = round(min(vals),2)
+    max_val = round(max(vals),2)
+    mean_val = round(statistics.mean(vals),2)
+    accuracy = round((mean_val/max_val)*100,2)
 
     return {
-        "hex": hex_out,
         "tour": tour_id + offset,
-        "jumps": jumps,
+        "cote": resultat,
         "min": min_val,
-        "max": max_val,
         "mean": mean_val,
-        "accuracy": accuracy
+        "max": max_val,
+        "accuracy": accuracy,
+        "salt": salt
     }
 
-# --- MINES ENGINE (fixe 5 diamants foana) ---
-def mines_ultra_engine(server_seed, client_seed, nonce, heure=None, iters=250000):
+# --- MINES ENGINE (fixe 5 diamants foana, Résultat multiplier fotsiny) ---
+def mines_ultra_engine(server_seed, client_seed, nonce, nb_mines, heure=None, iters=200000):
     if heure is None:
         heure = datetime.datetime.now().strftime("%H:%M:%S")
-    choice_salt = f"CHOICE5:{heure}"
-    base = f"{server_seed}:{client_seed}:{nonce}:{choice_salt}:MINES_V100"
-
+    base = f"{server_seed}:{client_seed}:{nonce}:{heure}:MINES_V100"
     h1 = hashlib.sha512(base.encode()).digest()
     h2 = hashlib.blake2b(h1).digest()
     h3 = hashlib.sha3_256(h2).digest()
@@ -123,13 +136,20 @@ def mines_ultra_engine(server_seed, client_seed, nonce, heure=None, iters=250000
         j = hash_int % (i + 1)
         grid[i], grid[j] = grid[j], grid[i]
         hash_int //= (i + 1)
-    
-    random.seed(int.from_bytes(h3[:16], "big") ^ 5)
-    random.shuffle(grid)
-    random.shuffle(grid)
-    random.shuffle(grid)
 
-    return grid[:5]
+    random.seed(int.from_bytes(h3[:16], "big") ^ nb_mines)
+    random.shuffle(grid); random.shuffle(grid); random.shuffle(grid)
+
+    schema = grid[:5]  # fixe 5 diamants
+    mines = grid[5:5+nb_mines]
+
+    # Résultat multiplier fotsiny
+    base_result = (4294967295 * 0.97) / (int.from_bytes(h1[:8], "big") % 999999999)
+    resultat = round(base_result / (nb_mines + 0.5), 2)
+    if resultat < 1.0:
+        resultat = 1.0
+
+    return schema, mines, resultat
 
 # --- LOGIN ---
 st.markdown("<h2 style='text-align:center;'>🔐 TITAN V100 ULTRA STYLÉ</h2>", unsafe_allow_html=True)
@@ -140,37 +160,14 @@ if admin_input == LOGIN_KEY:
     tab1, tab2 = st.tabs(["🌌 COSMOSX", "💣 MINES ULTRA"])
 
     with tab1:
-        st.markdown("##### 🌌 COSMOSX (V100: IA reinforcement)")
+        st.markdown("##### 🌌 COSMOSX Prediction")
         h_v = st.text_input("Hash Value:", key="c_hash")
         x_v = st.text_input("Hex Value:", key="c_hex")
-        t_v = st.number_input("Tour Actuel:", min_value=1, value=1, key="c_tour")
+        t_v = st.number_input("Tour Actuel:", min_value=1, value=8147979, key="c_tour")
         c_h = st.text_input("Heure (HH:mm:ss):", value=datetime.datetime.now().strftime("%H:%M:%S"), key="c_time")
-        if st.button("🚀 SCAN COSMOS"):
+        if st.button("🚀 ANALYZE COSMOS"):
             if h_v and x_v:
-                for s in ["T1", "T2"]:
-                    res1 = cosmos_ultra_engine(h_v, x_v, t_v, s, c_h)
-                    res2 = cosmos_ultra_engine(h_v, x_v, t_v+1, s, c_h)
-                    st.write(f"**{s} Tour 1:** {res1['tour']} | Jumps: {res1['jumps']} | Accuracy: {res1['accuracy']}%")
-                    st.write(f"**{s} Tour 2:** {res2['tour']} | Jumps: {res2['jumps']} | Accuracy: {res2['accuracy']}%")
-                    st.code(res1['hex'][:48], language="bash")
-
-    with tab2:
-        st.markdown("##### 💣 MINES ULTRA LOGIC (V100: fixe 5 diamants foana)")
-        m_s = st.text_input("Server Seed:", key="ms")
-        m_c = st.text_input("Client Seed:", key="mc")
-        m_n = st.text_input("Nonce:", key="mn")
-        m_sl = st.slider("Nombre de mine (1–4):", 1, 4, 1) # Safidy fotsiny fa 5 diamants foana ny mivoaka
-        m_h = st.text_input("Heure (HH:mm:ss):", value=datetime.datetime.now().strftime("%H:%M:%S"), key="m_time")
-        
-        if st.button("🛰️ SCAN MINES"):
-            schema = mines_ultra_engine(m_s, m_c, m_n, m_h)
-            grid_html = '<div class="mines-grid">'
-            for i in range(25):
-                is_star = i in schema
-                grid_html += f'<div class="mine-cell {"cell-star" if is_star else ""}">{"⭐" if is_star else ""}</div>'
-            grid_html += '</div>'
-            st.markdown(grid_html, unsafe_allow_html=True)
-            st.success(f"V100 Engine: 5 Diamants generated for {m_sl} mines.")
-
-elif admin_input != "":
-    st.error("❌ Code diso.")
+                res1 = cosmos_ultra_engine(h_v, x_v, t_v, "T1", c_h)
+                res2 = cosmos_ultra_engine(h_v, x_v, t_v, "T2", c_h)
+                st.write(f"**T1 → Tour: {res1['tour']} | Côte: {res1['cote']}x | Min: {res1['min']}x | Moyen: {res1['mean']}x | Max: {res1['max']}x | Accuracy: {res1['accuracy']}%**")
+                st.write(f"**T2 → Tour: {res2['tour']} | Côte: {res2['cote']}x | Min: {res2['min']}x | Moyen: {res2['mean']}

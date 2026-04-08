@@ -111,7 +111,7 @@ def cosmosultraengine(server_seed, client_seed, tour_id, salt, heure=None, iters
         "hex": hex_out
     }
 
-# --- MINES ENGINE (tsy kitihina, toy ny code-nao) ---
+# --- MINES ENGINE (tsy kitihina, fa slider 1–7) ---
 def minesultraengine(serverseed, clientseed, nonce, heure=None, iters=250000):
     if heure is None:
         heure = datetime.datetime.now().strftime("%H:%M:%S")
@@ -170,12 +170,9 @@ if admininput == LOGIN_KEY:
         ms = st.text_input("Server Seed:", key="ms")
         mc = st.text_input("Client Seed:", key="mc")
         mn = st.text_input("Nonce:", key="mn")
+        m_sl = st.slider("Nombre de mine (1–7):", 1, 7, 1)  # ✅ slider 1–7
         mh = st.text_input("Heure (HH:mm:ss):", value=datetime.datetime.now().strftime("%H:%M:%S"), key="m_time")
         
         if st.button("🛰️ SCAN MINES"):
             schema = minesultraengine(ms, mc, mn, mh)
-            grid_html = '<div class="mines-grid">'
-            for i in range(25):
-                is_star = i in schema
-                grid_html += f'<div class="mine-cell {"cell-star" if is_star else ""}">{"⭐" if is_star else ""}</div>'
-            grid_html
+            grid_html = '<div class="mines-grid

@@ -5,7 +5,7 @@ import hashlib, hmac, random, datetime, statistics
 LOGIN_KEY = "2026"
 st.set_page_config(page_title="TITAN V100 ULTRA STYLÉ", layout="wide")
 
-# --- STYLE (Tsy nisy novaina fa nohamafisina ny Grid) ---
+# --- STYLE ---
 st.markdown("""
     <style>
     .stApp {
@@ -13,7 +13,7 @@ st.markdown("""
         color: #00ffcc;
         font-family: 'Courier New', monospace;
     }
-    h2, h3, h4 {
+    h2, h3, h4, h5 {
         color: #00ffcc;
         text-shadow: 0 0 10px #00ffcc;
     }
@@ -25,37 +25,46 @@ st.markdown("""
         padding: 10px 20px;
         font-weight: bold;
         box-shadow: 0 0 20px #00ffcc;
-        width: 100%;
     }
     .stButton>button:hover {
         background: linear-gradient(90deg, #0066ff, #00ffcc);
         box-shadow: 0 0 30px #0066ff;
     }
-    /* Grid system ho an'ny Mines */
     .mines-grid {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
-        gap: 8px;
-        max-width: 300px;
+        gap: 10px;
+        max-width: 330px;
         margin: auto;
+        padding: 20px;
     }
-    .cell {
-        width: 50px;
-        height: 50px;
-        background: #222;
-        border-radius: 8px;
+    .mine-cell {
+        aspect-ratio: 1/1;
+        background: #111;
+        border: 1px solid #00ffcc44;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 20px;
-        border: 1px solid #333;
+        font-size: 28px;
+        border-radius: 12px;
+        transition: 0.3s;
+        color: #333;
     }
-    .diamond { background: rgba(0, 212, 255, 0.2); border: 1px solid #00d4ff; box-shadow: 0 0 10px #00d4ff; }
+    .mine-cell:hover {
+        transform: scale(1.1);
+        box-shadow: 0 0 15px #00ffcc;
+    }
+    .cell-star {
+        border: 2px solid #ff0000 !important;
+        background: rgba(255, 0, 0, 0.3);
+        color: #ff0000;
+        box-shadow: 0 0 30px #ff0000;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-# --- COSMOS ENGINE (Ilay efa nataonao) ---
-def cosmos_ultra_engine(hash_val, hex_val, tour_id, salt, heure=None, iters=200000):
+# --- COSMOS ENGINE ---
+def cosmos_ultra_engine(hash_val, hex_val, tour_id, salt, heure=None, iters=250000):
     if heure is None:
         heure = datetime.datetime.now().strftime("%H:%M:%S")
     base = f"{hash_val}:{hex_val}:{tour_id}:{salt}:{heure}:COSMOSX_V100"
@@ -64,86 +73,99 @@ def cosmos_ultra_engine(hash_val, hex_val, tour_id, salt, heure=None, iters=2000
         h1 = hmac.new(h1, f"STEP_{i}".encode(), hashlib.sha512).digest()
     blake = hashlib.blake2b(h1).digest()
     sha3 = hashlib.sha3_256(blake).digest()
-    final = bytes(a ^ b for a, b in zip(h1[:32], sha3))
+    sha384 = hashlib.sha384(sha3).digest()
+    sha256 = hashlib.sha256(sha384).digest()
+    final = bytes(a ^ b ^ c ^ d for a, b, c, d in zip(h1, blake, sha3, sha256))
     hex_out = final.hex()
 
     p_int = int(hex_out[:16], 16)
     offset = (p_int % 29) + (9 if salt == "T1" else 15)
-    
+
+    # Côte de prédiction
+    constante = 4294967295
+    rtp = 0.97
     dec_val = int(hex_out[-8:], 16)
-    resultat = round((4294967295 * 0.97) / dec_val, 2) if dec_val > 0 else 1.0
-    
-    vals = [int(hex_out[i:i+4], 16)/10000 for i in range(0,20,4)]
+    resultat = (constante * rtp) / dec_val
+    if resultat < 1.0:
+        resultat = 1.0
+    resultat = round(resultat, 2)
+
+    # Jumps sy metrics
+    jumps = [(p_int % 7) + 2, (p_int % 11) + 3, (p_int % 13) + 4]
+    values = [offset] + jumps
+    min_val = min(values)
+    max_val = max(values)
+    mean_val = statistics.mean(values)
+    accuracy = round((mean_val / max_val) * 100, 2)
+
     return {
         "tour": tour_id + offset,
-        "cote": max(resultat, 1.0),
-        "min": round(min(vals),2),
-        "mean": round(statistics.mean(vals),2),
-        "max": round(max(vals),2),
-        "accuracy": round((statistics.mean(vals)/max(vals))*100,2) if max(vals)>0 else 0
+        "cote": resultat,
+        "jumps": jumps,
+        "min": min_val,
+        "max": max_val,
+        "mean": mean_val,
+        "accuracy": accuracy
     }
 
-# --- MINES ENGINE ---
-def mines_ultra_engine(server_seed, client_seed, nonce, nb_mines, heure=None):
+# --- MINES ENGINE (fixe 5 diamants foana, Résultat multiplier fotsiny) ---
+def mines_ultra_engine(server_seed, client_seed, nonce, nb_mines, heure=None, iters=250000):
     if heure is None:
         heure = datetime.datetime.now().strftime("%H:%M:%S")
     base = f"{server_seed}:{client_seed}:{nonce}:{heure}:MINES_V100"
-    h = hashlib.sha256(base.encode()).digest()
-    random.seed(int.from_bytes(h, "big"))
-    
-    grid = list(range(25))
-    random.shuffle(grid)
-    schema = sorted(grid[:5]) # Diamants 5 foana
-    
-    base_res = (4294967295 * 0.97) / (int.from_bytes(h[:4], "big") % 999999 + 1)
-    return schema, round(max(base_res/10, 1.2), 2)
+    h1 = hashlib.sha512(base.encode()).digest()
+    h2 = hashlib.blake2b(h1).digest()
+    h3 = hashlib.sha3_256(h2).digest()
+    h4 = hashlib.sha384(h3).digest()
+    h5 = hashlib.sha256(h4).digest()
 
-# --- LOGIN & TABS ---
-st.markdown("<h2 style='text-align:center;'>🔐 TITAN V100 ULTRA</h2>", unsafe_allow_html=True)
-admin_input = st.sidebar.text_input("Admin Access:", type="password")
+    h_mut = h1
+    for i in range(iters):
+        h_mut = hashlib.sha512(h_mut + f"STEP{i}".encode()).digest()
+
+    combined = h1 + h2 + h3 + h4 + h5 + h_mut
+    hash_int = int.from_bytes(combined, "big")
+
+    grid = list(range(25))
+    for i in range(24, 0, -1):
+        j = hash_int % (i + 1)
+        grid[i], grid[j] = grid[j], grid[i]
+        hash_int //= (i + 1)
+
+    random.seed(int.from_bytes(h3[:16], "big") ^ nb_mines)
+    random.shuffle(grid); random.shuffle(grid); random.shuffle(grid)
+
+    schema = grid[:5]  # fixe 5 diamants
+    mines = grid[5:5+nb_mines]
+
+    # Résultat multiplier fotsiny
+    base_result = (4294967295 * 0.97) / (int.from_bytes(h1[:8], "big") % 999999999)
+    resultat = round(base_result / (nb_mines + 0.5), 2)
+    if resultat < 1.0:
+        resultat = 1.0
+
+    return schema, mines, resultat
+
+# --- LOGIN ---
+st.markdown("<h2 style='text-align:center;'>🔐 TITAN V100 ULTRA STYLÉ</h2>", unsafe_allow_html=True)
+admin_input = st.text_input("Enter Admin Code:", type="password", key="main_auth")
 
 if admin_input == LOGIN_KEY:
-    tab1, tab2, tab3 = st.tabs(["🌌 COSMOSX", "💣 MINES", "🏇 PMU/VIRTUAL"])
+    st.success("✅ TITAN V100 Activated.")
+    tab1, tab2 = st.tabs(["🌌 COSMOSX", "💣 MINES ULTRA"])
 
     with tab1:
-        col1, col2 = st.columns(2)
-        with col1:
-            h_v = st.text_input("Hash Value:", value="d17354bbdbbdbfefb1ef2d210fb3ea2c3aeb4e6be5c27ac08a3e49b49fdf0b91")
-            t_v = st.number_input("Tour Actuel:", value=8147979)
-        with col2:
-            x_v = st.text_input("Hex Value:", value="SaSd3AAerLJrfAw053Bf")
-            c_h = st.text_input("Heure:", value=datetime.datetime.now().strftime("%H:%M:%S"))
-
-        if st.button("🚀 ANALYZE COSMOS"):
-            for s in ["T1", "T2"]:
-                res = cosmos_ultra_engine(h_v, x_v, t_v, s, c_h)
-                st.info(f"**{s}** | Tour: {res['tour']} | Côte: {res['cote']}x | Acc: {res['accuracy']}%")
+        st.markdown("##### 🌌 COSMOSX Prediction")
+        hv = st.text_input("Server Seed:", key="c_hash")
+        xv = st.text_input("Client Seed:", key="c_hex")
+        tv = st.number_input("Tour Actuel:", min_value=1, value=1, key="c_tour")
+        ch = st.text_input("Heure (HH:mm:ss):", value=datetime.datetime.now().strftime("%H:%M:%S"), key="c_time")
+        if st.button("🚀 SCAN COSMOS"):
+            if hv and xv:
+                res1 = cosmos_ultra_engine(hv, xv, tv, "T1", ch)
+                res2 = cosmos_ultra_engine(hv, xv, tv, "T2", ch)
+                st.write(f"T1 → Tour: {res1['tour']} | Côte: {res1['cote']}x | Jumps: {res1['jumps']} | Min: {res1['min']} | Moyen: {res1['mean']} | Max: {res1['max']} | Accuracy: {res1['accuracy']}%")
+                st.write(f"T2 → Tour: {res2['tour']} | Côte: {res2['cote']}x | Jumps: {res2['jumps']} | Min: {res2['min']} | Moyen: {res2['mean']} | Max: {res2['max']} | Accuracy: {res2['accuracy']}%")
 
     with tab2:
-        st.markdown("### 💣 Mines Scanner")
-        nb_m = st.slider("Isan'ny Mines:", 1, 24, 3)
-        if st.button("🔍 SCAN GRID"):
-            schema, cote = mines_ultra_engine(h_v, x_v, t_v, nb_m, c_h)
-            
-            # Fampisehoana ny Grid amin'ny fomba stylé
-            grid_html = '<div class="mines-grid">'
-            for i in range(25):
-                if i in schema:
-                    grid_html += '<div class="cell diamond">💎</div>'
-                else:
-                    grid_html += '<div class="cell">?</div>'
-            grid_html += '</div>'
-            st.markdown(grid_html, unsafe_allow_html=True)
-            st.success(f"Cote possible: {cote}x | Safe Slots: {schema}")
-
-    with tab3:
-        st.markdown("### 🏇 Virtual Racing / PMU")
-        st.write("Mampiasa ny algorithm **TITAN Success Rate**.")
-        if st.button("📊 CALCULATE SUCCESS RATE"):
-            # Ohatra amin'ny fampiasana ny fahaizanao math (Success Rate)
-            sr = round(random.uniform(75, 98), 2)
-            st.metric("Taux de Réussite (SR)", f"{sr}%")
-            st.write("Vinavina: **Soavaly faha-3 sy faha-5** no manana probability ambony.")
-
-else:
-    st.warning("Ampidiro ny Admin Code eo amin'ny sidebar.")
+        st.markdown("##### 💣 MINES ULTRA (fixe 5 diamants foana)")

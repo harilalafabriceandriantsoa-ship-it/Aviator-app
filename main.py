@@ -2,25 +2,18 @@ import streamlit as st
 import hashlib, random, statistics, datetime
 import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="TITAN V101 PREMIUM", layout="wide")
+st.set_page_config(page_title="TITAN V101 PREMIUM ULTRA FIABLE", layout="wide")
 
 # --- STYLE ---
 st.markdown("""
     <style>
     .stApp {background: linear-gradient(135deg,#0f0f0f,#1a1a1a);color:#00ffcc;font-family:'Courier New',monospace;}
-    h1,h2,h3,h4 {color:#00ffcc;text-shadow:0 0 10px #00ffcc;}
+    h1,h2,h3,h4 {color:#00ffcc;text-shadow:0 0 15px #00ffcc;}
     .stButton>button {background:linear-gradient(90deg,#00ffcc,#0066ff);color:#fff;border-radius:12px;
-        padding:10px 20px;font-weight:bold;box-shadow:0 0 20px #00ffcc;}
-    .stButton>button:hover {background:linear-gradient(90deg,#0066ff,#00ffcc);box-shadow:0 0 30px #0066ff;}
+        padding:12px 24px;font-weight:bold;box-shadow:0 0 25px #00ffcc;}
+    .stButton>button:hover {background:linear-gradient(90deg,#0066ff,#00ffcc);box-shadow:0 0 35px #0066ff;}
     </style>
 """, unsafe_allow_html=True)
-
-# --- LOGIN KATHY ---
-st.sidebar.title("🔐 Login Kathy")
-username = st.sidebar.text_input("Username")
-password = st.sidebar.text_input("Password", type="password")
-if username and password:
-    st.sidebar.success(f"Bienvenue {username} !")
 
 # --- DRAW MINES BOARD ---
 def draw_styled_board(schema, mines):
@@ -33,11 +26,11 @@ def draw_styled_board(schema, mines):
     for pos in schema:
         r,c = divmod(pos,5)
         ax.text(c+0.5,4.5-r,"💎",ha="center",va="center",fontsize=35,
-                bbox=dict(facecolor='#00D4FF',alpha=0.1,edgecolor='none',boxstyle='round,pad=0.2'))
+                bbox=dict(facecolor='#00D4FF',alpha=0.2,edgecolor='none',boxstyle='round,pad=0.2'))
     for pos in mines:
         r,c = divmod(pos,5)
         ax.text(c+0.5,4.5-r,"💣",ha="center",va="center",fontsize=25,
-                bbox=dict(facecolor='#FF0044',alpha=0.1,edgecolor='none',boxstyle='round,pad=0.2'))
+                bbox=dict(facecolor='#FF0044',alpha=0.2,edgecolor='none',boxstyle='round,pad=0.2'))
     ax.set_xlim(0,5); ax.set_ylim(0,5); ax.axis('off')
     st.pyplot(fig)
 
@@ -84,10 +77,11 @@ def cosmos_premium_engine(server_seed, client_seed, tour_actuel):
     if resultat < 1.0:
         resultat = 1.0
 
-    # Dynamic jumps (not fixed)
+    # Dynamic jumps (not fixed, depend on hash + heure)
     p_int = int(h[:16],16)
-    jump1 = (p_int % 12) + (int(heure.replace(":","")) % 5)
-    jump2 = (p_int % 18) + (int(heure.replace(":","")) % 7)
+    heure_val = int(heure.replace(":",""))
+    jump1 = (p_int % 12) + (heure_val % 5)
+    jump2 = (p_int % 18) + (heure_val % 7)
     tour1 = tour_actuel + jump1
     tour2 = tour_actuel + jump2
 

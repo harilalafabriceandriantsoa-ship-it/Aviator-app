@@ -1,6 +1,5 @@
 import streamlit as st
 import hashlib, random, statistics, datetime
-import numpy as np
 import matplotlib.pyplot as plt
 
 st.set_page_config(page_title="TITAN V101 PREMIUM", layout="wide")
@@ -15,6 +14,13 @@ st.markdown("""
     .stButton>button:hover {background:linear-gradient(90deg,#0066ff,#00ffcc);box-shadow:0 0 30px #0066ff;}
     </style>
 """, unsafe_allow_html=True)
+
+# --- LOGIN KATHY ---
+st.sidebar.title("🔐 Login Kathy")
+username = st.sidebar.text_input("Username")
+password = st.sidebar.text_input("Password", type="password")
+if username and password:
+    st.sidebar.success(f"Bienvenue {username} !")
 
 # --- DRAW MINES BOARD ---
 def draw_styled_board(schema):
@@ -32,16 +38,12 @@ def draw_styled_board(schema):
     st.pyplot(fig)
 
 # --- MINES ULTRA ENGINE ---
-def mines_ultra_engine(server_seed, client_seed, nb_mines, tour_actuel, iters=100000):
+def mines_ultra_engine(server_seed, client_seed, nb_mines, tour_actuel):
     heure = datetime.datetime.now().strftime("%H:%M:%S")
     base = f"{server_seed}:{client_seed}:{nb_mines}:{tour_actuel}:{heure}:MINES_ULTRA"
     h = hashlib.sha512(base.encode()).digest()
-    h = hashlib.blake2b(h).digest()
-    h = hashlib.sha3_256(h).digest()
-    h = hashlib.sha384(h).digest()
-    h = hashlib.sha256(h).digest()
-
     hash_int = int.from_bytes(h, "big")
+
     grid = list(range(25))
     for i in range(24,0,-1):
         j = hash_int % (i+1)
@@ -52,15 +54,17 @@ def mines_ultra_engine(server_seed, client_seed, nb_mines, tour_actuel, iters=10
     for _ in range(5):
         random.shuffle(grid)
 
-    schema = grid[:nb_mines]  # toerana misy mines
-    safe_slots = [i for i in range(25) if i not in schema]
+    # Fixe 5 diamants
+    schema = grid[:5]
+    mines = grid[5:5+nb_mines]
+    safe_slots = [i for i in range(25) if i not in mines]
 
     probs = []
     for k in range(len(safe_slots)):
         p = round(((len(safe_slots)-k)/(25-k))*100,2)
         probs.append(p)
 
-    return schema, safe_slots, probs, heure
+    return schema, mines, safe_slots, probs, heure
 
 # --- COSMOS PREMIUM ENGINE ---
 def cosmos_premium_engine(server_seed, client_seed, tour_actuel):
@@ -68,7 +72,7 @@ def cosmos_premium_engine(server_seed, client_seed, tour_actuel):
     base = f"{server_seed}:{client_seed}:{tour_actuel}:{heure}:COSMOSX"
     h = hashlib.sha512(base.encode()).hexdigest()
 
-    hex_val = h[-8:]  # 8 derniers caractères
+    hex_val = h[-8:]
     dec_val = int(hex_val,16)
     constante = 4294967295
     rtp = 0.97
@@ -120,9 +124,10 @@ with tab1:
     nb_mines = st.selectbox("Isan'ny Mines:",[1,2,3])
     tour_actuel = st.number_input("Tour Actuel:",min_value=1,value=8147129)
     if st.button("🚀 SCAN MINES"):
-        schema,safe_slots,probs,heure = mines_ultra_engine(s_seed,c_seed,nb_mines,tour_actuel)
-        draw_styled_board(safe_slots)
-        st.success(f"Mines: {schema}")
+        schema,mines,safe_slots,probs,heure = mines_ultra_engine(s_seed,c_seed,nb_mines,tour_actuel)
+        draw_styled_board(schema)
+        st.success(f"Diamants (fixe 5): {schema}")
+        st.warning(f"Mines ({nb_mines}): {mines}")
         st.info(f"Safe Slots: {safe_slots}")
         st.info(f"Probabilités dynamique: {probs}")
         st.info(f"Heure kajy: {heure}")
@@ -136,7 +141,8 @@ with tab2:
         m2.metric("MEAN",f"{res['mean']}x")
         m3.metric("MAX",f"{res['max']}x")
         m4.metric("ACCURACY",f"{res['accuracy']}%")
+        st.success(f"Résultat: {res['resultat']}x")
         st.info(f"Tour Actuel {res['tour_actuel']} @ {res['heure']}")
         st.info(f"Tour 1 → {res['tour1']}")
         st.info(f"Tour 2 → {res['tour2']}")
-        st.code(f"Hash: {res['hash']}\nHEX: {res['hex']}\nDecimal: {res['decimal']}\nConstante: {res['constante']}\nRTP: {res['rtp']}\nRésultat: {res['resultat']}x",language="bash")
+        st.code(f"Hash: {res['hash']}\nHEX: {res['hex']}\nDecimal: {res['decimal']}\nConstante: {res['constante']}\nRTP: {res['rtp']}",language="bash")

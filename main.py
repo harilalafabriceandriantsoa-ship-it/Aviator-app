@@ -1,130 +1,122 @@
 import streamlit as st
-import hashlib, random, statistics, datetime
+import hashlib, hmac, random, statistics, datetime
 import matplotlib.pyplot as plt
+import numpy as np
 
-st.set_page_config(page_title="TITAN V101 PREMIUM ULTRA FIABLE", layout="wide")
+# --- CONFIGURATION STYLE ---
+st.set_page_config(page_title="TITAN V101 - ADMIN 2026", layout="wide")
+plt.style.use('dark_background')
 
-# --- STYLE ---
-st.markdown("""
-    <style>
-    .stApp {background: linear-gradient(135deg,#0f0f0f,#1a1a1a);color:#00ffcc;font-family:'Courier New',monospace;}
-    h1,h2,h3,h4 {color:#00ffcc;text-shadow:0 0 15px #00ffcc;}
-    .stButton>button {background:linear-gradient(90deg,#00ffcc,#0066ff);color:#fff;border-radius:12px;
-        padding:12px 24px;font-weight:bold;box-shadow:0 0 25px #00ffcc;}
-    .stButton>button:hover {background:linear-gradient(90deg,#0066ff,#00ffcc);box-shadow:0 0 35px #0066ff;}
-    </style>
-""", unsafe_allow_html=True)
+# --- ENGINE FUNCTIONS ---
 
-# --- DRAW MINES BOARD (stylé neon) ---
-def draw_styled_board(schema, mines):
-    fig, ax = plt.subplots(figsize=(6,6))
-    fig.patch.set_facecolor('#0E1117')
-    ax.set_facecolor('#0E1117')
-    for x in range(6):
-        ax.axhline(x, color='#00ff00', lw=2)
-        ax.axvline(x, color='#00ff00', lw=2)
-    for pos in schema:
-        r,c = divmod(pos,5)
-        ax.text(c+0.5,4.5-r,"💎",ha="center",va="center",fontsize=35,
-                bbox=dict(facecolor='#00D4FF',alpha=0.3,edgecolor='none',boxstyle='round,pad=0.2'))
-    for pos in mines:
-        r,c = divmod(pos,5)
-        ax.text(c+0.5,4.5-r,"💣",ha="center",va="center",fontsize=30,
-                bbox=dict(facecolor='#FF0044',alpha=0.3,edgecolor='none',boxstyle='round,pad=0.2'))
-    ax.set_xlim(0,5); ax.set_ylim(0,5); ax.axis('off')
-    st.pyplot(fig)
-
-# --- MINES ENGINE ---
-def mines_engine(server_seed, client_seeds, nb_mines, tour_actuel):
+def cosmos_premium_engine(server_seed, client_seed, nonce, salt="T1", iters=500000):
     heure = datetime.datetime.now().strftime("%H:%M:%S")
-    combined = server_seed + ":" + ":".join(client_seeds) + f":{nb_mines}:{tour_actuel}:{heure}:MINES"
-    h = hashlib.sha512(combined.encode()).digest()
-    hash_int = int.from_bytes(h, "big")
+    base = f"{server_seed}:{client_seed}:{nonce}:{salt}:{heure}:COSMOSX_V101"
+    h1 = hmac.new(b"COSMOS_CORE", base.encode(), hashlib.sha512).digest()
+    for i in range(iters):
+        h1 = hashlib.sha512(h1 + f"STEP_{i}".encode()).digest()
+    
+    hex_out = h1.hex()
+    p_int = int(hex_out[:16], 16)
+    offset = (p_int % 29) + (9 if salt == "T1" else 15)
+    jumps = [(p_int % 7) + 2, (p_int % 11) + 3, (p_int % 13) + 4]
 
+    values = [offset] + jumps
+    accuracy = round((statistics.mean(values) / max(values)) * 100, 2)
+
+    return {
+        "hex": hex_out[:64],
+        "tour": nonce + offset,
+        "jumps": jumps,
+        "min": min(values),
+        "max": max(values),
+        "mean": round(statistics.mean(values), 2),
+        "accuracy": accuracy
+    }
+
+def mines_premium_engine(server_seed, client_seed, nonce, iters=500000):
+    heure = datetime.datetime.now().strftime("%H:%M:%S")
+    base = f"{server_seed}:{client_seed}:{nonce}:{heure}:MINES_V101"
+    h = hashlib.sha512(base.encode()).digest()
+    for i in range(iters):
+        h = hashlib.sha512(h + f"STEP{i}".encode()).digest()
+
+    random.seed(int.from_bytes(h[:8], "big"))
     grid = list(range(25))
-    for i in range(24,0,-1):
-        j = hash_int % (i+1)
-        grid[i],grid[j] = grid[j],grid[i]
-        hash_int //= (i+1)
+    random.shuffle(grid)
+    schema = sorted(grid[:5])
+    probs = [round(((5 - k) / (25 - k)) * 100, 2) for k in range(5)]
+    
+    return schema, probs
 
-    random.seed(int.from_bytes(h[:16],"big") ^ nb_mines ^ tour_actuel)
-    for _ in range(5):
-        random.shuffle(grid)
+# --- INTERFACE ADMIN LOGIN ---
 
-    schema = grid[:5]  # fixe 5 diamants
-    mines = grid[5:5+nb_mines]
-    safe_slots = [i for i in range(25) if i not in mines]
+if 'logged_in' not in st.session_state:
+    st.session_state['logged_in'] = False
 
-    # Résultat samihafa arakaraka ny nb_mines
-    base_result = (4294967295 * 0.97) / (int.from_bytes(h[:8],"big") % 999999999)
-    resultat = round(base_result / (nb_mines + 0.5), 2)
-    if resultat < 1.0:
-        resultat = 1.0
+if not st.session_state['logged_in']:
+    st.title("🔐 TITAN V101 - ADMIN LOGIN (2026)")
+    admin_code = st.text_input("Enter Admin Code:", type="password")
+    if st.button("LOGIN"):
+        if admin_code == "2026": # Ity ny code fidirana
+            st.session_state['logged_in'] = True
+            st.rerun()
+        else:
+            st.error("Code diso! Avereno indray.")
+else:
+    # --- DASHBOARD ADMIN ---
+    st.title("🌌 TITAN V101 PREMIUM 2026")
+    if st.button("LOGOUT"):
+        st.session_state['logged_in'] = False
+        st.rerun()
 
-    vals = [int.from_bytes(h[i:i+2],"big")/10 for i in range(0,20,2)]
-    min_val = min(vals); max_val = max(vals)
-    mean_val = round(statistics.mean(vals),2)
-    accuracy = round((mean_val/max_val)*100,2)
+    st.markdown("---")
+    
+    col1, col2 = st.columns([1, 2])
+    
+    with col1:
+        st.subheader("🔑 Seeds Configuration")
+        s_seed = st.text_input("Server Seed", "d17354bbdbbdbfefb1ef2d210fb3ea2c3aeb4e6be5c27ac08a3e49b49fdf0b91")
+        c_seed = st.text_input("Client Seed", "SaSd3AAerLJrfAw053Bf")
+        n_val = st.number_input("Nonce / Current Tour", min_value=1, value=1)
+        
+        st.markdown("---")
+        mode = st.radio("Select Engine:", ["Mines Ultra", "CosmosX Predictor"])
 
-    return schema, mines, safe_slots, resultat, min_val, mean_val, max_val, accuracy, heure
+    with col2:
+        if mode == "Mines Ultra":
+            if st.button("🚀 PREDICT MINES"):
+                schema, probs = mines_premium_engine(s_seed, c_seed, n_val)
+                
+                fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+                img = np.zeros((5, 5))
+                for pos in schema:
+                    r, c = divmod(pos, 5)
+                    img[r, c] = 1
+                
+                ax1.imshow(img, cmap='Blues')
+                ax1.set_title("Diamond Strategy")
+                for p in schema:
+                    r, c = divmod(p, 5)
+                    ax1.text(c, r, "💎", ha="center", va="center", fontsize=20)
+                
+                ax2.bar(range(1, 6), probs, color='cyan')
+                ax2.set_title("Success Probability per Click")
+                
+                st.pyplot(fig)
+                st.success(f"Recommended Clicks (Positions): {schema}")
 
-# --- COSMOS ENGINE ---
-def cosmos_engine(server_seed, client_seeds, tour_actuel):
-    heure = datetime.datetime.now().strftime("%H:%M:%S")
-    combined = server_seed + ":" + ":".join(client_seeds) + f":{tour_actuel}:{heure}:COSMOS"
-    h = hashlib.sha512(combined.encode()).hexdigest()
-
-    hex_val = h[-8:]
-    dec_val = int(hex_val,16)
-    constante = 4294967295
-    rtp = 0.97
-    resultat = (constante * rtp) / dec_val
-    if resultat < 1.0:
-        resultat = 1.0
-
-    p_int = int(h[:16],16)
-    heure_val = int(heure.replace(":",""))
-    jump1 = (p_int % 12) + (heure_val % 5)
-    jump2 = (p_int % 18) + (heure_val % 7)
-    tour1 = tour_actuel + jump1
-    tour2 = tour_actuel + jump2
-
-    vals = [int(h[i:i+2],16)/10 for i in range(0,20,2)]
-    min_val = min(vals); max_val = max(vals)
-    mean_val = round(statistics.mean(vals),2)
-    accuracy = round((mean_val/max_val)*100,2)
-
-    return resultat, tour1, tour2, min_val, mean_val, max_val, accuracy, heure, h, hex_val, dec_val, constante, rtp
-
-# --- INTERFACE ---
-st.title("🌌 TITAN V101 PREMIUM ULTRA FIABLE")
-
-col1,col2 = st.columns(2)
-with col1:
-    s_seed = st.text_input("Server Seed","8763ac0c2e46896c640450c91894b7bb6c71d771766ba411e93499")
-with col2:
-    c_seeds = st.text_area("Client Seeds (separate by comma)","kaAfYhzp2OBQI8FPZkfg,BprqDhXFlmUcJYRXHnye,BOfwf4M0EXIFO5l4bj6t").split(",")
-
-tab1,tab2 = st.tabs(["💎 MINES","📈 COSMOS"])
-
-with tab1:
-    nb_mines = st.selectbox("Isan'ny Mines:",[1,2,3])
-    tour_actuel = st.number_input("Tour Actuel:",min_value=1,value=8147979)
-    if st.button("🚀 SCAN MINES"):
-        schema,mines,safe_slots,resultat,min_val,mean_val,max_val,accuracy,heure = mines_engine(s_seed,c_seeds,nb_mines,tour_actuel)
-        draw_styled_board(schema,mines)
-        st.success(f"Diamants (fixe 5): {schema}")
-        st.warning(f"Mines ({nb_mines}): {mines}")
-        st.info(f"Safe Slots: {safe_slots}")
-        st.metric("Résultat",f"{resultat}x")
-        m1,m2,m3,m4 = st.columns(4)
-        m1.metric("MIN",f"{min_val}x")
-        m2.metric("MEAN",f"{mean_val}x")
-        m3.metric("MAX",f"{max_val}x")
-        m4.metric("ACCURACY",f"{accuracy}%")
-        st.info(f"Heure kajy: {heure}")
-
-with tab2:
-    tour_actuel = st.number_input("Tour Actuel Cosmos:",min_value=1,value=8147979)
-    if st.button("🌠 ANALYZE COSMOS"):
-        resultat,tour1,tour2,min_val,mean_val,max_val,accuracy,heure,h,hex_val,dec_val,constante,rtp =
+        elif mode == "CosmosX Predictor":
+            if st.button("🌠 PREDICT COSMOS"):
+                res = cosmos_premium_engine(s_seed, c_seed, n_val)
+                
+                m1, m2, m3 = st.columns(3)
+                m1.metric("Target Tour", res['tour'])
+                m2.metric("Accuracy", f"{res['accuracy']}%")
+                m3.metric("Mean Jump", res['mean'])
+                
+                fig, ax = plt.subplots(figsize=(8, 4))
+                ax.barh(["Min", "Mean", "Max"], [res['min'], res['mean'], res['max']], color='magenta')
+                ax.set_title("Analysis Metrics")
+                st.pyplot(fig)
+                st.code(f"Hash: {res['hex']}...", language="bash")

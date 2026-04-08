@@ -63,11 +63,13 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- COSMOS ENGINE ---
-def cosmos_ultra_engine(hash_val, hex_val, tour_id, salt, heure=None, iters=250000):
+# --- COSMOS ENGINE (ultra puissante) ---
+def cosmosultraengine(server_seed, client_seed, tour_id, salt, heure=None, iters=250000):
     if heure is None:
         heure = datetime.datetime.now().strftime("%H:%M:%S")
-    base = f"{hash_val}:{hex_val}:{tour_id}:{salt}:{heure}:COSMOSX_V100"
+    base = f"{server_seed}:{client_seed}:{tour_id}:{salt}:{heure}:COSMOSXV100"
+    
+    # Hashing chain ultra puissante
     h1 = hmac.new(b"COSMOS_CORE", base.encode(), hashlib.sha512).digest()
     for i in range(iters):
         h1 = hmac.new(h1, f"STEP_{i}".encode(), hashlib.sha512).digest()
@@ -78,41 +80,44 @@ def cosmos_ultra_engine(hash_val, hex_val, tour_id, salt, heure=None, iters=2500
     final = bytes(a ^ b ^ c ^ d for a, b, c, d in zip(h1, blake, sha3, sha256))
     hex_out = final.hex()
 
+    # Offset sy jump variable
     p_int = int(hex_out[:16], 16)
     offset = (p_int % 29) + (9 if salt == "T1" else 15)
+    jumps = [(p_int % 7) + 2, (p_int % 11) + 3, (p_int % 13) + 4]
 
-    # Côte de prédiction
+    # Côte
     constante = 4294967295
     rtp = 0.97
     dec_val = int(hex_out[-8:], 16)
-    resultat = (constante * rtp) / dec_val
-    if resultat < 1.0:
-        resultat = 1.0
-    resultat = round(resultat, 2)
+    cote = (constante * rtp) / dec_val
+    if cote < 1.0: cote = 1.0
+    cote = round(cote, 2)
 
-    # Jumps sy metrics
-    jumps = [(p_int % 7) + 2, (p_int % 11) + 3, (p_int % 13) + 4]
+    # Metrics
     values = [offset] + jumps
-    min_val = min(values)
-    max_val = max(values)
-    mean_val = statistics.mean(values)
+    min_val = round(min(values),2)
+    max_val = round(max(values),2)
+    mean_val = round(statistics.mean(values),2)
     accuracy = round((mean_val / max_val) * 100, 2)
 
     return {
         "tour": tour_id + offset,
-        "cote": resultat,
+        "cote": cote,
         "jumps": jumps,
         "min": min_val,
         "max": max_val,
         "mean": mean_val,
-        "accuracy": accuracy
+        "accuracy": accuracy,
+        "hex": hex_out
     }
 
-# --- MINES ENGINE (fixe 5 diamants foana, Résultat multiplier fotsiny) ---
-def mines_ultra_engine(server_seed, client_seed, nonce, nb_mines, heure=None, iters=250000):
+# --- MINES ENGINE (tsy kitihina, toy ny code-nao) ---
+def minesultraengine(serverseed, clientseed, nonce, heure=None, iters=250000):
     if heure is None:
         heure = datetime.datetime.now().strftime("%H:%M:%S")
-    base = f"{server_seed}:{client_seed}:{nonce}:{heure}:MINES_V100"
+    choice_salt = f"CHOICE5:{heure}"
+    base = f"{serverseed}:{clientseed}:{nonce}:{choice_salt}:MINESV100"
+
     h1 = hashlib.sha512(base.encode()).digest()
     h2 = hashlib.blake2b(h1).digest()
     h3 = hashlib.sha3_256(h2).digest()
@@ -131,41 +136,46 @@ def mines_ultra_engine(server_seed, client_seed, nonce, nb_mines, heure=None, it
         j = hash_int % (i + 1)
         grid[i], grid[j] = grid[j], grid[i]
         hash_int //= (i + 1)
+    
+    random.seed(int.from_bytes(h3[:16], "big") ^ 5)
+    random.shuffle(grid)
+    random.shuffle(grid)
+    random.shuffle(grid)
 
-    random.seed(int.from_bytes(h3[:16], "big") ^ nb_mines)
-    random.shuffle(grid); random.shuffle(grid); random.shuffle(grid)
-
-    schema = grid[:5]  # fixe 5 diamants
-    mines = grid[5:5+nb_mines]
-
-    # Résultat multiplier fotsiny
-    base_result = (4294967295 * 0.97) / (int.from_bytes(h1[:8], "big") % 999999999)
-    resultat = round(base_result / (nb_mines + 0.5), 2)
-    if resultat < 1.0:
-        resultat = 1.0
-
-    return schema, mines, resultat
+    return grid[:5]
 
 # --- LOGIN ---
 st.markdown("<h2 style='text-align:center;'>🔐 TITAN V100 ULTRA STYLÉ</h2>", unsafe_allow_html=True)
-admin_input = st.text_input("Enter Admin Code:", type="password", key="main_auth")
+admininput = st.text_input("Enter Admin Code:", type="password", key="main_auth")
 
-if admin_input == LOGIN_KEY:
+if admininput == LOGIN_KEY:
     st.success("✅ TITAN V100 Activated.")
     tab1, tab2 = st.tabs(["🌌 COSMOSX", "💣 MINES ULTRA"])
 
     with tab1:
-        st.markdown("##### 🌌 COSMOSX Prediction")
+        st.markdown("##### 🌌 COSMOSX (Ultra puissante)")
         hv = st.text_input("Server Seed:", key="c_hash")
         xv = st.text_input("Client Seed:", key="c_hex")
-        tv = st.number_input("Tour Actuel:", min_value=1, value=1, key="c_tour")
+        tv = st.number_input("Tour Actuel:", min_value=1, value=1, key="ctour")
         ch = st.text_input("Heure (HH:mm:ss):", value=datetime.datetime.now().strftime("%H:%M:%S"), key="c_time")
         if st.button("🚀 SCAN COSMOS"):
             if hv and xv:
-                res1 = cosmos_ultra_engine(hv, xv, tv, "T1", ch)
-                res2 = cosmos_ultra_engine(hv, xv, tv, "T2", ch)
-                st.write(f"T1 → Tour: {res1['tour']} | Côte: {res1['cote']}x | Jumps: {res1['jumps']} | Min: {res1['min']} | Moyen: {res1['mean']} | Max: {res1['max']} | Accuracy: {res1['accuracy']}%")
-                st.write(f"T2 → Tour: {res2['tour']} | Côte: {res2['cote']}x | Jumps: {res2['jumps']} | Min: {res2['min']} | Moyen: {res2['mean']} | Max: {res2['max']} | Accuracy: {res2['accuracy']}%")
+                for s in ["T1", "T2"]:
+                    res = cosmosultraengine(hv, xv, tv, s, ch)
+                    st.write(f"{s} → Tour: {res['tour']} | Côte: {res['cote']}x | Jumps: {res['jumps']} | Min: {res['min']} | Moyen: {res['mean']} | Max: {res['max']} | Accuracy: {res['accuracy']}%")
+                    st.code(res['hex'][:48], language="bash")
 
     with tab2:
-        st.markdown("##### 💣 MINES ULTRA (fixe 5 diamants foana)")
+        st.markdown("##### 💣 MINES ULTRA LOGIC (fixe 5 diamants foana)")
+        ms = st.text_input("Server Seed:", key="ms")
+        mc = st.text_input("Client Seed:", key="mc")
+        mn = st.text_input("Nonce:", key="mn")
+        mh = st.text_input("Heure (HH:mm:ss):", value=datetime.datetime.now().strftime("%H:%M:%S"), key="m_time")
+        
+        if st.button("🛰️ SCAN MINES"):
+            schema = minesultraengine(ms, mc, mn, mh)
+            grid_html = '<div class="mines-grid">'
+            for i in range(25):
+                is_star = i in schema
+                grid_html += f'<div class="mine-cell {"cell-star" if is_star else ""}">{"⭐" if is_star else ""}</div>'
+            grid_html

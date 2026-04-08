@@ -15,30 +15,30 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- DRAW MINES BOARD ---
+# --- DRAW MINES BOARD (stylé neon) ---
 def draw_styled_board(schema, mines):
     fig, ax = plt.subplots(figsize=(6,6))
     fig.patch.set_facecolor('#0E1117')
     ax.set_facecolor('#0E1117')
     for x in range(6):
-        ax.axhline(x, color='#1E2633', lw=2)
-        ax.axvline(x, color='#1E2633', lw=2)
+        ax.axhline(x, color='#00ff00', lw=2)  # neon green grid
+        ax.axvline(x, color='#00ff00', lw=2)
     for pos in schema:
         r,c = divmod(pos,5)
         ax.text(c+0.5,4.5-r,"💎",ha="center",va="center",fontsize=35,
-                bbox=dict(facecolor='#00D4FF',alpha=0.2,edgecolor='none',boxstyle='round,pad=0.2'))
+                bbox=dict(facecolor='#00D4FF',alpha=0.3,edgecolor='none',boxstyle='round,pad=0.2'))
     for pos in mines:
         r,c = divmod(pos,5)
-        ax.text(c+0.5,4.5-r,"💣",ha="center",va="center",fontsize=25,
-                bbox=dict(facecolor='#FF0044',alpha=0.2,edgecolor='none',boxstyle='round,pad=0.2'))
+        ax.text(c+0.5,4.5-r,"💣",ha="center",va="center",fontsize=30,
+                bbox=dict(facecolor='#FF0044',alpha=0.3,edgecolor='none',boxstyle='round,pad=0.2'))
     ax.set_xlim(0,5); ax.set_ylim(0,5); ax.axis('off')
     st.pyplot(fig)
 
 # --- MINES ULTRA ENGINE ---
-def mines_ultra_engine(server_seed, client_seed, nb_mines, tour_actuel):
+def mines_ultra_engine(server_seed, client_seeds, nb_mines, tour_actuel):
     heure = datetime.datetime.now().strftime("%H:%M:%S")
-    base = f"{server_seed}:{client_seed}:{nb_mines}:{tour_actuel}:{heure}:MINES_ULTRA"
-    h = hashlib.sha512(base.encode()).digest()
+    combined = server_seed + ":" + ":".join(client_seeds) + f":{nb_mines}:{tour_actuel}:{heure}:MINES_ULTRA"
+    h = hashlib.sha512(combined.encode()).digest()
     hash_int = int.from_bytes(h, "big")
 
     grid = list(range(25))
@@ -51,8 +51,7 @@ def mines_ultra_engine(server_seed, client_seed, nb_mines, tour_actuel):
     for _ in range(5):
         random.shuffle(grid)
 
-    # Fixe 5 diamants
-    schema = grid[:5]
+    schema = grid[:5]  # diamants fixe 5
     mines = grid[5:5+nb_mines]
     safe_slots = [i for i in range(25) if i not in mines]
 
@@ -64,11 +63,12 @@ def mines_ultra_engine(server_seed, client_seed, nb_mines, tour_actuel):
     return schema, mines, safe_slots, probs, heure
 
 # --- COSMOS PREMIUM ENGINE ---
-def cosmos_premium_engine(server_seed, client_seed, tour_actuel):
+def cosmos_prediction(server_seed, client_seeds, tour_actuel):
     heure = datetime.datetime.now().strftime("%H:%M:%S")
-    base = f"{server_seed}:{client_seed}:{tour_actuel}:{heure}:COSMOSX"
-    h = hashlib.sha512(base.encode()).hexdigest()
+    combined = server_seed + ":" + ":".join(client_seeds) + f":{tour_actuel}:{heure}:COSMOSX"
+    h = hashlib.sha512(combined.encode()).hexdigest()
 
+    # Calcul interne (tsy aseho amin'ny UI)
     hex_val = h[-8:]
     dec_val = int(hex_val,16)
     constante = 4294967295
@@ -77,53 +77,33 @@ def cosmos_premium_engine(server_seed, client_seed, tour_actuel):
     if resultat < 1.0:
         resultat = 1.0
 
-    # Dynamic jumps (not fixed, depend on hash + heure)
+    # Dynamic jumps
     p_int = int(h[:16],16)
     heure_val = int(heure.replace(":",""))
     jump1 = (p_int % 12) + (heure_val % 5)
     jump2 = (p_int % 18) + (heure_val % 7)
+
     tour1 = tour_actuel + jump1
     tour2 = tour_actuel + jump2
 
-    vals = [int(h[i:i+2],16)/10 for i in range(0,20,2)]
-    min_val = min(vals)
-    max_val = max(vals)
-    mean_val = round(statistics.mean(vals),2)
-    accuracy = round((mean_val/max_val)*100,2)
-
-    return {
-        "hash": h,
-        "hex": hex_val,
-        "decimal": dec_val,
-        "constante": constante,
-        "rtp": rtp,
-        "resultat": round(resultat,2),
-        "tour_actuel": tour_actuel,
-        "heure": heure,
-        "tour1": tour1,
-        "tour2": tour2,
-        "min": min_val,
-        "mean": mean_val,
-        "max": max_val,
-        "accuracy": accuracy
-    }
+    return tour1, tour2
 
 # --- INTERFACE ---
 st.title("🌌 TITAN V101 PREMIUM ULTRA FIABLE")
 
 col1,col2 = st.columns(2)
 with col1:
-    s_seed = st.text_input("Server Seed","ea147a04df73500c6a2d8bc508e47bd5452de266f1d82abed77335f")
+    s_seed = st.text_input("Server Seed","8763ac0c2e46896c640450c91894b7bb6c71d771766ba411e93499")
 with col2:
-    c_seed = st.text_input("Client Seed","VVysLnEDMZEEC6Givsrv")
+    c_seeds = st.text_area("Client Seeds (separate by comma)","kaAfYhzp2OBQI8FPZkfg,BprqDhXFlmUcJYRXHnye,BOfwf4M0EXIFO5l4bj6t").split(",")
 
 tab1,tab2 = st.tabs(["💎 MINES","📈 COSMOSX"])
 
 with tab1:
     nb_mines = st.selectbox("Isan'ny Mines:",[1,2,3])
-    tour_actuel = st.number_input("Tour Actuel:",min_value=1,value=8147129)
+    tour_actuel = st.number_input("Tour Actuel:",min_value=1,value=8147979)
     if st.button("🚀 SCAN MINES"):
-        schema,mines,safe_slots,probs,heure = mines_ultra_engine(s_seed,c_seed,nb_mines,tour_actuel)
+        schema,mines,safe_slots,probs,heure = mines_ultra_engine(s_seed,c_seeds,nb_mines,tour_actuel)
         draw_styled_board(schema,mines)
         st.success(f"Diamants (fixe 5): {schema}")
         st.warning(f"Mines ({nb_mines}): {mines}")
@@ -132,16 +112,9 @@ with tab1:
         st.info(f"Heure kajy: {heure}")
 
 with tab2:
-    tour_actuel = st.number_input("Tour Actuel Cosmos:",min_value=1,value=8147129)
+    tour_actuel = st.number_input("Tour Actuel Cosmos:",min_value=1,value=8147979)
     if st.button("🌠 ANALYZE COSMOS"):
-        res = cosmos_premium_engine(s_seed,c_seed,tour_actuel)
-        m1,m2,m3,m4 = st.columns(4)
-        m1.metric("MIN",f"{res['min']}x")
-        m2.metric("MEAN",f"{res['mean']}x")
-        m3.metric("MAX",f"{res['max']}x")
-        m4.metric("ACCURACY",f"{res['accuracy']}%")
-        st.success(f"Résultat: {res['resultat']}x")
-        st.info(f"Tour Actuel {res['tour_actuel']} @ {res['heure']}")
-        st.info(f"Tour 1 → {res['tour1']}")
-        st.info(f"Tour 2 → {res['tour2']}")
-        st.code(f"Hash: {res['hash']}\nHEX: {res['hex']}\nDecimal: {res['decimal']}\nConstante: {res['constante']}\nRTP: {res['rtp']}",language="bash")
+        tour1, tour2 = cosmos_prediction(s_seed,c_seeds,tour_actuel)
+        st.success(f"Tour Actuel: {tour_actuel}")
+        st.info(f"Tour 1 → {tour1}")
+        st.info(f"Tour 2 → {tour2}")

@@ -23,7 +23,7 @@ if username and password:
     st.sidebar.success(f"Bienvenue {username} !")
 
 # --- DRAW MINES BOARD ---
-def draw_styled_board(schema):
+def draw_styled_board(schema, mines):
     fig, ax = plt.subplots(figsize=(6,6))
     fig.patch.set_facecolor('#0E1117')
     ax.set_facecolor('#0E1117')
@@ -34,6 +34,10 @@ def draw_styled_board(schema):
         r,c = divmod(pos,5)
         ax.text(c+0.5,4.5-r,"💎",ha="center",va="center",fontsize=35,
                 bbox=dict(facecolor='#00D4FF',alpha=0.1,edgecolor='none',boxstyle='round,pad=0.2'))
+    for pos in mines:
+        r,c = divmod(pos,5)
+        ax.text(c+0.5,4.5-r,"💣",ha="center",va="center",fontsize=25,
+                bbox=dict(facecolor='#FF0044',alpha=0.1,edgecolor='none',boxstyle='round,pad=0.2'))
     ax.set_xlim(0,5); ax.set_ylim(0,5); ax.axis('off')
     st.pyplot(fig)
 
@@ -80,9 +84,10 @@ def cosmos_premium_engine(server_seed, client_seed, tour_actuel):
     if resultat < 1.0:
         resultat = 1.0
 
+    # Dynamic jumps (not fixed)
     p_int = int(h[:16],16)
-    jump1 = (p_int % 10) + 3
-    jump2 = (p_int % 15) + 5
+    jump1 = (p_int % 12) + (int(heure.replace(":","")) % 5)
+    jump2 = (p_int % 18) + (int(heure.replace(":","")) % 7)
     tour1 = tour_actuel + jump1
     tour2 = tour_actuel + jump2
 
@@ -125,7 +130,7 @@ with tab1:
     tour_actuel = st.number_input("Tour Actuel:",min_value=1,value=8147129)
     if st.button("🚀 SCAN MINES"):
         schema,mines,safe_slots,probs,heure = mines_ultra_engine(s_seed,c_seed,nb_mines,tour_actuel)
-        draw_styled_board(schema)
+        draw_styled_board(schema,mines)
         st.success(f"Diamants (fixe 5): {schema}")
         st.warning(f"Mines ({nb_mines}): {mines}")
         st.info(f"Safe Slots: {safe_slots}")

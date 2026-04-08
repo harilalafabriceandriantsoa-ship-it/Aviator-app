@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # --- CONFIGURATION STYLE ---
-st.set_page_config(page_title="TITAN V101 - ADMIN 2026", layout="wide")
+st.set_page_config(page_title="TITAN V101 - ADMIN", layout="wide")
 plt.style.use('dark_background')
 
 # --- ENGINE FUNCTIONS ---
@@ -55,17 +55,17 @@ if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 
 if not st.session_state['logged_in']:
-    st.title("🔐 TITAN V101 - ADMIN LOGIN (2026)")
+    st.title("🔐 TITAN V101 - ADMIN LOGIN")
     admin_code = st.text_input("Enter Admin Code:", type="password")
     if st.button("LOGIN"):
-        if admin_code == "2026": # Ity ny code fidirana
+        if admin_code == "2026": # Azonao ovaina ity code ity
             st.session_state['logged_in'] = True
             st.rerun()
         else:
             st.error("Code diso! Avereno indray.")
 else:
-    # --- DASHBOARD ADMIN ---
-    st.title("🌌 TITAN V101 PREMIUM 2026")
+    # --- INTERFACE REHEFA LOGGED IN ---
+    st.title("🌌 TITAN V101 PREMIUM DASHBOARD")
     if st.button("LOGOUT"):
         st.session_state['logged_in'] = False
         st.rerun()
@@ -88,6 +88,7 @@ else:
             if st.button("🚀 PREDICT MINES"):
                 schema, probs = mines_premium_engine(s_seed, c_seed, n_val)
                 
+                # Vizualisation
                 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
                 img = np.zeros((5, 5))
                 for pos in schema:

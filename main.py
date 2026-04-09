@@ -120,18 +120,34 @@ else:
         server = st.text_input("Server Seed")
         client = st.text_input("Client Seed")
         nonce = st.number_input("Nonce", min_value=1, value=1)
+        
         if st.button("SCAN COSMOS"):
             if not server or not client:
                 st.error("Seed required")
             else:
                 with st.spinner("Scanning Cosmos..."):
                     tours, minv, meanv, maxv, acc, signal = cosmos_dynamic(server,client,nonce)
-                    st.success(f"Signal: {signal}")
-                    st.info(f"MIN: {minv} | MEAN: {meanv} | MAX: {maxv}")
-                    st.warning(f"ACCURACY: {acc}%")
-                    st.write("🎯 TOURS:")
-                    for t in tours:
-                        st.write(f"➡️ Tour {t['tour']} → Nonce {t['nonce']} → Crash {t['crash']}x")
+                    
+                    # Signal lehibe eo ambony
+                    st.markdown(f"<h2 style='text-align:center;color:#00ffcc'>{signal}</h2>", unsafe_allow_html=True)
+                    
+                    # MIN / MEAN / MAX globale
+                    st.markdown(f"<p style='text-align:center;color:#00ffcc'>MIN: {minv} | MEAN: {meanv} | MAX: {maxv} | Accuracy: {acc}%</p>", unsafe_allow_html=True)
+                    
+                    # Affichage stylé tsirairay ny tour
+                    cols = st.columns(4)
+                    colors = ["#00ffcc", "#ffcc00", "#ff3300", "#33ff33"]
+                    
+                    for idx, t in enumerate(tours):
+                        with cols[idx]:
+                            st.markdown(f"""
+                            <div style='background:{colors[idx]};padding:10px;border-radius:10px;text-align:center;box-shadow:0 0 15px {colors[idx]};'>
+                                <h3>Tour {t['tour']}</h3>
+                                <p>Nonce: {t['nonce']}</p>
+                                <p>Crash: {t['crash']}x</p>
+                                <p>Accuracy: {acc}%</p>
+                            </div>
+                            """, unsafe_allow_html=True)
     
     # -------- MINES --------
     with tab2:
@@ -139,6 +155,7 @@ else:
         client_m = st.text_input("Client Seed", key="m2")
         nonce_m = st.number_input("Nonce", min_value=1, value=1, key="m3")
         mines_count = st.slider("Nombre de mines", 1, 3, 3)
+        
         if st.button("SCAN MINES"):
             if not server_m or not client_m:
                 st.error("Seed required")

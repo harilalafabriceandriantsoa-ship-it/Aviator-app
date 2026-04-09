@@ -38,20 +38,30 @@ def crash(server, client, nonce):
     dec = int(h[-8:], 16) or 1
     return round((4294967295 * 0.97) / dec, 2)
 
-def cosmos_dynamic_precise(server, client, nonce):
-    total_hash = 50
-    decs = []
-    for i in range(total_hash):
-        h = hashlib.sha512(f"{server}:{client}:{nonce+i}".encode()).hexdigest()
-        dec = int(h[-8:], 16) or 1
-        decs.append(dec)
+def cosmos_precise(server, client, nonce):
+    total_hash = 100  # Plus de hash pour précision
+    decs = [int(hashlib.sha512(f"{server}:{client}:{nonce+i}".encode()).hexdigest()[-8:],16) or 1 for i in range(total_hash)]
     
-    jumps = [max(2, ((d%7)+(d%11)+(d%13))//2) for d in decs[:4]]
-    tours=[]
-    for idx,jump in enumerate(jumps):
+    # Générer jumps automatiques uniques pour 4 tours
+    jumps = []
+    used_nonces = set()
+    idx = 0
+    while len(jumps)<4:
+        jump = max(2, ((decs[idx]%7)+(decs[idx]%11)+(decs[idx]%13))//2)
         t_nonce = nonce + jump
-        start = idx*5
-        end = start + 10
+        if t_nonce not in used_nonces:
+            jumps.append(jump)
+            used_nonces.add(t_nonce)
+        idx += 1
+        if idx >= len(decs):
+            idx = 0
+    
+    tours=[]
+    for i,jump in enumerate(jumps):
+        t_nonce = nonce + jump
+        # Prendre 15 hash autour de la position
+        start = i*10
+        end = start + 15
         t_decs = decs[start:end] if end <= len(decs) else decs[start:]
         t_results = [(4294967295*0.97)/d for d in t_decs]
         min_val = round(min(t_results),2)
@@ -59,9 +69,9 @@ def cosmos_dynamic_precise(server, client, nonce):
         max_val = round(max(t_results),2)
         var = statistics.pvariance(t_results)
         acc = round(max(0,100 - var),2)
-        t_crash = round((4294967295*0.97)/decs[idx],2)
+        t_crash = round((4294967295*0.97)/decs[i],2)
         tours.append({
-            "tour": idx+1,
+            "tour": i+1,
             "nonce": t_nonce,
             "crash": t_crash,
             "min": min_val,
@@ -69,6 +79,7 @@ def cosmos_dynamic_precise(server, client, nonce):
             "max": max_val,
             "acc": acc
         })
+    
     signal = "🟢 PLAY 🎯" if all(t['acc']>55 for t in tours) else "🔴 SKIP ❌"
     return tours, signal
 
@@ -89,7 +100,6 @@ def mines_hubris(server, client, nonce, mines_count):
         mines = grid[:mines_count]
         for m in mines:
             freq[m] = freq.get(m,0)+1
-    
     ranking = sorted(range(25), key=lambda x: freq.get(x,0))
     safe5 = ranking[:5]
     risky = ranking[-5:]
@@ -99,10 +109,7 @@ def mines_hubris(server, client, nonce, mines_count):
 def draw_grid(safe):
     html = "<div class='grid'>"
     for i in range(25):
-        if i in safe:
-            html += "<div class='cell safe'>💎</div>"
-        else:
-            html += "<div class='cell empty'></div>"
+        html += "<div class='cell safe'>💎</div>" if i in safe else "<div class='cell empty'></div>"
     html += "</div>"
     return html
 
@@ -134,13 +141,11 @@ else:
                 st.error("Seed required")
             else:
                 with st.spinner("Scanning Cosmos... 🎯"):
-                    tours, signal = cosmos_dynamic_precise(server,client,nonce)
-                    
+                    tours, signal = cosmos_precise(server,client,nonce)
                     st.markdown(f"<h2 style='text-align:center;color:#00ffcc'>{signal}</h2>", unsafe_allow_html=True)
-                    
                     cols = st.columns(4)
-                    for idx,t in enumerate(tours):
-                        with cols[idx]:
+                    for t, col in zip(tours, cols):
+                        with col:
                             st.markdown(f"""
                             <div style='background:#111;color:#00ffcc;padding:10px;border-radius:10px;text-align:center;border:1px solid #00ffcc;'>
                                 <h3>🎯 Tour {t['tour']}</h3>

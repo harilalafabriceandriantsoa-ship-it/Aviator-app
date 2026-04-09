@@ -2,9 +2,10 @@ import streamlit as st
 import hashlib
 import random
 import statistics
+from streamlit_autorefresh import st_autorefresh
 
 # ---------------- CONFIG ----------------
-st.set_page_config(page_title="HUBRIS V550 FINAL", layout="wide")
+st.set_page_config(page_title="HUBRIS V550 STRATEGIC", layout="wide")
 
 # ---------------- STYLE ----------------
 st.markdown("""
@@ -39,13 +40,10 @@ def crash(server, client, nonce):
     return round((4294967295 * 0.97) / dec, 2)
 
 def cosmos_precise(server, client, nonce):
-    total_hash = 100  # Plus de hash pour précision
+    total_hash = 100
     decs = [int(hashlib.sha512(f"{server}:{client}:{nonce+i}".encode()).hexdigest()[-8:],16) or 1 for i in range(total_hash)]
     
-    # Générer jumps automatiques uniques pour 4 tours
-    jumps = []
-    used_nonces = set()
-    idx = 0
+    jumps, used_nonces, idx = [], set(), 0
     while len(jumps)<4:
         jump = max(2, ((decs[idx]%7)+(decs[idx]%11)+(decs[idx]%13))//2)
         t_nonce = nonce + jump
@@ -53,20 +51,15 @@ def cosmos_precise(server, client, nonce):
             jumps.append(jump)
             used_nonces.add(t_nonce)
         idx += 1
-        if idx >= len(decs):
-            idx = 0
-    
+        if idx >= len(decs): idx = 0
+
     tours=[]
     for i,jump in enumerate(jumps):
         t_nonce = nonce + jump
-        # Prendre 15 hash autour de la position
-        start = i*10
-        end = start + 15
+        start, end = i*10, i*10 + 15
         t_decs = decs[start:end] if end <= len(decs) else decs[start:]
         t_results = [(4294967295*0.97)/d for d in t_decs]
-        min_val = round(min(t_results),2)
-        mean_val = round(statistics.mean(t_results),2)
-        max_val = round(max(t_results),2)
+        min_val, mean_val, max_val = round(min(t_results),2), round(statistics.mean(t_results),2), round(max(t_results),2)
         var = statistics.pvariance(t_results)
         acc = round(max(0,100 - var),2)
         t_crash = round((4294967295*0.97)/decs[i],2)
@@ -79,8 +72,8 @@ def cosmos_precise(server, client, nonce):
             "max": max_val,
             "acc": acc
         })
-    
-    signal = "🟢 PLAY 🎯" if all(t['acc']>55 for t in tours) else "🔴 SKIP ❌"
+
+    signal = "🟢 PLAY 🎯" if all(t['acc']>55 for t in tours) and statistics.pvariance([t['crash'] for t in tours])<500 else "🔴 SKIP ❌"
     return tours, signal
 
 # ---------------- MINES ----------------
@@ -114,8 +107,7 @@ def draw_grid(safe):
     return html
 
 # ---------------- LOGIN ----------------
-if "login" not in st.session_state:
-    st.session_state.login = False
+if "login" not in st.session_state: st.session_state.login = False
 
 if not st.session_state.login:
     st.title("🔐 HUBRIS ACCESS")
@@ -124,13 +116,11 @@ if not st.session_state.login:
         if pwd == "2026":
             st.session_state.login = True
             st.rerun()
-        else:
-            st.error("Code diso")
+        else: st.error("Code diso")
 else:
-    st.title("🔥 HUBRIS GOD MODE V550")
+    st.title("🔥 HUBRIS GOD MODE STRATEGIC V550")
     tab1, tab2, tab3 = st.tabs(["🌌 COSMOS", "💎 MINES", "📘 GUIDE"])
     
-    # -------- COSMOS --------
     with tab1:
         server = st.text_input("Server Seed")
         client = st.text_input("Client Seed")
@@ -156,7 +146,6 @@ else:
                             </div>
                             """, unsafe_allow_html=True)
     
-    # -------- MINES --------
     with tab2:
         server_m = st.text_input("Server Seed", key="m1")
         client_m = st.text_input("Client Seed", key="m2")
@@ -174,35 +163,38 @@ else:
                     st.error(f"⚠️ RISKY: {risky}")
                     st.info(f"CONFIDENCE: {conf}%")
     
-    # -------- GUIDE --------
     with tab3:
         st.markdown("""
 ### 📘 GUIDE UTILISATEUR
 
 ### 🌌 COSMOS
 - ✔️ Variable jumps automatique
-- ✔️ MIN / MEAN / MAX crash isaky ny tour 🎯
-- ✔️ Accuracy isaky ny tour 🎯
-- ✔️ Signal = PLAY raha tours rehetra > 55%
-- ✔️ Milalao ireo tours 1→4 🎯
+- ✔️ MIN / MEAN / MAX crash per tour 🎯
+- ✔️ Accuracy per tour 🎯
+- ✔️ Signal = PLAY only if tours > 55% and variance < threshold
+- ✔️ Adaptive betting & stop-loss
 
 ---
 
 ### 💎 MINES
 - ✔️ Sélection: 1 à 3 mines
-- ✔️ Ny système dia mamoaka **5 SAFE 💎**
-- ✔️ Safidio **2 ou 3 cases max**
+- ✔️ System outputs **5 SAFE 💎**
+- ✔️ Use 2-3 selections max
+- ✔️ Confidence-driven strategy
 
 ---
 
 ### 🎯 STRATEGIE
-- 💰 Bet = 1% bankroll
-- ❌ Stop après 3 pertes
-- 🔁 Reset nonce
+- 💰 Bet = 1% bankroll or adaptive based on confidence
+- ❌ Stop after 2-3 losses
+- 🔁 Reset nonce if patterns appear
 
 ---
 
 ### ⚠️ IMPORTANT
-- Tsy misy algo 100% win
-- Ity dia manampy **hampihena loss**
+- No 100% winning algorithm
+- Helps **reduce losses**
 """)
+    
+    # Auto-refresh every 10 seconds
+    st_autorefresh(interval=10000, limit=None, key="auto_refresh")

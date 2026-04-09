@@ -28,8 +28,6 @@ h1, h2, h3 {
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🚀 TITAN V300 ULTRA PRO MAX")
-
 # ---------------- COSMOS ENGINE ----------------
 def crash_result(server_seed, client_seed, nonce):
     base = f"{server_seed}:{client_seed}:{nonce}"
@@ -43,7 +41,6 @@ def crash_result(server_seed, client_seed, nonce):
 
     result = (4294967295 * 0.97) / decimal
     return float(round(max(result, 1.0), 2)), int(decimal)
-
 
 def cosmos_advanced(server, client, nonce):
     results = []
@@ -90,7 +87,6 @@ def mines_engine(server, client, nonce, mines_count=3):
 
     return sorted(grid[:mines_count])
 
-
 def mines_ultra_safe(server, client, nonce, mines_count):
     runs = [mines_engine(server, client, nonce+i, mines_count) for i in range(7)]
 
@@ -106,81 +102,105 @@ def mines_ultra_safe(server, client, nonce, mines_count):
 
     return risky, safe[:5], confidence
 
-# ---------------- UI ----------------
-tab1, tab2, tab3 = st.tabs(["🌌 COSMOS PRO", "💣 MINES PRO", "📘 GUIDE"])
+# ---------------- LOGIN SYSTEM ----------------
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
 
-# ---------- COSMOS ----------
-with tab1:
-    st.subheader("COSMOS PREDICTION")
+if not st.session_state.logged_in:
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center;'>🔒 TITAN V300 LOGIN</h2>", unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        pwd = st.text_input("Veuillez entrer le code d'accès :", type="password")
+        if st.button("SE CONNECTER"):
+            if pwd == "2026":
+                st.session_state.logged_in = True
+                st.rerun()
+            else:
+                st.error("❌ Code incorrect. Veuillez réessayer.")
+else:
+    # ---------------- UI (Rehefa tafiditra ny code) ----------------
+    st.title("🚀 TITAN V300 ULTRA PRO MAX")
+    
+    if st.button("Déconnexion"):
+        st.session_state.logged_in = False
+        st.rerun()
 
-    server = st.text_input("Server Seed")
-    client = st.text_input("Client Seed")
-    nonce = st.number_input("Tour actuel", min_value=1, value=1)
+    tab1, tab2, tab3 = st.tabs(["🌌 COSMOS PRO", "💣 MINES PRO", "📘 GUIDE"])
 
-    scan_cosmos = st.button("🚀 SCAN COSMOS")
+    # ---------- COSMOS ----------
+    with tab1:
+        st.subheader("COSMOS PREDICTION")
 
-    if scan_cosmos:
-        if not server or not client:
-            st.error("Ampidiro seed!")
-        else:
-            with st.spinner("Analyse..."):
-                time.sleep(0.5)
-                data = cosmos_advanced(server, client, nonce)
+        server = st.text_input("Server Seed")
+        client = st.text_input("Client Seed")
+        nonce = st.number_input("Tour actuel", min_value=1, value=1)
 
-            st.write("Résultats:", data["results"])
-            st.success(f"MIN: {data['min']} | MOYEN: {data['mean']} | MAX: {data['max']}")
-            st.info(f"ACCURACY: {data['accuracy']}%")
+        scan_cosmos = st.button("🚀 SCAN COSMOS")
 
-            st.warning(f"🎯 Tour 1: {data['next1']}")
-            st.warning(f"🎯 Tour 2: {data['next2']}")
+        if scan_cosmos:
+            if not server or not client:
+                st.error("Ampidiro seed!")
+            else:
+                with st.spinner("Analyse..."):
+                    time.sleep(0.5)
+                    data = cosmos_advanced(server, client, nonce)
 
-# ---------- MINES ----------
-with tab2:
-    st.subheader("MINES SAFE")
+                st.write("Résultats:", data["results"])
+                st.success(f"MIN: {data['min']} | MOYEN: {data['mean']} | MAX: {data['max']}")
+                st.info(f"ACCURACY: {data['accuracy']}%")
 
-    server_m = st.text_input("Server Seed", key="m1")
-    client_m = st.text_input("Client Seed", key="m2")
-    nonce_m = st.number_input("Nonce", min_value=1, value=1, key="m3")
-    mines_count = st.slider("Nombre mines", 1, 7, 3)
+                st.warning(f"🎯 Tour 1: {data['next1']}")
+                st.warning(f"🎯 Tour 2: {data['next2']}")
 
-    scan_mines = st.button("💣 SCAN MINES")
+    # ---------- MINES ----------
+    with tab2:
+        st.subheader("MINES SAFE")
 
-    if scan_mines:
-        if not server_m or not client_m:
-            st.error("Seed vide!")
-        else:
-            with st.spinner("Analyse mines..."):
-                time.sleep(0.5)
-                grid = mines_engine(server_m, client_m, nonce_m, mines_count)
-                risky, safe, confidence = mines_ultra_safe(server_m, client_m, nonce_m, mines_count)
+        server_m = st.text_input("Server Seed", key="m1")
+        client_m = st.text_input("Client Seed", key="m2")
+        nonce_m = st.number_input("Nonce", min_value=1, value=1, key="m3")
+        mines_count = st.slider("Nombre mines", 1, 7, 3)
 
-            st.write("Mines:", grid)
-            st.error(f"Risky: {risky}")
-            st.success(f"SAFE: {safe}")
-            st.info(f"Confidence: {confidence}%")
+        scan_mines = st.button("💣 SCAN MINES")
 
-# ---------- GUIDE ----------
-with tab3:
-    st.markdown("""
-### 🌌 COSMOS
-- Accuracy > 60% → OK
-- Jouer Tour 1 ou 2
+        if scan_mines:
+            if not server_m or not client_m:
+                st.error("Seed vide!")
+            else:
+                with st.spinner("Analyse mines..."):
+                    time.sleep(0.5)
+                    grid = mines_engine(server_m, client_m, nonce_m, mines_count)
+                    risky, safe, confidence = mines_ultra_safe(server_m, client_m, nonce_m, mines_count)
 
-### 💣 MINES
-- SAFE = jouer
-- Risky = éviter
+                st.write("Mines:", grid)
+                st.error(f"Risky: {risky}")
+                st.success(f"SAFE: {safe}")
+                st.info(f"Confidence: {confidence}%")
 
-### ⚠️ ANTI LOSS
-- Bet 1%
-- Stop après 3 pertes
-""")
+    # ---------- GUIDE ----------
+    with tab3:
+        st.markdown("""
+    ### 🌌 COSMOS
+    - Accuracy > 60% → OK
+    - Jouer Tour 1 ou 2
 
-# ---------------- SESSION LIMIT ----------------
-if "plays" not in st.session_state:
-    st.session_state.plays = 0
+    ### 💣 MINES
+    - SAFE = jouer
+    - Risky = éviter
 
-st.session_state.plays += 1
+    ### ⚠️ ANTI LOSS
+    - Bet 1%
+    - Stop après 3 pertes
+    """)
 
-if st.session_state.plays > 30:
-    st.error("STOP SESSION 🚫")
-    st.stop()
+    # ---------------- SESSION LIMIT ----------------
+    if "plays" not in st.session_state:
+        st.session_state.plays = 0
+
+    st.session_state.plays += 1
+
+    if st.session_state.plays > 30:
+        st.error("STOP SESSION 🚫")
+        st.stop()

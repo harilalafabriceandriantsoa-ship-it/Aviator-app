@@ -2,11 +2,9 @@ import streamlit as st
 import hashlib
 import random
 import statistics
-import time
 
 # ---------------- CONFIG ----------------
-st.set_page_config(page_title="TITAN V400 GOD MODE", layout="wide")
-st.set_option('client.showErrorDetails', True)
+st.set_page_config(page_title="HUBRIS GOD MODE V500", layout="wide")
 
 # ---------------- STYLE ----------------
 st.markdown("""
@@ -15,200 +13,145 @@ st.markdown("""
     background: linear-gradient(135deg, #0f0f0f, #1c1c1c);
     color: #00ffcc;
 }
-h1, h2, h3 {
-    text-align:center;
-    color:#00ffcc;
-}
+h1, h2, h3 {text-align:center;color:#00ffcc;}
+
 .stButton>button {
     background: linear-gradient(90deg,#00ffcc,#0066ff);
-    color:white;
+    color:white;border-radius:10px;height:45px;
+}
+
+.grid {
+    display:grid;
+    grid-template-columns:repeat(5,60px);
+    gap:10px;
+    justify-content:center;
+    margin-top:20px;
+}
+.cell {
+    width:60px;height:60px;
+    display:flex;align-items:center;justify-content:center;
     border-radius:10px;
-    height:50px;
+    font-size:22px;
 }
-
-/* GRID 24 */
-.grid-container {
-    display: grid;
-    grid-template-columns: repeat(6, 60px);
-    gap: 10px;
-    justify-content: center;
-    margin-top: 20px;
-}
-
-.grid-item {
-    width: 60px;
-    height: 60px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-}
-
-.safe {
-    background: #00ffcc;
-    color: black;
-    box-shadow: 0 0 15px #00ffcc;
-}
-
-.risky {
-    background: #ff4d4d;
-    color: white;
-    box-shadow: 0 0 15px red;
-}
-
-.neutral {
-    background: #222;
-    border: 1px solid #444;
-}
+.safe {background:#00ffcc;color:#000;box-shadow:0 0 15px #00ffcc;}
+.empty {background:#222;border:1px solid #444;}
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- COSMOS ----------------
-def crash_result(server_seed, client_seed, nonce):
-    base = f"{server_seed}:{client_seed}:{nonce}"
-    h = hashlib.sha512(base.encode()).hexdigest()
+# ---------------- COSMOS ENGINE ----------------
 
-    hex_part = h[-8:]
-    decimal = int(hex_part, 16)
+def crash(server, client, nonce):
+    h = hashlib.sha512(f"{server}:{client}:{nonce}".encode()).hexdigest()
+    dec = int(h[-8:], 16)
+    if dec == 0: dec = 1
+    return round((4294967295 * 0.97) / dec, 2), dec
 
-    if decimal == 0:
-        decimal = 1
+def extract_jump(dec):
+    # jump tena avy amin’ny hash
+    a = dec % 13
+    b = (dec >> 8) % 17
+    c = (dec >> 16) % 19
+    return max(2, (a + b + c) // 3)
 
-    result = (4294967295 * 0.97) / decimal
-    return float(round(max(result, 1.0), 2)), decimal
-
-
-def generate_real_tours(decimals, base_nonce):
-    tours = []
-
-    for i in range(6):
-        d = decimals[i]
-        jump = ((d % 13) + (d % 7) + (d % 5)) // 2
-        jump += (i * (d % 3 + 1))
-        tours.append(base_nonce + jump)
-
-    return list(set(tours))[:4]
-
-
-def analyze_single_tour(server, client, nonce):
+def cosmos_hubris(server, client, nonce):
     results = []
+    decimals = []
 
-    for i in range(6):
-        r, _ = crash_result(server, client, nonce + i)
+    for i in range(12):
+        r, d = crash(server, client, nonce + i)
         results.append(r)
+        decimals.append(d)
 
-    mean_v = statistics.mean(results)
-    variance = statistics.pvariance(results)
+    jumps = []
+    for d in decimals[:4]:
+        jumps.append(extract_jump(d))
 
-    accuracy = round(max(0, 100 - variance), 2)
+    tours = [
+        nonce + jumps[0],
+        nonce + jumps[1] + 3,
+        nonce + jumps[2] + 7,
+        nonce + jumps[3] + 11
+    ]
 
-    if mean_v > 2 and accuracy > 60:
-        signal = "🟢 BON"
-    elif mean_v > 1.5:
-        signal = "🟡 MOYEN"
-    else:
-        signal = "🔴 DANGER"
+    mean = statistics.mean(results)
+    var = statistics.pvariance(results)
+    acc = round(max(0, 100 - var), 2)
+
+    signal = "🟢 PLAY" if acc > 55 and mean > 2 else "🔴 SKIP"
 
     return {
-        "nonce": nonce,
-        "min": round(min(results), 2),
-        "mean": round(mean_v, 2),
-        "max": round(max(results), 2),
-        "accuracy": accuracy,
+        "results": results,
+        "min": round(min(results),2),
+        "max": round(max(results),2),
+        "mean": round(mean,2),
+        "acc": acc,
+        "tours": tours,
         "signal": signal
     }
 
+# ---------------- MINES ENGINE ----------------
 
-def cosmos_advanced(server, client, nonce):
-    decimals = []
-
-    for i in range(10):
-        _, d = crash_result(server, client, nonce + i)
-        decimals.append(d)
-
-    tours = generate_real_tours(decimals, nonce)
-
-    analyses = []
-    for t in tours:
-        analyses.append(analyze_single_tour(server, client, t))
-
-    return analyses
-
-
-# ---------------- MINES ----------------
-def mines_engine(server, client, nonce, mines_count=3):
-    base = f"{server}:{client}:{nonce}"
-    h = hashlib.sha512(base.encode()).digest()
-
-    seed_int = int.from_bytes(h[:16], "big", signed=False)
-    rng = random.Random(seed_int)
-
-    grid = list(range(24))  # 🔥 24 CASES
+def mines_core(server, client, nonce):
+    h = hashlib.sha512(f"{server}:{client}:{nonce}".encode()).digest()
+    seed = int.from_bytes(h[:16], "big")
+    rng = random.Random(seed)
+    grid = list(range(25))
     rng.shuffle(grid)
+    return grid
 
-    return sorted(grid[:mines_count])
-
-
-def mines_diamond_safe(server, client, nonce, mines_count):
-    runs = [mines_engine(server, client, nonce+i, mines_count) for i in range(12)]
-
+def mines_hubris(server, client, nonce):
     freq = {}
-    for r in runs:
-        for x in r:
-            freq[x] = freq.get(x, 0) + 1
 
-    safe_sorted = sorted(range(24), key=lambda x: freq.get(x, 0))
-    safe5 = safe_sorted[:5]
+    # multi analyse
+    for i in range(20):
+        grid = mines_core(server, client, nonce + i)
+        mines = grid[:3]
+        for m in mines:
+            freq[m] = freq.get(m, 0) + 1
 
-    risky = [k for k, v in freq.items() if v >= 4]
+    # SAFE = ireo tsy miseho matetika
+    ranking = sorted(range(25), key=lambda x: freq.get(x, 0))
 
-    confidence = round(100 - sum(freq.get(x, 0) for x in safe5), 2)
+    safe5 = ranking[:5]  # 💎 FIXE 5 DIAMANT
+    risky = ranking[-5:]
 
-    return risky, safe5, confidence
+    confidence = round(100 - sum(freq.get(x,0) for x in safe5), 2)
 
+    return safe5, risky, confidence
 
-def draw_grid(safe, risky):
-    html = "<div class='grid-container'>"
-
-    for i in range(24):
+def draw_grid(safe):
+    html = "<div class='grid'>"
+    for i in range(25):
         if i in safe:
-            html += "<div class='grid-item safe'>💎</div>"
-        elif i in risky:
-            html += "<div class='grid-item risky'>💣</div>"
+            html += "<div class='cell safe'>💎</div>"
         else:
-            html += "<div class='grid-item neutral'></div>"
-
+            html += "<div class='cell empty'></div>"
     html += "</div>"
     return html
 
-
 # ---------------- LOGIN ----------------
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
 
-if not st.session_state.logged_in:
-    st.markdown("<h3>🔒 LOGIN</h3>", unsafe_allow_html=True)
-    pwd = st.text_input("Code", type="password")
+if "login" not in st.session_state:
+    st.session_state.login = False
 
-    if st.button("LOGIN"):
-        if pwd == "2026":
-            st.session_state.logged_in = True
+if not st.session_state.login:
+    st.title("🔐 HUBRIS ACCESS")
+    code = st.text_input("Code", type="password")
+    if st.button("ENTER"):
+        if code == "2026":
+            st.session_state.login = True
             st.rerun()
         else:
-            st.error("❌ Diso code")
-
+            st.error("Diso")
 else:
-    st.title("🚀 TITAN V400 GOD MODE")
 
-    if st.button("LOGOUT"):
-        st.session_state.logged_in = False
-        st.rerun()
+    st.title("🔥 HUBRIS GOD MODE V500")
 
-    tab1, tab2, tab3 = st.tabs(["🌌 COSMOS", "💣 MINES", "📘 GUIDE"])
+    tab1, tab2 = st.tabs(["🌌 COSMOS", "💣 MINES"])
 
-    # -------- COSMOS --------
+    # ---------------- COSMOS UI ----------------
     with tab1:
+        st.subheader("COSMOS ULTRA")
         server = st.text_input("Server Seed")
         client = st.text_input("Client Seed")
         nonce = st.number_input("Nonce", min_value=1, value=1)
@@ -217,57 +160,34 @@ else:
             if not server or not client:
                 st.error("Seed required")
             else:
-                data = cosmos_advanced(server, client, nonce)
+                data = cosmos_hubris(server, client, nonce)
 
-                for d in data:
-                    st.markdown(f"### 🎯 TOUR → {d['nonce']}")
-                    st.success(f"MIN: {d['min']} | MEAN: {d['mean']} | MAX: {d['max']}")
-                    st.info(f"ACCURACY: {d['accuracy']}%")
-                    st.warning(f"SIGNAL: {d['signal']}")
+                st.write("Résultats:", data["results"])
+                st.success(f"Signal: {data['signal']}")
+                st.info(f"MIN: {data['min']} | MEAN: {data['mean']} | MAX: {data['max']}")
+                st.warning(f"ACCURACY: {data['acc']}%")
 
-    # -------- MINES --------
+                st.write("🎯 TOURS À JOUER:")
+                for t in data["tours"]:
+                    r,_ = crash(server, client, t)
+                    st.write(f"➡️ Tour {t} → {r}x")
+
+    # ---------------- MINES UI ----------------
     with tab2:
+        st.subheader("MINES HUBRIS 💎")
+
         server_m = st.text_input("Server Seed", key="m1")
         client_m = st.text_input("Client Seed", key="m2")
         nonce_m = st.number_input("Nonce", min_value=1, value=1, key="m3")
-        m_count = st.slider("Mines", 1, 7, 3)
 
         if st.button("SCAN MINES"):
             if not server_m or not client_m:
                 st.error("Seed required")
             else:
-                risky, safe, conf = mines_diamond_safe(server_m, client_m, nonce_m, m_count)
+                safe, risky, conf = mines_hubris(server_m, client_m, nonce_m)
 
-                st.markdown(draw_grid(safe, risky), unsafe_allow_html=True)
+                st.markdown(draw_grid(safe), unsafe_allow_html=True)
 
-                col1, col2, col3 = st.columns(3)
-                col1.success(f"💎 SAFE: {len(safe)}")
-                col2.error(f"💣 RISKY: {len(risky)}")
-                col3.info(f"📊 CONF: {conf}%")
-
-                if conf > 70:
-                    st.success("🟢 SAFE ZONE")
-                elif conf > 50:
-                    st.warning("🟡 MOYEN")
-                else:
-                    st.error("🔴 DANGER")
-
-    # -------- GUIDE --------
-    with tab3:
-        st.markdown("""
-### 📘 GUIDE
-- COSMOS: jouer si accuracy > 60%
-- MINES: jouer SAFE uniquement
-- 2 cases max
-- STOP après 3 pertes
-""")
-
-    # -------- SESSION LIMIT --------
-    if "plays" not in st.session_state:
-        st.session_state.plays = 0
-
-    st.session_state.plays += 1
-
-    if st.session_state.plays > 30:
-        st.error("STOP SESSION 🚫")
-        st.stop()
+                st.success(f"💎 SAFE 5: {safe}")
+                st.error(f"⚠️ RISKY: {risky}")
+                st.info(f"CONFIDENCE: {conf}%")

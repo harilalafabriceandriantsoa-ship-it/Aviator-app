@@ -47,10 +47,7 @@ def cosmos_dynamic(server, client, nonce):
         decs.append(dec)
         results.append((4294967295*0.97)/dec)
     
-    # MIN / MEAN / MAX globale
-    min_val = round(min(results),2)
-    mean_val = round(statistics.mean(results),2)
-    max_val = round(max(results),2)
+    # Accuracy globale
     var = statistics.pvariance(results)
     acc = round(max(0,100 - var),2)
     
@@ -60,13 +57,25 @@ def cosmos_dynamic(server, client, nonce):
     tours=[]
     for idx,jump in enumerate(jumps):
         t_nonce = nonce + jump
+        # MIN / MEAN / MAX pour ce tour
+        t_results = [(4294967295*0.97)/decs[idx+i] for i in range(5) if idx+i < len(decs)]
+        min_val = round(min(t_results),2)
+        mean_val = round(statistics.mean(t_results),2)
+        max_val = round(max(t_results),2)
         t_crash = round((4294967295*0.97)/decs[idx],2)
-        tours.append({"tour": idx+1, "nonce": t_nonce, "crash": t_crash})
+        tours.append({
+            "tour": idx+1,
+            "nonce": t_nonce,
+            "crash": t_crash,
+            "min": min_val,
+            "mean": mean_val,
+            "max": max_val
+        })
     
     # Signal
-    signal = "🟢 PLAY 🎯" if acc>55 and mean_val>2 else "🔴 SKIP ❌"
+    signal = "🟢 PLAY 🎯" if acc>55 else "🔴 SKIP ❌"
     
-    return tours, min_val, mean_val, max_val, acc, signal
+    return tours, acc, signal
 
 # ---------------- MINES ----------------
 def mines_core(server, client, nonce):
@@ -130,23 +139,20 @@ else:
                 st.error("Seed required")
             else:
                 with st.spinner("Scanning Cosmos... 🎯"):
-                    tours, minv, meanv, maxv, acc, signal = cosmos_dynamic(server,client,nonce)
+                    tours, acc, signal = cosmos_dynamic(server,client,nonce)
                     
-                    # Signal lehibe eo ambony
                     st.markdown(f"<h2 style='text-align:center;color:#00ffcc'>{signal}</h2>", unsafe_allow_html=True)
-                    st.markdown(f"<p style='text-align:center;color:#00ffcc'>MIN: {minv} | MEAN: {meanv} | MAX: {maxv} | Accuracy: {acc}%</p>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='text-align:center;color:#00ffcc'>Accuracy globale: {acc}%</p>", unsafe_allow_html=True)
                     
-                    # Cards tours 1->4
                     cols = st.columns(4)
-                    colors = ["#00ffcc", "#ffcc00", "#ff3300", "#33ff33"]
                     for idx,t in enumerate(tours):
                         with cols[idx]:
                             st.markdown(f"""
-                            <div style='background:{colors[idx]};padding:15px;border-radius:15px;text-align:center;box-shadow:0 0 20px {colors[idx]};'>
+                            <div style='background:#111;color:#00ffcc;padding:10px;border-radius:10px;text-align:center;border:1px solid #00ffcc;'>
                                 <h3>🎯 Tour {t['tour']}</h3>
                                 <p>Nonce: {t['nonce']}</p>
                                 <p>Crash: {t['crash']}x</p>
-                                <p>Accuracy: {acc}%</p>
+                                <p>MIN: {t['min']} | MEAN: {t['mean']} | MAX: {t['max']}</p>
                             </div>
                             """, unsafe_allow_html=True)
     
@@ -175,7 +181,7 @@ else:
 
 ### 🌌 COSMOS
 - ✔️ Variable jumps automatique
-- ✔️ MIN / MEAN / MAX crash
+- ✔️ MIN / MEAN / MAX crash isaky ny tour
 - ✔️ Signal = PLAY
 - ✔️ Milalao ireo tours 1→4 🎯
 

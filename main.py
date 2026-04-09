@@ -38,30 +38,27 @@ def crash(server, client, nonce):
     dec = int(h[-8:], 16) or 1
     return round((4294967295 * 0.97) / dec, 2)
 
-def cosmos_dynamic(server, client, nonce):
-    results=[]
-    decs=[]
-    for i in range(20):
+def cosmos_dynamic_precise(server, client, nonce):
+    total_hash = 50
+    decs = []
+    for i in range(total_hash):
         h = hashlib.sha512(f"{server}:{client}:{nonce+i}".encode()).hexdigest()
-        dec = int(h[-8:],16) or 1
+        dec = int(h[-8:], 16) or 1
         decs.append(dec)
-        results.append((4294967295*0.97)/dec)
     
-    # Accuracy globale
-    var = statistics.pvariance(results)
-    acc = round(max(0,100 - var),2)
-    
-    # Variable jumps automatique pour tours 1->4
     jumps = [max(2, ((d%7)+(d%11)+(d%13))//2) for d in decs[:4]]
-    
     tours=[]
     for idx,jump in enumerate(jumps):
         t_nonce = nonce + jump
-        # MIN / MEAN / MAX pour ce tour
-        t_results = [(4294967295*0.97)/decs[idx+i] for i in range(5) if idx+i < len(decs)]
+        start = idx*5
+        end = start + 10
+        t_decs = decs[start:end] if end <= len(decs) else decs[start:]
+        t_results = [(4294967295*0.97)/d for d in t_decs]
         min_val = round(min(t_results),2)
         mean_val = round(statistics.mean(t_results),2)
         max_val = round(max(t_results),2)
+        var = statistics.pvariance(t_results)
+        acc = round(max(0,100 - var),2)
         t_crash = round((4294967295*0.97)/decs[idx],2)
         tours.append({
             "tour": idx+1,
@@ -69,13 +66,11 @@ def cosmos_dynamic(server, client, nonce):
             "crash": t_crash,
             "min": min_val,
             "mean": mean_val,
-            "max": max_val
+            "max": max_val,
+            "acc": acc
         })
-    
-    # Signal
-    signal = "🟢 PLAY 🎯" if acc>55 else "🔴 SKIP ❌"
-    
-    return tours, acc, signal
+    signal = "🟢 PLAY 🎯" if all(t['acc']>55 for t in tours) else "🔴 SKIP ❌"
+    return tours, signal
 
 # ---------------- MINES ----------------
 def mines_core(server, client, nonce):
@@ -139,10 +134,9 @@ else:
                 st.error("Seed required")
             else:
                 with st.spinner("Scanning Cosmos... 🎯"):
-                    tours, acc, signal = cosmos_dynamic(server,client,nonce)
+                    tours, signal = cosmos_dynamic_precise(server,client,nonce)
                     
                     st.markdown(f"<h2 style='text-align:center;color:#00ffcc'>{signal}</h2>", unsafe_allow_html=True)
-                    st.markdown(f"<p style='text-align:center;color:#00ffcc'>Accuracy globale: {acc}%</p>", unsafe_allow_html=True)
                     
                     cols = st.columns(4)
                     for idx,t in enumerate(tours):
@@ -152,7 +146,8 @@ else:
                                 <h3>🎯 Tour {t['tour']}</h3>
                                 <p>Nonce: {t['nonce']}</p>
                                 <p>Crash: {t['crash']}x</p>
-                                <p>MIN: {t['min']} | MEAN: {t['mean']} | MAX: {t['max']}</p>
+                                <p>🎯 MIN: {t['min']} | 🎯 MEAN: {t['mean']} | 🎯 MAX: {t['max']}</p>
+                                <p>🎯 Accuracy: {t['acc']}%</p>
                             </div>
                             """, unsafe_allow_html=True)
     
@@ -181,8 +176,9 @@ else:
 
 ### 🌌 COSMOS
 - ✔️ Variable jumps automatique
-- ✔️ MIN / MEAN / MAX crash isaky ny tour
-- ✔️ Signal = PLAY
+- ✔️ MIN / MEAN / MAX crash isaky ny tour 🎯
+- ✔️ Accuracy isaky ny tour 🎯
+- ✔️ Signal = PLAY raha tours rehetra > 55%
 - ✔️ Milalao ireo tours 1→4 🎯
 
 ---

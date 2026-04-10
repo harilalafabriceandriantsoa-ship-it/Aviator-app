@@ -8,9 +8,9 @@ from sklearn.ensemble import RandomForestClassifier
 from streamlit_autorefresh import st_autorefresh
 
 # ================= CONFIG =================
-st.set_page_config(page_title="HUBRIS AI CORE", layout="wide")
+st.set_page_config(page_title="HUBRIS AI CORE SYSTEM", layout="wide")
 
-# ================= DATABASE SAFE INIT =================
+# ================= DATABASE (ONLY HISTORY SAFE) =================
 conn = sqlite3.connect("hubris.db", check_same_thread=False)
 cursor = conn.cursor()
 
@@ -23,15 +23,6 @@ def init_db():
         output TEXT
     )
     """)
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS chat (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        msg TEXT,
-        reply TEXT
-    )
-    """)
-
     conn.commit()
 
 init_db()
@@ -80,7 +71,6 @@ def cosmos(server, client, nonce):
 
     return results, avg, signal
 
-# ================= COSMOS SIGNALS =================
 def cosmos_signals(series):
     return ["🟢" if sum(x < 2 for x in series[i:i+5]) > 2 else "🔴"
             for i in range(0,15,5)]
@@ -108,7 +98,7 @@ def features(s, c, n):
     h = hashlib.sha256(f"{s}:{c}:{n}".encode()).hexdigest()
     return [int(h[i:i+2], 16) for i in range(0, 20, 2)]
 
-# ================= TRAIN MODEL =================
+# ================= TRAIN ML =================
 def train_model():
     if len(st.session_state.memory) < 30:
         return None
@@ -138,6 +128,7 @@ def mines_ai(server, client, nonce):
     risky = rank[-5:]
     conf = float(np.max(final) * 100)
 
+    # learning memory
     st.session_state.memory.append((features(server, client, nonce), int(safe[0])))
 
     return safe, risky, conf
@@ -155,18 +146,9 @@ def auto_bet(conf):
             return "LOSE"
     return "SKIP"
 
-# ================= CHAT =================
-def ai_chat(msg):
-    msg = msg.lower()
-    if "mine" in msg:
-        return "💎 SAFE zones active"
-    if "cosmos" in msg:
-        return "🌌 signal engine running"
-    return "🤖 analyzing..."
-
 # ================= LOGIN UI =================
 if not st.session_state.login:
-    st.title("🔐 HUBRIS ACCESS")
+    st.title("🔐 HUBRIS ACCESS SYSTEM")
     pwd = st.text_input("Password", type="password")
 
     if st.button("ENTER"):
@@ -176,9 +158,9 @@ if not st.session_state.login:
     st.stop()
 
 # ================= MAIN UI =================
-st.title("🚀 HUBRIS FULL AI SYSTEM")
+st.title("🚀 HUBRIS FULL AI ENGINE (CLEAN CORE)")
 
-tab1, tab2, tab3, tab4 = st.tabs(["🌌 COSMOS", "💎 MINES", "🤖 AI", "💬 CHAT"])
+tab1, tab2, tab3 = st.tabs(["🌌 COSMOS", "💎 MINES", "🤖 AI"])
 
 # ================= COSMOS =================
 with tab1:
@@ -201,43 +183,14 @@ with tab2:
 
     if st.button("RUN MINES"):
         safe, risky, conf = mines_ai(s, c, n)
-        st.write("SAFE:", list(safe))
-        st.write("RISKY:", list(risky))
-        st.success(f"CONF: {conf:.2f}%")
+        st.write("SAFE 💎:", list(safe))
+        st.write("RISKY ☠️:", list(risky))
+        st.success(f"CONFIDENCE: {conf:.2f}%")
 
 # ================= AI AUTO =================
 with tab3:
     conf = st.slider("Confidence", 0, 100, 50)
     st.write("RESULT:", auto_bet(conf))
     st.write("BALANCE:", st.session_state.balance)
-
-# ================= CHAT =================
-with tab4:
-    msg = st.text_input("Message")
-
-    if st.button("SEND"):
-        reply = ai_chat(msg)
-
-        cursor.execute(
-            "INSERT INTO chat(msg, reply) VALUES (?, ?)",
-            (msg, reply)
-        )
-        conn.commit()
-
-        st.success(reply)
-
-    def get_chat():
-        try:
-            cursor.execute("SELECT * FROM chat ORDER BY id DESC")
-            return cursor.fetchall()
-        except:
-            init_db()
-            return []
-
-    data = get_chat()
-
-    for d in data[:10]:
-        st.write("🧑", d[1])
-        st.write("🤖", d[2])
 
 st_autorefresh(interval=10000)

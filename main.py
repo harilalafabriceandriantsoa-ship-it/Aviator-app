@@ -1,200 +1,250 @@
-import streamlit as st 
+# ================== IMPORT ==================
+import streamlit as st
 import hashlib
-import random
-import statistics
-from streamlit_autorefresh import st_autorefresh
+import numpy as np
 
-# ---------------- CONFIG ----------------
-st.set_page_config(page_title="HUBRIS V550 STRATEGIC", layout="wide")
-
-# ---------------- STYLE ----------------
-st.markdown("""
-<style>
-.stApp {background: linear-gradient(135deg,#0f0f0f,#1c1c1c);color:#00ffcc;}
-h1,h2,h3{text-align:center;color:#00ffcc;}
-
-.stButton>button {
-    background: linear-gradient(90deg,#00ffcc,#0066ff);
-    color:white;border-radius:10px;height:45px;
-}
-
-.grid {
-    display:grid;
-    grid-template-columns:repeat(5,60px);
-    gap:10px;justify-content:center;margin-top:20px;
-}
-.cell {
-    width:60px;height:60px;
-    display:flex;align-items:center;justify-content:center;
-    border-radius:10px;font-size:22px;
-}
-.safe {background:#00ffcc;color:#000;box-shadow:0 0 15px #00ffcc;}
-.empty {background:#222;border:1px solid #444;}
-</style>
-""", unsafe_allow_html=True)
-
-# ---------------- COSMOS ----------------
-def crash(server, client, nonce):
-    h = hashlib.sha512(f"{server}:{client}:{nonce}".encode()).hexdigest()
-    dec = int(h[-8:], 16) or 1
-    return round((4294967295 * 0.97) / dec, 2)
-
-def cosmos_precise(server, client, nonce):
-    total_hash = 100
-    decs = [int(hashlib.sha512(f"{server}:{client}:{nonce+i}".encode()).hexdigest()[-8:],16) or 1 for i in range(total_hash)]
-    
-    jumps, used_nonces, idx = [], set(), 0
-    while len(jumps)<4:
-        jump = max(2, ((decs[idx]%7)+(decs[idx]%11)+(decs[idx]%13))//2)
-        t_nonce = nonce + jump
-        if t_nonce not in used_nonces:
-            jumps.append(jump)
-            used_nonces.add(t_nonce)
-        idx += 1
-        if idx >= len(decs): idx = 0
-
-    tours=[]
-    for i,jump in enumerate(jumps):
-        t_nonce = nonce + jump
-        start, end = i*10, i*10 + 15
-        t_decs = decs[start:end] if end <= len(decs) else decs[start:]
-        t_results = [(4294967295*0.97)/d for d in t_decs]
-        min_val, mean_val, max_val = round(min(t_results),2), round(statistics.mean(t_results),2), round(max(t_results),2)
-        var = statistics.pvariance(t_results)
-        acc = round(max(0,100 - var),2)
-        t_crash = round((4294967295*0.97)/decs[i],2)
-        tours.append({
-            "tour": i+1,
-            "nonce": t_nonce,
-            "crash": t_crash,
-            "min": min_val,
-            "mean": mean_val,
-            "max": max_val,
-            "acc": acc
-        })
-
-    signal = "🟢 PLAY 🎯" if all(t['acc']>55 for t in tours) and statistics.pvariance([t['crash'] for t in tours])<500 else "🔴 SKIP ❌"
-    return tours, signal
-
-# ---------------- MINES ----------------
+# ================== CORE MINES ==================
 def mines_core(server, client, nonce):
-    h = hashlib.sha512(f"{server}:{client}:{nonce}".encode()).digest()
-    seed = int.from_bytes(h[:16], "big")
-    rng = random.Random(seed)
-    grid = list(range(25))
-    rng.shuffle(grid)
-    return grid
+    base = f"{server}:{client}:{nonce}"
+    hash_val = hashlib.sha256(base.encode()).hexdigest()
 
-def mines_hubris(server, client, nonce, mines_count):
-    freq = {}
-    runs = 15 + mines_count * 5
-    for i in range(runs):
+    numbers = []
+    for i in range(0, 50, 2):
+        num = int(hash_val[i:i+2], 16)
+        numbers.append(num % 25)
+
+    seen = []
+    for n in numbers:
+        if n not in seen:
+            seen.append(n)
+    return seen
+
+
+# ================== 📊 HEATMAP ==================
+def mines_heatmap(server, client, nonce, mines_count, rounds=30):
+    freq = {i:0 for i in range(25)}
+
+    for i in range(rounds):
         grid = mines_core(server, client, nonce+i)
         mines = grid[:mines_count]
         for m in mines:
-            freq[m] = freq.get(m,0)+1
-    ranking = sorted(range(25), key=lambda x: freq.get(x,0))
-    safe5 = ranking[:5]
-    risky = ranking[-5:]
-    confidence = round(100 - sum(freq.get(x,0) for x in safe5),2)
-    return safe5, risky, confidence
+            freq[m] += 1
 
-def draw_grid(safe):
+    return freq
+
+
+def draw_heatmap(freq):
     html = "<div class='grid'>"
+    max_val = max(freq.values()) if freq else 1
+
     for i in range(25):
-        html += "<div class='cell safe'>💎</div>" if i in safe else "<div class='cell empty'></div>"
+        val = freq.get(i, 0)
+        intensity = val / max_val if max_val else 0
+
+        if intensity > 0.7:
+            color = "#ff3333"
+        elif intensity > 0.4:
+            color = "#ffaa00"
+        else:
+            color = "#00ffcc"
+
+        html += f"<div class='cell' style='background:{color};color:#000'>{val}</div>"
+
     html += "</div>"
     return html
 
-# ---------------- LOGIN ----------------
-if "login" not in st.session_state: st.session_state.login = False
 
-if not st.session_state.login:
-    st.title("🔐 HUBRIS ACCESS")
-    pwd = st.text_input("Code", type="password")
-    if st.button("ENTER"):
-        if pwd == "2026":
-            st.session_state.login = True
-            st.rerun()
-        else: st.error("Code diso")
-else:
-    st.title("🔥 HUBRIS GOD MODE STRATEGIC V550")
-    tab1, tab2, tab3 = st.tabs(["🌌 COSMOS", "💎 MINES", "📘 GUIDE"])
-    
-    with tab1:
-        server = st.text_input("Server Seed")
-        client = st.text_input("Client Seed")
-        nonce = st.number_input("Nonce", min_value=1, value=1)
-        
-        if st.button("SCAN COSMOS"):
-            if not server or not client:
-                st.error("Seed required")
-            else:
-                with st.spinner("Scanning Cosmos... 🎯"):
-                    tours, signal = cosmos_precise(server,client,nonce)
-                    st.markdown(f"<h2 style='text-align:center;color:#00ffcc'>{signal}</h2>", unsafe_allow_html=True)
-                    cols = st.columns(4)
-                    for t, col in zip(tours, cols):
-                        with col:
-                            st.markdown(f"""
-                            <div style='background:#111;color:#00ffcc;padding:10px;border-radius:10px;text-align:center;border:1px solid #00ffcc;'>
-                                <h3>🎯 Tour {t['tour']}</h3>
-                                <p>Nonce: {t['nonce']}</p>
-                                <p>Crash: {t['crash']}x</p>
-                                <p>🎯 MIN: {t['min']} | 🎯 MEAN: {t['mean']} | 🎯 MAX: {t['max']}</p>
-                                <p>🎯 Accuracy: {t['acc']}%</p>
-                            </div>
-                            """, unsafe_allow_html=True)
-    
-    with tab2:
-        server_m = st.text_input("Server Seed", key="m1")
-        client_m = st.text_input("Client Seed", key="m2")
-        nonce_m = st.number_input("Nonce", min_value=1, value=1, key="m3")
-        mines_count = st.slider("Nombre de mines", 1, 3, 3)
-        
-        if st.button("SCAN MINES"):
-            if not server_m or not client_m:
-                st.error("Seed required")
-            else:
-                with st.spinner("Scanning Mines..."):
-                    safe, risky, conf = mines_hubris(server_m, client_m, nonce_m, mines_count)
-                    st.markdown(draw_grid(safe), unsafe_allow_html=True)
-                    st.success(f"💎 SAFE 5: {safe}")
-                    st.error(f"⚠️ RISKY: {risky}")
-                    st.info(f"CONFIDENCE: {conf}%")
-    
-    with tab3:
-        st.markdown("""
-### 📘 GUIDE UTILISATEUR
+# ================== 🧠 RL AGENT ==================
+class RLAgent:
+    def __init__(self):
+        self.q = np.zeros(25)
+
+    def update(self, safe_cells, reward=1):
+        for s in safe_cells:
+            self.q[s] += reward
+
+    def act(self, risk_prob):
+        scores = {}
+        for i in range(25):
+            scores[i] = (1 - risk_prob[i]) + self.q[i]
+
+        return sorted(scores.items(), key=lambda x: x[1], reverse=True)
+
+
+# ================== 🧠 LEARNING MEMORY ==================
+if "mines_memory" not in st.session_state:
+    st.session_state.mines_memory = {}
+
+if "agent" not in st.session_state:
+    st.session_state.agent = RLAgent()
+
+
+def update_learning(safe, mines):
+    for s in safe:
+        st.session_state.mines_memory[s] = st.session_state.mines_memory.get(s, 0) - 1
+    for m in mines:
+        st.session_state.mines_memory[m] = st.session_state.mines_memory.get(m, 0) + 2
+
+
+def apply_learning(ranking):
+    mem = st.session_state.mines_memory
+    return sorted(ranking, key=lambda x: mem.get(x,0))
+
+
+# ================== 🎯 TRACKING ==================
+def multi_round_tracking(server, client, nonce, mines_count):
+    history = []
+
+    for i in range(3):
+        grid = mines_core(server, client, nonce+i)
+        safe = grid[mines_count:10]
+        history.append(set(safe))
+
+    common_safe = set.intersection(*history) if history else set()
+    return list(common_safe), history
+
+
+# ================== 🌌 COSMOS AI (UPGRADED) ==================
+def cosmos_signal(server, client, nonce):
+    base = f"{server}:{client}:{nonce}"
+    h = hashlib.sha512(base.encode()).hexdigest()
+
+    vec = [int(h[i:i+2], 16) for i in range(0, 32, 2)]
+    vec = np.array(vec) / 255.0
+
+    return vec
+
+
+# ================== 📊 RISK MODEL (REAL PROBABILITY) ==================
+def risk_model(server, client, nonce, mines_count, rounds=300):
+    freq = np.zeros(25)
+
+    for i in range(rounds):
+        grid = mines_core(server, client, nonce + i)
+        mines = grid[:mines_count]
+
+        for m in mines:
+            freq[m] += 1
+
+    return freq / rounds
+
+
+# ================== 🔥 FUSION AI ENGINE ==================
+def fusion_ai(server, client, nonce, mines_count):
+    cosmos = cosmos_signal(server, client, nonce)
+    risk = risk_model(server, client, nonce, mines_count)
+
+    agent = st.session_state.agent
+
+    blended = {}
+
+    for i in range(25):
+        cosmos_factor = cosmos[i % len(cosmos)]
+        blended[i] = (1 - risk[i]) * 0.6 + cosmos_factor * 0.2 + agent.q[i] * 0.2
+
+    ranked = sorted(blended.items(), key=lambda x: x[1], reverse=True)
+
+    return ranked, risk
+
+
+# ================== 🎯 TRAIN FUSION ==================
+def train_fusion(server, client, nonce, mines_count):
+    risk = risk_model(server, client, nonce, mines_count)
+    safe_cells = np.argsort(risk)[:10]
+
+    st.session_state.agent.update(safe_cells, reward=1)
+
+
+# ================== UI ==================
+st.title("🔥 HUBRIS V700 ULTRA PRO — FUSION AI")
+
+tab1, tab2, tab3 = st.tabs(["🌌 COSMOS AI", "💎 MINES AI", "📘 GUIDE"])
+
+
+# ================== COSMOS ==================
+with tab1:
+    st.subheader("🌌 COSMOS AI")
+
+    server = st.text_input("Server Seed")
+    client = st.text_input("Client Seed")
+    nonce = st.number_input("Nonce", min_value=1, value=1)
+
+    if st.button("SCAN COSMOS AI"):
+        h = hashlib.sha512(f"{server}:{client}:{nonce}".encode()).hexdigest()
+        decimal = int(h[-8:], 16)
+        result = max(1.0, (4294967295 / decimal) * 0.97)
+
+        st.write(f"Result: {round(result,2)}")
+
+        if result > 2:
+            st.success("🟢 STRONG PLAY")
+        elif result > 1.3:
+            st.warning("🟡 MEDIUM")
+        else:
+            st.error("🔴 SKIP")
+
+
+# ================== MINES ==================
+with tab2:
+    st.subheader("💎 MINES AI")
+
+    server_m = st.text_input("Server Seed (mines)")
+    client_m = st.text_input("Client Seed (mines)")
+    nonce_m = st.number_input("Nonce (mines)", min_value=1, value=1)
+    mines_count = st.slider("Mines", 1, 3, 3)
+
+    if st.button("🧠 TRAIN FUSION AI"):
+        train_fusion(server_m, client_m, nonce_m, mines_count)
+        st.success("AI trained")
+
+    if st.button("🚀 RUN FUSION AI"):
+        ranked, risk = fusion_ai(server_m, client_m, nonce_m, mines_count)
+
+        st.write("💎 TOP SAFE ZONES:")
+        st.write(ranked[:5])
+
+        st.write("⚠️ RISK MAP:")
+        st.write(risk)
+
+    st.markdown("---")
+    st.subheader("📊 HEATMAP")
+
+    if st.button("GENERATE HEATMAP"):
+        freq = mines_heatmap(server_m, client_m, nonce_m, mines_count)
+        st.markdown(draw_heatmap(freq), unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.subheader("🎯 TRACKING")
+
+    if st.button("TRACK SAFE ZONES"):
+        common, history = multi_round_tracking(server_m, client_m, nonce_m, mines_count)
+
+        st.write(f"Common safe: {common}")
+        for i, h in enumerate(history):
+            st.write(f"Round {i+1}: {list(h)}")
+
+
+# ================== GUIDE ==================
+with tab3:
+    st.markdown("""
+## 🚀 HUBRIS V700 FUSION AI GUIDE
 
 ### 🌌 COSMOS
-- ✔️ Variable jumps automatique
-- ✔️ MIN / MEAN / MAX crash per tour 🎯
-- ✔️ Accuracy per tour 🎯
-- ✔️ Signal = PLAY only if tours > 55% and variance < threshold
-- ✔️ Adaptive betting & stop-loss
+- Hash volatility signal only
+- No prediction guarantee
 
----
+### 💎 MINES AI
+- Risk-based probability engine
+- Monte Carlo simulation
 
-### 💎 MINES
-- ✔️ Sélection: 1 à 3 mines
-- ✔️ System outputs **5 SAFE 💎**
-- ✔️ Use 2-3 selections max
-- ✔️ Confidence-driven strategy
-
----
-
-### 🎯 STRATEGIE
-- 💰 Bet = 1% bankroll or adaptive based on confidence
-- ❌ Stop after 2-3 losses
-- 🔁 Reset nonce if patterns appear
-
----
+### 🧠 FUSION AI
+- COSMOS + RISK + RL memory
+- Adaptive learning system
 
 ### ⚠️ IMPORTANT
-- No 100% winning algorithm
-- Helps **reduce losses**
+- Tsy 100% prediction
+- Decision support only
+- RNG cannot be broken
+
+🔥 PRO MAX SYSTEM 🔥
 """)
-    
-    # Auto-refresh every 10 seconds
-    st_autorefresh(interval=10000, limit=None, key="auto_refresh")

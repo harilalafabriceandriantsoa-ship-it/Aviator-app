@@ -1,175 +1,214 @@
 import streamlit as st
-import numpy as np
 import hashlib
-import sqlite3
-import matplotlib.pyplot as plt
-from sklearn.ensemble import RandomForestClassifier
+import random
+import statistics
+import time
+from streamlit_autorefresh import st_autorefresh
 
-# ================== APP CONFIG ==================
-st.set_page_config(page_title="HUBRIS V700 AI CLEAN", layout="wide")
-st.title("🚀 HUBRIS V700 CLEAN ARCHITECTURE AI SYSTEM")
+# ---------------- CONFIG ----------------
+st.set_page_config(page_title="HUBRIS V600 AI REAL LEARNING", layout="wide")
 
-# ================== DATABASE ==================
-def init_db():
-    conn = sqlite3.connect("hubris.db")
-    c = conn.cursor()
+# ---------------- STYLE ----------------
+st.markdown("""
+<style>
+.stApp {background: linear-gradient(135deg,#0f0f0f,#1c1c1c);color:#00ffcc;}
+h1,h2,h3{text-align:center;color:#00ffcc;}
 
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS history (
-        server TEXT,
-        client TEXT,
-        nonce INTEGER,
-        result TEXT
-    )
-    """)
+.stButton>button {
+    background: linear-gradient(90deg,#00ffcc,#0066ff);
+    color:white;border-radius:10px;height:45px;
+}
 
-    conn.commit()
-    conn.close()
+.grid {
+    display:grid;
+    grid-template-columns:repeat(5,60px);
+    gap:10px;justify-content:center;margin-top:20px;
+}
+.cell {
+    width:60px;height:60px;
+    display:flex;align-items:center;justify-content:center;
+    border-radius:10px;font-size:22px;
+}
+.safe {background:#00ffcc;color:#000;box-shadow:0 0 15px #00ffcc;}
+.risk {background:#ff0033;color:#fff;}
+.empty {background:#222;border:1px solid #444;}
+</style>
+""", unsafe_allow_html=True)
 
-init_db()
+# ---------------- MEMORY (AI LEARNING) ----------------
+if "history" not in st.session_state:
+    st.session_state.history = []
 
-def save_history(server, client, nonce, result):
-    conn = sqlite3.connect("hubris.db")
-    c = conn.cursor()
-    c.execute("INSERT INTO history VALUES (?,?,?,?)",
-              (server, client, nonce, str(result)))
-    conn.commit()
-    conn.close()
-
-def load_history():
-    conn = sqlite3.connect("hubris.db")
-    c = conn.cursor()
-    c.execute("SELECT * FROM history")
-    data = c.fetchall()
-    conn.close()
-    return data
-
-# ================== MINES CORE ==================
-def mines_core(server, client, nonce):
-    h = hashlib.sha256(f"{server}:{client}:{nonce}".encode()).hexdigest()
-    nums = [int(h[i:i+2], 16) % 25 for i in range(0, 50, 2)]
-
-    seen = []
-    for n in nums:
-        if n not in seen:
-            seen.append(n)
-    return seen
-
-# ================== COSMOS SIGNAL ==================
-def cosmos_signal(server, client, nonce):
+# ---------------- HASH VERIFY ----------------
+def verify_hash(server, client, nonce):
     h = hashlib.sha512(f"{server}:{client}:{nonce}".encode()).hexdigest()
-    return np.array([int(h[i:i+2], 16) for i in range(0, 32, 2)]) / 255.0
+    return h
 
-# ================== RISK MODEL ==================
-def risk_model(server, client, nonce):
-    freq = np.zeros(25)
+# ---------------- CRASH ----------------
+def crash(server, client, nonce):
+    h = verify_hash(server, client, nonce)
+    dec = int(h[-8:], 16) or 1
+    return round((4294967295 * 0.97) / dec, 2)
 
-    for i in range(120):
-        grid = mines_core(server, client, nonce + i)
-        for g in grid:
-            freq[g] += 1
+# ---------------- COSMOS AI ----------------
+def analyse_crash_series(server, client, nonce):
+    results = [crash(server, client, nonce+i) for i in range(20)]
+    
+    avg = round(statistics.mean(results),2)
+    variance = round(statistics.pvariance(results),2)
 
-    return freq / np.max(freq)
+    # streak low
+    streak_low = 0
+    for r in reversed(results):
+        if r < 2:
+            streak_low += 1
+        else:
+            break
 
-# ================== DIAMONDS ==================
-def top5_diamonds(risk):
-    return np.argsort(risk)[:5]
+    signal = "🔴 SKIP"
+    if streak_low >= 4 and avg > 1.8:
+        signal = "🟢 PLAY"
 
-# ================== ML MODEL ==================
-model = RandomForestClassifier(n_estimators=80)
+    return results, avg, variance, streak_low, signal
 
-def train_model(history):
-    X, y = [], []
+# ---------------- DETECT ENTRY ----------------
+def detect_best_entry(series):
+    low = sum(1 for x in series if x < 2)
+    high = sum(1 for x in series if x >= 2)
 
-    for h in history:
-        server, client, nonce, result = h
+    if low > high:
+        return "🔴 WAIT"
+    return "🟢 ENTER"
 
-        try:
-            mines = eval(result)
-        except:
-            mines = []
+# ---------------- MINES CORE ----------------
+def mines_core(server, client, nonce):
+    h = hashlib.sha512(f"{server}:{client}:{nonce}".encode()).digest()
+    seed = int.from_bytes(h[:16], "big")
+    rng = random.Random(seed)
+    grid = list(range(25))
+    rng.shuffle(grid)
+    return grid
 
-        label = mines[0] if len(mines) > 0 else 0
+# ---------------- MINES AI ----------------
+def mines_ai(server, client, nonce, mines_count):
+    freq = {}
+    history_maps = []
 
-        X.append([len(server) % 10, len(client) % 10, int(nonce) % 10])
-        y.append(label)
+    for i in range(30):
+        grid = mines_core(server, client, nonce+i)
+        mines = grid[:mines_count]
+        history_maps.append(mines)
 
-    if len(X) > 10:
-        model.fit(X, y)
+        for m in mines:
+            freq[m] = freq.get(m,0)+1
 
-def ml_predict(server, client, nonce):
-    return model.predict([[len(server) % 10,
-                           len(client) % 10,
-                           nonce % 10]])[0]
+    ranking = sorted(range(25), key=lambda x: freq.get(x,0))
+    
+    safe5 = ranking[:5]
+    best2 = ranking[:2]
+    risky = ranking[-5:]
 
-# ================== QUANT AI ==================
-def quant_ai(server, client, nonce):
-    risk = risk_model(server, client, nonce)
-    ml = ml_predict(server, client, nonce)
+    confidence = round(100 - sum(freq.get(x,0) for x in safe5),2)
 
-    scores = []
+    return safe5, best2, risky, confidence, freq
 
+# ---------------- DRAW GRID ----------------
+def draw_grid(safe, risky):
+    html = "<div class='grid'>"
     for i in range(25):
-        score = (1 - risk[i]) * 0.7
+        if i in safe:
+            html += "<div class='cell safe'>💎</div>"
+        elif i in risky:
+            html += "<div class='cell risk'>☠️</div>"
+        else:
+            html += "<div class='cell empty'></div>"
+    html += "</div>"
+    return html
 
-        if i == ml:
-            score += 0.2
+# ---------------- LOGIN ----------------
+if "login" not in st.session_state:
+    st.session_state.login = False
 
-        scores.append((i, score))
+if not st.session_state.login:
+    st.title("🔐 HUBRIS ACCESS")
+    pwd = st.text_input("Code", type="password")
+    if st.button("ENTER"):
+        if pwd == "2026":
+            st.session_state.login = True
+            st.rerun()
+        else:
+            st.error("Code diso")
 
-    return sorted(scores, key=lambda x: x[1], reverse=True), risk
+else:
+    st.title("🔥 HUBRIS V600 AI REAL LEARNING")
 
-# ================== ACCURACY ==================
-def accuracy(predicted, real):
-    if len(real) == 0:
-        return 0
+    tab1, tab2, tab3 = st.tabs(["🌌 COSMOS AI", "💎 MINES AI", "📘 GUIDE"])
 
-    hit = len(set(predicted[:5]) & set(real[:5]))
-    return hit / 5
+    # ---------------- COSMOS ----------------
+    with tab1:
+        server = st.text_input("Server Seed")
+        client = st.text_input("Client Seed")
+        nonce = st.number_input("Nonce", min_value=1, value=1)
 
-# ================== LOAD HISTORY ==================
-history = load_history()
-train_model(history)
+        if st.button("SCAN COSMOS"):
+            if not server or not client:
+                st.error("Seed required")
+            else:
+                series, avg, var, streak, signal = analyse_crash_series(server, client, nonce)
+                entry = detect_best_entry(series)
 
-# ================== INPUT ==================
-server = st.text_input("Server Seed")
-client = st.text_input("Client Seed")
-nonce = st.number_input("Nonce", 1)
+                st.success(signal)
+                st.info(entry)
 
-# ================== RUN SYSTEM ==================
-if st.button("🚀 RUN HUBRIS AI"):
+                st.write("📊 Série Crash:", series)
+                st.write(f"AVG: {avg} | VAR: {var} | STREAK LOW: {streak}")
 
-    mines = mines_core(server, client, nonce)
-    ranked, risk = quant_ai(server, client, nonce)
-    diamonds = top5_diamonds(risk)
-    cosmos = cosmos_signal(server, client, nonce)
+                # learning
+                st.session_state.history.append(avg)
 
-    save_history(server, client, nonce, mines)
+    # ---------------- MINES ----------------
+    with tab2:
+        server_m = st.text_input("Server Seed", key="m1")
+        client_m = st.text_input("Client Seed", key="m2")
+        nonce_m = st.number_input("Nonce", min_value=1, value=1, key="m3")
+        mines_count = st.slider("Nombre de mines", 1, 3, 3)
 
-    acc = accuracy(diamonds, mines)
+        if st.button("SCAN MINES"):
+            if not server_m or not client_m:
+                st.error("Seed required")
+            else:
+                safe, best2, risky, conf, freq = mines_ai(server_m, client_m, nonce_m, mines_count)
 
-    # ================== OUTPUT ==================
-    st.subheader("💣 MINES RESULT")
-    st.write(mines)
+                st.markdown(draw_grid(safe, risky), unsafe_allow_html=True)
 
-    st.subheader("💎 TOP 5 DIAMONDS")
-    st.write(diamonds)
+                st.success(f"💎 SAFE 5: {safe}")
+                st.warning(f"🔥 BEST 2: {best2}")
+                st.error(f"☠️ RISKY: {risky}")
+                st.info(f"CONFIDENCE: {conf}%")
 
-    st.subheader("📊 QUANT RANKING")
-    st.write(ranked[:10])
+    # ---------------- GUIDE ----------------
+    with tab3:
+        st.markdown("""
+### 📘 CONSIGNE CLIENT
 
-    st.subheader("🌌 COSMOS SIGNAL")
-    st.write(cosmos)
+### 🌌 COSMOS
+- Miditra raha 🟢 PLAY
+- Streak low ≥ 4
+- AVG > 1.8
 
-    st.subheader("📈 ACCURACY ESTIMATION")
-    st.write(f"{acc * 100:.2f}%")
+### 💎 MINES
+- Mifidiana 2 amin'ny BEST 2 🔥
+- SAFE 5 = support
+- Aza misafidy risky ☠️
 
-    st.subheader("⚠️ RISK MAP")
-    st.bar_chart(risk)
+### 🎯 STRATEGY
+- Bet = 1% bankroll
+- Stop après 2 pertes
+- Reset nonce
 
-# ================== HISTORY ==================
-st.markdown("---")
-st.subheader("🧠 LEARNING HISTORY (LAST 10)")
+### ⚠️
+- Tsy misy 100%
+- AI = manampy décision
+""")
 
-for h in history[-10:]:
-    st.write(h)
+    st_autorefresh(interval=10000, limit=None, key="refresh")

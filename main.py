@@ -8,9 +8,9 @@ from sklearn.ensemble import RandomForestClassifier
 from streamlit_autorefresh import st_autorefresh
 
 # ================= CONFIG =================
-st.set_page_config(page_title="HUBRIS AI CORE SYSTEM", layout="wide")
+st.set_page_config(page_title="HUBRIS AI CORE", layout="wide")
 
-# ================= DATABASE (FIXED SAFE INIT) =================
+# ================= DATABASE SAFE INIT =================
 conn = sqlite3.connect("hubris.db", check_same_thread=False)
 cursor = conn.cursor()
 
@@ -80,11 +80,12 @@ def cosmos(server, client, nonce):
 
     return results, avg, signal
 
+# ================= COSMOS SIGNALS =================
 def cosmos_signals(series):
     return ["🟢" if sum(x < 2 for x in series[i:i+5]) > 2 else "🔴"
             for i in range(0,15,5)]
 
-# ================= MINES ENGINE =================
+# ================= MINES CORE =================
 def mines_core(server, client, nonce):
     h = hashlib.sha512(f"{server}:{client}:{nonce}".encode()).digest()
     seed = int.from_bytes(h[:16], "big")
@@ -93,6 +94,7 @@ def mines_core(server, client, nonce):
     rng.shuffle(grid)
     return grid
 
+# ================= MONTE CARLO =================
 def monte_carlo(server, client, nonce):
     scores = np.zeros(25)
     for i in range(200):
@@ -101,10 +103,12 @@ def monte_carlo(server, client, nonce):
         scores[idx] += 1
     return scores / 200
 
+# ================= FEATURES =================
 def features(s, c, n):
     h = hashlib.sha256(f"{s}:{c}:{n}".encode()).hexdigest()
     return [int(h[i:i+2], 16) for i in range(0, 20, 2)]
 
+# ================= TRAIN MODEL =================
 def train_model():
     if len(st.session_state.memory) < 30:
         return None
@@ -116,6 +120,7 @@ def train_model():
     model.fit(X, y)
     return model
 
+# ================= MINES AI =================
 def mines_ai(server, client, nonce):
     risk = monte_carlo(server, client, nonce)
     model = train_model()
@@ -137,20 +142,10 @@ def mines_ai(server, client, nonce):
 
     return safe, risky, conf
 
-# ================= CHAT AI =================
-def ai_chat(msg):
-    msg = msg.lower()
-    if "mine" in msg:
-        return "💎 SAFE zones recommended"
-    if "cosmos" in msg:
-        return "🌌 signal analysis active"
-    if "bet" in msg:
-        return "⚠️ risk management required"
-    return "🤖 processing pattern..."
-
 # ================= AUTO BET =================
 def auto_bet(conf):
     bet = st.session_state.balance * 0.01
+
     if conf > 70:
         if random.random() > 0.5:
             st.session_state.balance += bet
@@ -160,9 +155,18 @@ def auto_bet(conf):
             return "LOSE"
     return "SKIP"
 
+# ================= CHAT =================
+def ai_chat(msg):
+    msg = msg.lower()
+    if "mine" in msg:
+        return "💎 SAFE zones active"
+    if "cosmos" in msg:
+        return "🌌 signal engine running"
+    return "🤖 analyzing..."
+
 # ================= LOGIN UI =================
 if not st.session_state.login:
-    st.title("🔐 ACCESS SYSTEM")
+    st.title("🔐 HUBRIS ACCESS")
     pwd = st.text_input("Password", type="password")
 
     if st.button("ENTER"):
@@ -172,7 +176,7 @@ if not st.session_state.login:
     st.stop()
 
 # ================= MAIN UI =================
-st.title("🚀 HUBRIS AI CORE SYSTEM")
+st.title("🚀 HUBRIS FULL AI SYSTEM")
 
 tab1, tab2, tab3, tab4 = st.tabs(["🌌 COSMOS", "💎 MINES", "🤖 AI", "💬 CHAT"])
 
@@ -187,6 +191,7 @@ with tab1:
         st.success(signal)
         st.write(series)
         st.write("AVG:", avg)
+        st.write("SIGNALS:", cosmos_signals(series))
 
 # ================= MINES =================
 with tab2:
@@ -221,9 +226,15 @@ with tab4:
 
         st.success(reply)
 
-    data = cursor.execute(
-        "SELECT * FROM chat ORDER BY id DESC"
-    ).fetchall()
+    def get_chat():
+        try:
+            cursor.execute("SELECT * FROM chat ORDER BY id DESC")
+            return cursor.fetchall()
+        except:
+            init_db()
+            return []
+
+    data = get_chat()
 
     for d in data[:10]:
         st.write("🧑", d[1])

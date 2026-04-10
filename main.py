@@ -1,13 +1,15 @@
 # ================== IMPORTS ==================
 import streamlit as st
 import sqlite3
-import numpy as np
 import hashlib
+import numpy as np
 import random
 import matplotlib.pyplot as plt
 
+from sklearn.ensemble import RandomForestClassifier
+
 # ================== CONFIG ==================
-st.set_page_config(page_title="HUBRIS V700 GOD MODE", layout="wide")
+st.set_page_config(page_title="HUBRIS V700 PRO AI", layout="wide")
 
 # ================== DB ==================
 def init_db():
@@ -16,15 +18,23 @@ def init_db():
 
     c.execute("""
     CREATE TABLE IF NOT EXISTS users (
-        username TEXT,
-        password TEXT
+        username TEXT PRIMARY KEY,
+        password TEXT,
+        role TEXT
     )
     """)
 
     c.execute("""
-    CREATE TABLE IF NOT EXISTS messages (
+    CREATE TABLE IF NOT EXISTS chat (
         user TEXT,
-        msg TEXT
+        message TEXT
+    )
+    """)
+
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS history (
+        features TEXT,
+        label INTEGER
     )
     """)
 
@@ -33,42 +43,48 @@ def init_db():
 
 init_db()
 
-# ================== AUTH ==================
-def login(user, pw):
-    conn = sqlite3.connect("hubris.db")
-    c = conn.cursor()
-    c.execute("SELECT * FROM users WHERE username=? AND password=?", (user,pw))
-    return c.fetchone()
+# ================== SECURITY ==================
+def hash_pw(pw):
+    return hashlib.sha256(pw.encode()).hexdigest()
 
-def register(user,pw):
+def register(u,p,role="user"):
     conn = sqlite3.connect("hubris.db")
     c = conn.cursor()
-    c.execute("INSERT INTO users VALUES (?,?)",(user,pw))
+    c.execute("INSERT OR REPLACE INTO users VALUES (?,?,?)",
+              (u, hash_pw(p), role))
     conn.commit()
     conn.close()
 
-# ================== CHAT ==================
-def send_msg(user,msg):
+def login(u,p):
     conn = sqlite3.connect("hubris.db")
     c = conn.cursor()
-    c.execute("INSERT INTO messages VALUES (?,?)",(user,msg))
+    c.execute("SELECT role FROM users WHERE username=? AND password=?",
+              (u, hash_pw(p)))
+    r = c.fetchone()
+    conn.close()
+    return r[0] if r else None
+
+# ================== CHAT ==================
+def send_msg(u,msg):
+    conn = sqlite3.connect("hubris.db")
+    c = conn.cursor()
+    c.execute("INSERT INTO chat VALUES (?,?)",(u,msg))
     conn.commit()
     conn.close()
 
 def get_msgs():
     conn = sqlite3.connect("hubris.db")
     c = conn.cursor()
-    c.execute("SELECT * FROM messages")
-    return c.fetchall()
+    c.execute("SELECT * FROM chat")
+    r = c.fetchall()
+    conn.close()
+    return r
 
-# ================== COSMOS ==================
-def cosmos(seed):
-    h = hashlib.sha512(seed.encode()).hexdigest()
-    return np.array([int(h[i:i+2],16) for i in range(0,32,2)]) / 255
+# ================== MINES (PRESERVED) ==================
+def mines_core(server, client, nonce):
+    base = f"{server}:{client}:{nonce}"
+    h = hashlib.sha256(base.encode()).hexdigest()
 
-# ================== MINES ==================
-def mines(seed):
-    h = hashlib.sha256(seed.encode()).hexdigest()
     nums = [int(h[i:i+2],16)%25 for i in range(0,50,2)]
 
     seen = []
@@ -77,138 +93,129 @@ def mines(seed):
             seen.append(n)
     return seen
 
-# ================== RISK ==================
-def risk(seed):
-    h = hashlib.sha256(seed.encode()).hexdigest()
-    return np.array([int(h[i:i+2],16)%100 for i in range(0,50,2)]) / 100
+# ================== COSMOS (PRESERVED) ==================
+def cosmos_signal(server, client, nonce):
+    h = hashlib.sha512(f"{server}:{client}:{nonce}".encode()).hexdigest()
+    return np.array([int(h[i:i+2],16) for i in range(0,32,2)]) / 255
 
-# ================== RL MEMORY ==================
-class RLMemory:
-    def __init__(self):
-        self.q = np.zeros(25)
+# ================== ML MODEL ==================
+model = RandomForestClassifier(n_estimators=50)
 
-    def update(self, idxs):
-        for i in idxs:
-            self.q[i] += 1
+def train_model():
+    # fake training dataset (simulation learning layer)
+    X = []
+    y = []
 
-memory = RLMemory()
+    for i in range(300):
+        server = random.randint(1,100)
+        client = random.randint(1,100)
+        nonce = random.randint(1,100)
 
-# ================== FUSION AI ==================
-def fusion(seed):
+        m = mines_core(str(server),str(client),nonce)
+        label = m[0] if len(m)>0 else 0
 
-    r = risk(seed)
-    c = cosmos(seed)
-    m = mines(seed)
+        X.append([
+            server%10,
+            client%10,
+            nonce%10
+        ])
+        y.append(label)
 
-    score = {}
+    model.fit(X,y)
 
-    for i in range(25):
-        score[i] = (
-            (1 - r[i % len(r)]) * 0.5 +
-            c[i % len(c)] * 0.3 +
-            memory.q[i] * 0.2
-        )
+# ================== PREDICTION ==================
+def ml_predict(server, client, nonce):
+    x = [[server%10, client%10, nonce%10]]
+    return model.predict(x)[0]
 
-    ranked = sorted(score.items(), key=lambda x: x[1], reverse=True)
-
-    return ranked, r, m
-
-# ================== CHAT AI ==================
-def chat_ai(msg):
+# ================== GPT STYLE AI ==================
+def gpt_ai(msg):
     msg = msg.lower()
 
-    if "risk" in msg:
-        return "⚠️ Risk is probability-based (hash simulation)"
-    if "cosmos" in msg:
-        return "🌌 COSMOS = entropy signal generator"
     if "mine" in msg:
-        return "💣 Mines generated using SHA256 randomness"
-    if "best" in msg:
-        return "🔥 Fusion AI ranks best safe zones"
-
-    return random.choice([
-        "🤖 Processing request...",
-        "📊 Running AI model...",
-        "🧠 Updating system..."
-    ])
+        return "💣 Mines = hash-based deterministic generation"
+    if "cosmos" in msg:
+        return "🌌 Cosmos = entropy signal generator"
+    if "ai" in msg:
+        return "🤖 Fusion AI combines ML + heuristics"
+    return "🧠 Processing advanced reasoning..."
 
 # ================== SESSION ==================
 if "user" not in st.session_state:
     st.session_state.user = None
+    st.session_state.role = None
 
 # ================== UI ==================
-st.title("🚀 HUBRIS V700 — GOD MODE FULL STACK")
+st.title("🚀 HUBRIS V700 PRO AI ENTERPRISE")
 
 # ================== LOGIN ==================
-st.subheader("🔐 LOGIN SYSTEM")
+u = st.text_input("Username")
+p = st.text_input("Password", type="password")
 
-user = st.text_input("Username")
-pw = st.text_input("Password", type="password")
-
-col1, col2 = st.columns(2)
+col1,col2 = st.columns(2)
 
 with col1:
     if st.button("LOGIN"):
-        if login(user,pw):
-            st.session_state.user = user
+        role = login(u,p)
+        if role:
+            st.session_state.user = u
+            st.session_state.role = role
             st.success("Logged in")
         else:
-            st.error("Wrong credentials")
+            st.error("Invalid")
 
 with col2:
     if st.button("REGISTER"):
-        register(user,pw)
+        register(u,p)
         st.success("User created")
 
-# ================== MAIN SYSTEM ==================
+# ================== SYSTEM ==================
 if st.session_state.user:
 
     st.markdown("---")
-    st.subheader("🧠 HUBRIS AI ENGINE")
 
     server = st.text_input("Server Seed")
     client = st.text_input("Client Seed")
-    nonce = st.number_input("Nonce", 1)
+    nonce = st.number_input("Nonce",1)
 
-    seed = f"{server}:{client}:{nonce}"
+    # TRAIN ML
+    if st.button("🧠 TRAIN ML"):
+        train_model()
+        st.success("ML trained")
 
-    if st.button("🚀 RUN AI") and server:
+    # RUN AI
+    if st.button("🚀 RUN AI SYSTEM"):
 
-        ranked, r, m = fusion(seed)
-
-        st.subheader("💎 TOP ZONES")
-        st.write(ranked[:5])
+        mines = mines_core(server,client,nonce)
+        cosmos = cosmos_signal(server,client,nonce)
+        ml = ml_predict(int(len(server)), int(len(client)), nonce)
 
         st.subheader("💣 MINES")
-        st.write(m)
+        st.write(mines)
 
-        st.subheader("⚠️ RISK MAP")
-        st.write(r)
+        st.subheader("🌌 COSMOS")
+        st.write(cosmos)
 
-        fig, ax = plt.subplots()
-        ax.bar(range(len(r)), r)
-        st.pyplot(fig)
-
-        # RL update
-        memory.update([i[0] for i in ranked[:5]])
+        st.subheader("🤖 ML PREDICTION")
+        st.write("Predicted index:", ml)
 
     # ================== CHAT ==================
     st.markdown("---")
-    st.subheader("💬 CHAT SYSTEM")
+    st.subheader("💬 CHAT (WhatsApp STYLE)")
 
     msg = st.text_input("Message")
 
     if st.button("SEND"):
-        send_msg(st.session_state.user, msg)
+        send_msg(st.session_state.user,msg)
 
-    for u,m in get_msgs():
-        st.write(f"{u}: {m}")
+    for u,m in get_msgs()[-20:]:
+        st.write(f"🧑 {u}: {m}")
 
-    # ================== AI CHAT ==================
+    # ================== GPT AI ==================
     st.markdown("---")
-    st.subheader("🤖 AI ASSISTANT")
+    st.subheader("🤖 GPT AI")
 
     ask = st.text_input("Ask AI")
 
     if st.button("ASK"):
-        st.success(chat_ai(ask))
+        st.success(gpt_ai(ask))

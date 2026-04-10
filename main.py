@@ -1,214 +1,126 @@
 import streamlit as st
 import hashlib
 import random
-import statistics
-import time
-from streamlit_autorefresh import st_autorefresh
+import numpy as np
+import sqlite3
 
-# ---------------- CONFIG ----------------
-st.set_page_config(page_title="HUBRIS V600 AI REAL LEARNING", layout="wide")
+# ================= DATABASE =================
+conn = sqlite3.connect("hubris_v900.db", check_same_thread=False)
+cursor = conn.cursor()
 
-# ---------------- STYLE ----------------
-st.markdown("""
-<style>
-.stApp {background: linear-gradient(135deg,#0f0f0f,#1c1c1c);color:#00ffcc;}
-h1,h2,h3{text-align:center;color:#00ffcc;}
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type TEXT,
+    input TEXT,
+    output TEXT
+)
+""")
+conn.commit()
 
-.stButton>button {
-    background: linear-gradient(90deg,#00ffcc,#0066ff);
-    color:white;border-radius:10px;height:45px;
-}
+def save_record(t, inp, out):
+    cursor.execute("INSERT INTO history (type,input,output) VALUES (?,?,?)",
+                   (t, str(inp), str(out)))
+    conn.commit()
 
-.grid {
-    display:grid;
-    grid-template-columns:repeat(5,60px);
-    gap:10px;justify-content:center;margin-top:20px;
-}
-.cell {
-    width:60px;height:60px;
-    display:flex;align-items:center;justify-content:center;
-    border-radius:10px;font-size:22px;
-}
-.safe {background:#00ffcc;color:#000;box-shadow:0 0 15px #00ffcc;}
-.risk {background:#ff0033;color:#fff;}
-.empty {background:#222;border:1px solid #444;}
-</style>
-""", unsafe_allow_html=True)
+def load_history():
+    cursor.execute("SELECT * FROM history ORDER BY id DESC")
+    return cursor.fetchall()
 
-# ---------------- MEMORY (AI LEARNING) ----------------
-if "history" not in st.session_state:
-    st.session_state.history = []
-
-# ---------------- HASH VERIFY ----------------
-def verify_hash(server, client, nonce):
+# ================= COSMOS ENGINE =================
+def cosmos_engine(server, client, nonce):
     h = hashlib.sha512(f"{server}:{client}:{nonce}".encode()).hexdigest()
-    return h
 
-# ---------------- CRASH ----------------
-def crash(server, client, nonce):
-    h = verify_hash(server, client, nonce)
-    dec = int(h[-8:], 16) or 1
-    return round((4294967295 * 0.97) / dec, 2)
-
-# ---------------- COSMOS AI ----------------
-def analyse_crash_series(server, client, nonce):
-    results = [crash(server, client, nonce+i) for i in range(20)]
-    
-    avg = round(statistics.mean(results),2)
-    variance = round(statistics.pvariance(results),2)
-
-    # streak low
-    streak_low = 0
-    for r in reversed(results):
-        if r < 2:
-            streak_low += 1
-        else:
-            break
+    values = [int(h[i:i+2],16) for i in range(0,32,2)]
+    trend = np.mean(values)
+    volatility = np.var(values)
 
     signal = "🔴 SKIP"
-    if streak_low >= 4 and avg > 1.8:
+    if trend > 120 and volatility < 500:
         signal = "🟢 PLAY"
 
-    return results, avg, variance, streak_low, signal
+    return {
+        "trend": float(trend),
+        "volatility": float(volatility),
+        "signal": signal
+    }
 
-# ---------------- DETECT ENTRY ----------------
-def detect_best_entry(series):
-    low = sum(1 for x in series if x < 2)
-    high = sum(1 for x in series if x >= 2)
-
-    if low > high:
-        return "🔴 WAIT"
-    return "🟢 ENTER"
-
-# ---------------- MINES CORE ----------------
-def mines_core(server, client, nonce):
+# ================= MINES ENGINE =================
+def mines_engine(server, client, nonce):
     h = hashlib.sha512(f"{server}:{client}:{nonce}".encode()).digest()
-    seed = int.from_bytes(h[:16], "big")
+    seed = int.from_bytes(h[:16],"big")
+
     rng = random.Random(seed)
     grid = list(range(25))
     rng.shuffle(grid)
-    return grid
 
-# ---------------- MINES AI ----------------
-def mines_ai(server, client, nonce, mines_count):
-    freq = {}
-    history_maps = []
+    mines = grid[:3]
+    safe = grid[3:]
 
-    for i in range(30):
-        grid = mines_core(server, client, nonce+i)
-        mines = grid[:mines_count]
-        history_maps.append(mines)
+    risk_map = np.zeros(25)
+    for i in mines:
+        risk_map[i] = 1
 
-        for m in mines:
-            freq[m] = freq.get(m,0)+1
+    confidence = float((1 - np.mean(risk_map)) * 100)
 
-    ranking = sorted(range(25), key=lambda x: freq.get(x,0))
-    
-    safe5 = ranking[:5]
-    best2 = ranking[:2]
-    risky = ranking[-5:]
+    return {
+        "safe": safe[:5],
+        "risk": mines,
+        "confidence": confidence
+    }
 
-    confidence = round(100 - sum(freq.get(x,0) for x in safe5),2)
+# ================= FUSION AI =================
+def fusion(cosmos, mines):
+    if cosmos["signal"] == "🟢 PLAY" and mines["confidence"] > 60:
+        return "🟢 STRONG ENTRY"
+    elif cosmos["signal"] == "🟢 PLAY":
+        return "🟡 WEAK ENTRY"
+    else:
+        return "🔴 NO TRADE"
 
-    return safe5, best2, risky, confidence, freq
+# ================= STREAMLIT UI =================
+st.set_page_config(page_title="HUBRIS V900", layout="wide")
 
-# ---------------- DRAW GRID ----------------
-def draw_grid(safe, risky):
-    html = "<div class='grid'>"
-    for i in range(25):
-        if i in safe:
-            html += "<div class='cell safe'>💎</div>"
-        elif i in risky:
-            html += "<div class='cell risk'>☠️</div>"
-        else:
-            html += "<div class='cell empty'></div>"
-    html += "</div>"
-    return html
+st.title("🚀 HUBRIS V900 ULTIMATE ENGINE")
 
-# ---------------- LOGIN ----------------
-if "login" not in st.session_state:
-    st.session_state.login = False
+tab1, tab2, tab3 = st.tabs(["🌌 COSMOS", "💎 MINES", "📊 HISTORY"])
 
-if not st.session_state.login:
-    st.title("🔐 HUBRIS ACCESS")
-    pwd = st.text_input("Code", type="password")
-    if st.button("ENTER"):
-        if pwd == "2026":
-            st.session_state.login = True
-            st.rerun()
-        else:
-            st.error("Code diso")
+# ================= COSMOS TAB =================
+with tab1:
+    server = st.text_input("Server Seed")
+    client = st.text_input("Client Seed")
+    nonce = st.number_input("Nonce", value=1)
 
-else:
-    st.title("🔥 HUBRIS V600 AI REAL LEARNING")
+    if st.button("RUN COSMOS"):
+        result = cosmos_engine(server, client, nonce)
+        save_record("COSMOS", f"{server}-{client}-{nonce}", result)
+        st.json(result)
 
-    tab1, tab2, tab3 = st.tabs(["🌌 COSMOS AI", "💎 MINES AI", "📘 GUIDE"])
+# ================= MINES TAB =================
+with tab2:
+    s = st.text_input("Server (Mines)")
+    c = st.text_input("Client (Mines)")
+    n = st.number_input("Nonce Mines", value=1)
 
-    # ---------------- COSMOS ----------------
-    with tab1:
-        server = st.text_input("Server Seed")
-        client = st.text_input("Client Seed")
-        nonce = st.number_input("Nonce", min_value=1, value=1)
+    if st.button("RUN MINES"):
+        m = mines_engine(s,c,n)
+        save_record("MINES", f"{s}-{c}-{n}", m)
+        st.json(m)
 
-        if st.button("SCAN COSMOS"):
-            if not server or not client:
-                st.error("Seed required")
-            else:
-                series, avg, var, streak, signal = analyse_crash_series(server, client, nonce)
-                entry = detect_best_entry(series)
+    if st.button("FUSION AI"):
+        cosmos = cosmos_engine(s,c,n)
+        mines = mines_engine(s,c,n)
 
-                st.success(signal)
-                st.info(entry)
+        decision = fusion(cosmos, mines)
 
-                st.write("📊 Série Crash:", series)
-                st.write(f"AVG: {avg} | VAR: {var} | STREAK LOW: {streak}")
+        save_record("FUSION", f"{s}-{c}-{n}", decision)
 
-                # learning
-                st.session_state.history.append(avg)
+        st.success(decision)
 
-    # ---------------- MINES ----------------
-    with tab2:
-        server_m = st.text_input("Server Seed", key="m1")
-        client_m = st.text_input("Client Seed", key="m2")
-        nonce_m = st.number_input("Nonce", min_value=1, value=1, key="m3")
-        mines_count = st.slider("Nombre de mines", 1, 3, 3)
+# ================= HISTORY TAB =================
+with tab3:
+    st.subheader("📊 AI LEARNING HISTORY")
+    data = load_history()
 
-        if st.button("SCAN MINES"):
-            if not server_m or not client_m:
-                st.error("Seed required")
-            else:
-                safe, best2, risky, conf, freq = mines_ai(server_m, client_m, nonce_m, mines_count)
-
-                st.markdown(draw_grid(safe, risky), unsafe_allow_html=True)
-
-                st.success(f"💎 SAFE 5: {safe}")
-                st.warning(f"🔥 BEST 2: {best2}")
-                st.error(f"☠️ RISKY: {risky}")
-                st.info(f"CONFIDENCE: {conf}%")
-
-    # ---------------- GUIDE ----------------
-    with tab3:
-        st.markdown("""
-### 📘 CONSIGNE CLIENT
-
-### 🌌 COSMOS
-- Miditra raha 🟢 PLAY
-- Streak low ≥ 4
-- AVG > 1.8
-
-### 💎 MINES
-- Mifidiana 2 amin'ny BEST 2 🔥
-- SAFE 5 = support
-- Aza misafidy risky ☠️
-
-### 🎯 STRATEGY
-- Bet = 1% bankroll
-- Stop après 2 pertes
-- Reset nonce
-
-### ⚠️
-- Tsy misy 100%
-- AI = manampy décision
-""")
-
-    st_autorefresh(interval=10000, limit=None, key="refresh")
+    for row in data[:50]:
+        st.write(row)

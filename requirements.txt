@@ -7,3 +7,8 @@ streamlit-autorefresh
 pip install sqlite3
 pip install tensorflow
 pip install scikit-learn
+tensorflow
+fastapi
+uvicorn
+scikit-learn
+pydantic

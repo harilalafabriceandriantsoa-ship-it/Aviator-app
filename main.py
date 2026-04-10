@@ -7,28 +7,34 @@ import sqlite3
 from sklearn.ensemble import RandomForestClassifier
 from streamlit_autorefresh import st_autorefresh
 
-# ================= DATABASE =================
+# ================= CONFIG =================
+st.set_page_config(page_title="HUBRIS AI CORE SYSTEM", layout="wide")
+
+# ================= DATABASE (FIXED SAFE INIT) =================
 conn = sqlite3.connect("hubris.db", check_same_thread=False)
 cursor = conn.cursor()
 
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS history (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    type TEXT,
-    input TEXT,
-    output TEXT
-)
-""")
+def init_db():
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        type TEXT,
+        input TEXT,
+        output TEXT
+    )
+    """)
 
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS chat (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    msg TEXT,
-    reply TEXT
-)
-""")
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS chat (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        msg TEXT,
+        reply TEXT
+    )
+    """)
 
-conn.commit()
+    conn.commit()
+
+init_db()
 
 # ================= SESSION =================
 if "memory" not in st.session_state:
@@ -43,7 +49,7 @@ if "login" not in st.session_state:
 if "role" not in st.session_state:
     st.session_state.role = "user"
 
-# ================= SECURITY =================
+# ================= LOGIN =================
 def login(password):
     if password == "2026":
         st.session_state.login = True
@@ -165,7 +171,7 @@ if not st.session_state.login:
 
     st.stop()
 
-# ================= UI =================
+# ================= MAIN UI =================
 st.title("🚀 HUBRIS AI CORE SYSTEM")
 
 tab1, tab2, tab3, tab4 = st.tabs(["🌌 COSMOS", "💎 MINES", "🤖 AI", "💬 CHAT"])
@@ -206,11 +212,19 @@ with tab4:
 
     if st.button("SEND"):
         reply = ai_chat(msg)
-        cursor.execute("INSERT INTO chat(msg,reply) VALUES (?,?)", (msg, reply))
+
+        cursor.execute(
+            "INSERT INTO chat(msg, reply) VALUES (?, ?)",
+            (msg, reply)
+        )
         conn.commit()
+
         st.success(reply)
 
-    data = cursor.execute("SELECT * FROM chat ORDER BY id DESC").fetchall()
+    data = cursor.execute(
+        "SELECT * FROM chat ORDER BY id DESC"
+    ).fetchall()
+
     for d in data[:10]:
         st.write("🧑", d[1])
         st.write("🤖", d[2])

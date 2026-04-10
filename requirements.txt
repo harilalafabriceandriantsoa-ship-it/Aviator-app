@@ -1,14 +1,6 @@
-streamlit 
-pandas
-matplotlib 
-numpy
 streamlit
-streamlit-autorefresh
-pip install sqlite3
-pip install tensorflow
-pip install scikit-learn
-tensorflow
-fastapi
-uvicorn
+numpy
+pandas
+matplotlib
 scikit-learn
-pydantic
+streamlit-autorefresh

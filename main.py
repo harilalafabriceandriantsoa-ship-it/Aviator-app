@@ -7,15 +7,15 @@ import json
 from sklearn.ensemble import RandomForestClassifier
 
 # ================= CONFIG =================
-st.set_page_config(page_title="HUBRIS AI CORE SYSTEM", layout="wide")
+st.set_page_config(page_title="HUBRIS V1000 AI ENGINE", layout="wide")
 
-# ================= DATABASE =================
+# ================= DATABASE (V900 CORE) =================
 conn = sqlite3.connect("hubris_ai.db", check_same_thread=False)
 cursor = conn.cursor()
 
 def init_db():
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS mine_history (
+    CREATE TABLE IF NOT EXISTS mine_data (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         server TEXT,
         client TEXT,
@@ -29,25 +29,25 @@ def init_db():
 
 init_db()
 
-# ================= SESSION =================
-if "balance" not in st.session_state:
-    st.session_state.balance = 1000
-
+# ================= SESSION MEMORY =================
 if "memory" not in st.session_state:
     st.session_state.memory = []
 
-# ================= COSMOS ENGINE =================
+if "balance" not in st.session_state:
+    st.session_state.balance = 1000
+
+# ================= V800 COSMOS ENGINE =================
 def crash(server, client, nonce):
     h = hashlib.sha512(f"{server}:{client}:{nonce}".encode()).hexdigest()
     dec = int(h[-8:], 16) or 1
     return round((4294967295 * 0.97) / dec, 2)
 
 def cosmos_engine(server, client, nonce):
-    results = [crash(server, client, nonce+i) for i in range(20)]
-    avg = np.mean(results)
+    series = [crash(server, client, nonce+i) for i in range(20)]
+    avg = np.mean(series)
 
     streak = 0
-    for r in reversed(results):
+    for r in reversed(series):
         if r < 2:
             streak += 1
         else:
@@ -57,122 +57,131 @@ def cosmos_engine(server, client, nonce):
     if streak >= 4 and avg > 1.8:
         signal = "PLAY"
 
-    return results, avg, signal
+    return series, avg, signal
 
-# ================= FEATURES =================
-def mine_features(server, client, nonce):
+# ================= V800 MINES CORE =================
+def mines_core(server, client, nonce):
     h = hashlib.sha256(f"{server}:{client}:{nonce}".encode()).hexdigest()
     return [int(h[i:i+2], 16) for i in range(0, 20, 2)]
 
-# ================= TRAIN MODEL =================
+# ================= V900 FEATURE ENGINE =================
+def features(server, client, nonce):
+    h = hashlib.sha256(f"{server}:{client}:{nonce}".encode()).hexdigest()
+    return [int(h[i:i+2], 16) for i in range(0, 20, 2)]
+
+# ================= V900 ML TRAINING =================
 def train_model():
-    cursor.execute("SELECT features, label FROM mine_history")
+    cursor.execute("SELECT features, label FROM mine_data")
     data = cursor.fetchall()
 
-    if len(data) < 30:
+    if len(data) < 40:
         return None
 
     X = [json.loads(d[0]) for d in data]
     y = [d[1] for d in data]
 
-    model = RandomForestClassifier(n_estimators=150)
+    model = RandomForestClassifier(n_estimators=200)
     model.fit(X, y)
     return model
 
-# ================= MINE ENGINE =================
-def mine_engine(server, client, nonce):
-    features = mine_features(server, client, nonce)
+# ================= V1000 AI FUSION ENGINE =================
+def mines_ai(server, client, nonce):
+    risk = np.zeros(25)
+
+    # Monte Carlo simulation
+    for i in range(150):
+        h = hashlib.sha256(f"{server}:{client}:{nonce+i}".encode()).hexdigest()
+        idx = int(h[:2], 16) % 25
+        risk[idx] += 1
+
+    risk = risk / np.max(risk)
 
     model = train_model()
 
+    ml_layer = np.zeros(25)
+
     if model:
-        pred = model.predict([features])[0]
-    else:
-        pred = sum(features) % 25
+        pred = model.predict([features(server, client, nonce)])[0]
+        ml_layer[pred] = 1
 
-    risk_map = np.zeros(25)
-    risk_map[pred] = 1
+    # V1000 fusion logic
+    final_score = (1 - risk) * 0.6 + ml_layer * 0.2 + np.random.random(25) * 0.2
 
-    safe = [i for i in range(25) if i != pred][:5]
-    risky = [pred]
+    rank = np.argsort(-final_score)
 
-    confidence = float(np.max([1 - risk_map[pred], 0.5]) * 100)
+    safe = rank[:5]
+    risky = rank[-5:]
+    confidence = float(np.max(final_score) * 100)
 
-    return safe, risky, pred, confidence, features
+    # learning memory (V900 self training)
+    st.session_state.memory.append((features(server, client, nonce), safe[0]))
 
-# ================= SAVE LEARNING =================
-def save_mine(server, client, nonce, pred, label):
-    feats = mine_features(server, client, nonce)
+    return safe, risky, confidence
+
+# ================= SAVE TRAINING DATA =================
+def save_learning(server, client, nonce, pred):
+    feat = features(server, client, nonce)
 
     cursor.execute("""
-    INSERT INTO mine_history (server, client, nonce, features, prediction, label)
+    INSERT INTO mine_data (server, client, nonce, features, prediction, label)
     VALUES (?, ?, ?, ?, ?, ?)
     """, (
         server,
         client,
         nonce,
-        json.dumps(feats),
+        json.dumps(feat),
         pred,
-        label
+        pred  # simulation label
     ))
 
     conn.commit()
 
 # ================= LOGIN =================
-def login(password):
-    return password == "2026"
-
-# ================= UI LOGIN =================
 if "login" not in st.session_state:
     st.session_state.login = False
 
 if not st.session_state.login:
-    st.title("🔐 HUBRIS AI ACCESS")
+    st.title("🔐 HUBRIS V1000 ACCESS")
     pwd = st.text_input("Password", type="password")
 
     if st.button("ENTER"):
-        if login(pwd):
+        if pwd == "2026":
             st.session_state.login = True
             st.rerun()
         else:
-            st.error("Wrong password")
+            st.error("WRONG PASSWORD")
 
     st.stop()
 
-# ================= MAIN UI =================
-st.title("🚀 HUBRIS AI FULL PRODUCTION ENGINE")
+# ================= UI =================
+st.title("🚀 HUBRIS V800 + V900 + V1000 AI SYSTEM")
 
-tab1, tab2 = st.tabs(["🌌 COSMOS", "💎 MINES"])
+tab1, tab2 = st.tabs(["🌌 COSMOS V800", "💎 MINES AI V1000"])
 
 # ================= COSMOS =================
 with tab1:
-    server = st.text_input("Server Seed")
-    client = st.text_input("Client Seed")
-    nonce = st.number_input("Nonce", 1)
+    s = st.text_input("Server Seed")
+    c = st.text_input("Client Seed")
+    n = st.number_input("Nonce", 1)
 
     if st.button("RUN COSMOS"):
-        results, avg, signal = cosmos_engine(server, client, nonce)
+        series, avg, signal = cosmos_engine(s, c, n)
 
         st.success(signal)
         st.write("AVG:", avg)
-        st.write(results)
+        st.write(series)
 
-# ================= MINES =================
+# ================= MINES AI =================
 with tab2:
-    s = st.text_input("Server (Mines)")
-    c = st.text_input("Client (Mines)")
-    n = st.number_input("Nonce (Mines)", 1)
+    s = st.text_input("Server M")
+    c = st.text_input("Client M")
+    n = st.number_input("Nonce M", 1)
 
-    if st.button("RUN MINES AI"):
-        safe, risky, pred, conf, feats = mine_engine(s, c, n)
+    if st.button("RUN AI MINES"):
+        safe, risky, conf = mines_ai(s, c, n)
 
-        st.write("💎 SAFE:", safe)
-        st.write("☠️ RISK:", risky)
-        st.write("🎯 PRED:", pred)
+        st.write("💎 SAFE:", list(safe))
+        st.write("☠️ RISKY:", list(risky))
         st.success(f"CONFIDENCE: {conf:.2f}%")
 
-        # FAKE LABEL (learning simulation)
-        label = pred if random.random() > 0.5 else (pred + 1) % 25
-        save_mine(s, c, n, pred, label)
-
-st.info("HUBRIS AI RUNNING - PRODUCTION MODE")
+        save_learning(s, c, n, safe[0])

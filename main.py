@@ -7,7 +7,7 @@ from sklearn.ensemble import RandomForestClassifier
 from streamlit_autorefresh import st_autorefresh
 
 # ---------------- CONFIG ----------------
-st.set_page_config(page_title="HUBRIS V900 GOD MODE", layout="wide")
+st.set_page_config(page_title="HUBRIS V900 FINAL", layout="wide")
 
 # ---------------- STYLE ----------------
 st.markdown("""
@@ -39,6 +39,22 @@ if "memory" not in st.session_state:
     st.session_state.memory = []
 if "balance" not in st.session_state:
     st.session_state.balance = 1000
+if "login" not in st.session_state:
+    st.session_state.login = False
+
+# ---------------- LOGIN ----------------
+if not st.session_state.login:
+    st.title("🔐 HUBRIS SECURE ACCESS")
+    pwd = st.text_input("Password", type="password")
+
+    if st.button("ENTER"):
+        if pwd == "2026":
+            st.session_state.login = True
+            st.rerun()
+        else:
+            st.error("Wrong password")
+
+    st.stop()
 
 # ---------------- HASH ----------------
 def verify_hash(server, client, nonce):
@@ -57,12 +73,10 @@ def cosmos_ultra(server, client, nonce, ref=2.0):
     avg = statistics.mean(base)
     var = statistics.pvariance(base)
 
-    streak = sum(1 for x in reversed(base) if x < ref)
-
     seed_val = int(hashlib.sha256(f"{server}{client}{nonce}".encode()).hexdigest(),16)
     rng = random.Random(seed_val)
 
-    jumps = list(set([max(2,int(avg)+rng.randint(2,6)) for _ in range(5)]))[:3]
+    jumps = list(set([max(2,int(avg)+rng.randint(2,6)) for _ in range(6)]))[:3]
 
     tours = []
 
@@ -114,8 +128,8 @@ def train_model():
     model.fit(X,y)
     return model
 
-# ---------------- MINES AI ----------------
-def mines_ai_multi(server, client, nonce, mines_count):
+# ---------------- MINES AI (FIX 5 DIAMOND) ----------------
+def mines_ai(server, client, nonce):
     risk = monte_carlo(server, client, nonce)
     model = train_model()
 
@@ -128,10 +142,10 @@ def mines_ai_multi(server, client, nonce, mines_count):
     final = (1-risk)*0.7 + ml*0.3
     rank = np.argsort(-final)
 
-    safe = rank[:(5-mines_count)]
-    risky = rank[-(5+mines_count):]   # ✅ FIX
+    safe = rank[:5]          # ✅ TOUJOURS 5 DIAMANTS
+    risky = rank[-5:]
 
-    confidence = round(float(np.max(final)*100 - mines_count*5),2)
+    confidence = round(float(np.mean(final[safe]) * 100),2)
 
     st.session_state.memory.append((features(server,client,nonce), int(safe[0])))
 
@@ -151,10 +165,11 @@ def draw_grid(safe, risky):
     return html
 
 # ---------------- UI ----------------
-st.title("🔥 HUBRIS V900 FINAL FIX")
+st.title("🔥 HUBRIS V900 FINAL SYSTEM")
 
 tab1, tab2 = st.tabs(["🌌 COSMOS", "💎 MINES"])
 
+# ---------------- COSMOS ----------------
 with tab1:
     s = st.text_input("Server Seed")
     c = st.text_input("Client Seed")
@@ -170,17 +185,17 @@ MIN: {t[3]} | AVG: {t[4]} | MAX: {t[5]}
 ACCURACY: {t[6]}%
 """)
 
+# ---------------- MINES ----------------
 with tab2:
     s = st.text_input("Server",key="m1")
     c = st.text_input("Client",key="m2")
     n = st.number_input("Nonce",1,key="m3")
-    m = st.selectbox("Mines",[1,2,3])
 
     if st.button("SCAN MINES"):
-        safe,risk,conf = mines_ai_multi(s,c,n,m)
+        safe,risk,conf = mines_ai(s,c,n)
         st.markdown(draw_grid(safe,risk),unsafe_allow_html=True)
-        st.write("SAFE:",list(safe))
-        st.write("RISK:",list(risk))
-        st.write("CONF:",conf)
+        st.write("SAFE 💎:",list(safe))
+        st.write("RISK ☠️:",list(risk))
+        st.write("CONFIDENCE:",conf,"%")
 
 st_autorefresh(interval=10000,limit=None)

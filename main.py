@@ -35,8 +35,6 @@ h1,h2,h3{text-align:center;color:#00ffcc;}
 """, unsafe_allow_html=True)
 
 # ---------------- SESSION ----------------
-if "history" not in st.session_state:
-    st.session_state.history = []
 if "memory" not in st.session_state:
     st.session_state.memory = []
 if "balance" not in st.session_state:
@@ -52,63 +50,41 @@ def crash(server, client, nonce):
     dec = int(h[-8:],16) or 1
     return round((4294967295*0.97)/dec,2)
 
-# ================= COSMOS ULTRA =================
+# ---------------- COSMOS ULTRA ----------------
 def cosmos_ultra(server, client, nonce, ref=2.0):
-    base_series = [crash(server, client, nonce+i) for i in range(30)]
+    base = [crash(server, client, nonce+i) for i in range(30)]
 
-    avg = statistics.mean(base_series)
-    var = statistics.pvariance(base_series)
+    avg = statistics.mean(base)
+    var = statistics.pvariance(base)
 
-    streak_low = 0
-    for r in reversed(base_series):
-        if r < ref:
-            streak_low += 1
-        else:
-            break
+    streak = sum(1 for x in reversed(base) if x < ref)
 
     seed_val = int(hashlib.sha256(f"{server}{client}{nonce}".encode()).hexdigest(),16)
     rng = random.Random(seed_val)
 
-    jumps = []
-    used = set()
-
-    while len(jumps) < 3:
-        base_jump = int((avg + streak_low + (var % 5)))
-        jump = max(2, base_jump + rng.randint(1,5))
-        if jump not in used:
-            jumps.append(jump)
-            used.add(jump)
+    jumps = list(set([max(2,int(avg)+rng.randint(2,6)) for _ in range(5)]))[:3]
 
     tours = []
 
-    for idx, j in enumerate(jumps):
-        t_nonce = nonce + j
-        future = [crash(server, client, t_nonce + k) for k in range(10)]
+    for i,j in enumerate(jumps):
+        n2 = nonce + j
+        future = [crash(server, client, n2+k) for k in range(10)]
 
-        min_v = round(min(future),2)
+        min_v = round(max(1.01, min(future)),2)
         avg_v = round(statistics.mean(future),2)
         max_v = round(max(future),2)
 
         variance = statistics.pvariance(future)
         acc = max(0, 100 - variance)
 
-        if acc >= 80 and avg_v > ref:
+        if acc > 80 and avg_v > ref:
             sig = "🟢 GO"
-        elif acc >= 60:
+        elif acc > 60:
             sig = "🟡 WAIT"
         else:
             sig = "🔴 SKIP"
 
-        tours.append({
-            "tour": idx+1,
-            "nonce": t_nonce,
-            "jump": j,
-            "min": min_v,
-            "avg": avg_v,
-            "max": max_v,
-            "acc": round(acc,2),
-            "signal": sig
-        })
+        tours.append((i+1,n2,j,min_v,avg_v,max_v,round(acc,2),sig))
 
     return tours
 
@@ -153,7 +129,7 @@ def mines_ai_multi(server, client, nonce, mines_count):
     rank = np.argsort(-final)
 
     safe = rank[:(5-mines_count)]
-    risky = rank[-(5+mines_count)]
+    risky = rank[-(5+mines_count):]   # ✅ FIX
 
     confidence = round(float(np.max(final)*100 - mines_count*5),2)
 
@@ -161,104 +137,50 @@ def mines_ai_multi(server, client, nonce, mines_count):
 
     return safe, risky, confidence
 
-# ---------------- AUTO BET ----------------
-def auto_bet(conf):
-    bet = st.session_state.balance * 0.01
-
-    if conf > 70:
-        if random.random() > 0.5:
-            st.session_state.balance += bet
-            return "WIN"
-        else:
-            st.session_state.balance -= bet
-            return "LOSE"
-    return "SKIP"
-
 # ---------------- GRID ----------------
 def draw_grid(safe, risky):
     html = "<div class='grid'>"
     for i in range(25):
-        if i in safe:
+        if i in list(safe):
             html += "<div class='cell safe'>💎</div>"
-        elif i in risky:
+        elif i in list(risky):
             html += "<div class='cell risk'>☠️</div>"
         else:
             html += "<div class='cell empty'></div>"
     html += "</div>"
     return html
 
-# ---------------- LOGIN ----------------
-if "login" not in st.session_state:
-    st.session_state.login = False
+# ---------------- UI ----------------
+st.title("🔥 HUBRIS V900 FINAL FIX")
 
-if not st.session_state.login:
-    st.title("🔐 HUBRIS SECURE ACCESS")
-    pwd = st.text_input("Password", type="password")
+tab1, tab2 = st.tabs(["🌌 COSMOS", "💎 MINES"])
 
-    if st.button("ENTER"):
-        if pwd == "2026":
-            st.session_state.login = True
-            st.rerun()
-        else:
-            st.error("Wrong password")
+with tab1:
+    s = st.text_input("Server Seed")
+    c = st.text_input("Client Seed")
+    n = st.number_input("Nonce",1)
 
-else:
-    st.title("🔥 HUBRIS V900 GOD MODE")
+    if st.button("SCAN COSMOS"):
+        res = cosmos_ultra(s,c,n)
+        for t in res:
+            st.write(f"""
+🎯 TOUR {t[0]} → {t[7]}
+Nonce: {t[1]} (+{t[2]})
+MIN: {t[3]} | AVG: {t[4]} | MAX: {t[5]}
+ACCURACY: {t[6]}%
+""")
 
-    tab1, tab2, tab3, tab4 = st.tabs(["🌌 COSMOS", "💎 MINES", "🤖 AUTO", "💬 CHAT"])
+with tab2:
+    s = st.text_input("Server",key="m1")
+    c = st.text_input("Client",key="m2")
+    n = st.number_input("Nonce",1,key="m3")
+    m = st.selectbox("Mines",[1,2,3])
 
-    # ---------------- COSMOS ----------------
-    with tab1:
-        server = st.text_input("Server Seed")
-        client = st.text_input("Client Seed")
-        nonce = st.number_input("Nonce", value=1)
+    if st.button("SCAN MINES"):
+        safe,risk,conf = mines_ai_multi(s,c,n,m)
+        st.markdown(draw_grid(safe,risk),unsafe_allow_html=True)
+        st.write("SAFE:",list(safe))
+        st.write("RISK:",list(risk))
+        st.write("CONF:",conf)
 
-        if st.button("SCAN COSMOS"):
-            tours = cosmos_ultra(server, client, nonce)
-
-            for t in tours:
-                st.markdown(f"""
-                <div style='background:#111;padding:15px;border-radius:12px;
-                            border:1px solid #00ffcc;margin-bottom:10px'>
-                    <h3>🎯 TOUR {t['tour']} → {t['signal']}</h3>
-                    <p>Nonce: {t['nonce']} (+{t['jump']})</p>
-                    <p>MIN: {t['min']} | AVG: {t['avg']} | MAX: {t['max']}</p>
-                    <p>ACCURACY: {t['acc']}%</p>
-                </div>
-                """, unsafe_allow_html=True)
-
-    # ---------------- MINES ----------------
-    with tab2:
-        server_m = st.text_input("Server", key="m1")
-        client_m = st.text_input("Client", key="m2")
-        nonce_m = st.number_input("Nonce", value=1, key="m3")
-
-        mines_count = st.selectbox("Nombre de mines", [1,2,3])
-
-        if st.button("SCAN MINES"):
-            safe, risky, conf = mines_ai_multi(server_m, client_m, nonce_m, mines_count)
-
-            st.markdown(draw_grid(safe, risky), unsafe_allow_html=True)
-            st.success(f"SAFE 💎: {list(safe)}")
-            st.error(f"RISK ☠️: {list(risky)}")
-            st.info(f"CONFIDENCE: {conf}%")
-
-    # ---------------- AUTO ----------------
-    with tab3:
-        conf = st.slider("Confidence",0,100,50)
-        result = auto_bet(conf)
-
-        st.write("RESULT:", result)
-        st.write("BALANCE:", st.session_state.balance)
-
-    # ---------------- CHAT ----------------
-    with tab4:
-        msg = st.text_input("Message")
-
-        if st.button("SEND"):
-            if "play" in msg.lower():
-                st.success("🟢 Good entry")
-            else:
-                st.warning("⚠️ Wait better signal")
-
-    st_autorefresh(interval=10000, limit=None)
+st_autorefresh(interval=10000,limit=None)

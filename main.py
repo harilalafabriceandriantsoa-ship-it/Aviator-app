@@ -3,7 +3,6 @@ import hashlib
 import random
 import statistics
 import numpy as np
-import json
 from sklearn.ensemble import RandomForestClassifier
 
 # ================= CONFIG =================
@@ -42,29 +41,100 @@ if "memory" not in st.session_state:
 def verify_hash(server, client, nonce):
     return hashlib.sha512(f"{server}:{client}:{nonce}".encode()).hexdigest()
 
-# ================= CRASH (COSMOS CORE) =================
+# ================= CRASH =================
 def crash(server, client, nonce):
     h = verify_hash(server, client, nonce)
     dec = int(h[-8:],16) or 1
     return round((4294967295*0.97)/dec,2)
 
-# ================= COSMOS AI =================
-def analyse_crash_series(server, client, nonce):
-    results = [crash(server, client, nonce+i) for i in range(20)]
-    avg = round(statistics.mean(results),2)
+# ================= ULTRA SCORE =================
+def ultra_signal_score(series):
+    avg = statistics.mean(series)
+    var = statistics.pvariance(series)
 
-    streak_low = 0
-    for r in reversed(results):
-        if r < 2:
-            streak_low += 1
+    streak = 0
+    for x in reversed(series):
+        if x < 2:
+            streak += 1
         else:
             break
 
-    signal = "SKIP"
-    if streak_low >= 4 and avg > 1.8:
-        signal = "PLAY"
+    low = sum(1 for x in series if x < 2)
+    high = sum(1 for x in series if x >= 2)
 
-    return results, avg, signal
+    score = 0
+    score += min(streak * 6, 30)
+
+    if avg > 2.2:
+        score += 25
+    elif avg > 1.8:
+        score += 18
+    elif avg > 1.5:
+        score += 10
+
+    if var < 1:
+        score += 20
+    elif var < 2:
+        score += 12
+    else:
+        score += 5
+
+    if high > low:
+        score += 25
+    elif high == low:
+        score += 15
+    else:
+        score += 5
+
+    return round(score,2)
+
+# ================= AUTO OFFSET =================
+def auto_offset(series):
+    avg = statistics.mean(series)
+    var = statistics.pvariance(series)
+
+    streak = 0
+    for x in reversed(series):
+        if x < 2:
+            streak += 1
+        else:
+            break
+
+    if streak >= 7:
+        return 3
+    elif streak >= 5:
+        return 2
+    elif avg > 2.2 and var < 1.5:
+        return 1
+    else:
+        return 2
+
+# ================= COSMOS AI =================
+def analyse_crash_series(server, client, nonce):
+    series = [crash(server, client, nonce+i) for i in range(20)]
+
+    avg = round(statistics.mean(series),2)
+    var = round(statistics.pvariance(series),2)
+
+    streak = 0
+    for x in reversed(series):
+        if x < 2:
+            streak += 1
+        else:
+            break
+
+    score = ultra_signal_score(series)
+    offset = auto_offset(series)
+    entry = nonce + offset
+
+    if score >= 80:
+        signal = "🟢 PLAY"
+    elif score >= 60:
+        signal = "🟡 WAIT"
+    else:
+        signal = "🔴 SKIP"
+
+    return series, avg, var, streak, score, offset, entry, signal
 
 # ================= FEATURES =================
 def features(server, client, nonce):
@@ -83,11 +153,10 @@ def train_model():
     model.fit(X, y)
     return model
 
-# ================= MINES AI (STRONG IA) =================
+# ================= MINES AI =================
 def mines_ai(server, client, nonce):
     feat = features(server, client, nonce)
 
-    # Monte Carlo risk engine
     risk = np.zeros(25)
     for i in range(150):
         h = hashlib.sha512(f"{server}:{client}:{nonce+i}".encode()).hexdigest()
@@ -96,7 +165,6 @@ def mines_ai(server, client, nonce):
 
     risk = risk / (np.max(risk) + 1e-9)
 
-    # ML model
     model = train_model()
     ml = np.zeros(25)
 
@@ -107,7 +175,6 @@ def mines_ai(server, client, nonce):
         except:
             pass
 
-    # AI fusion
     final = (1 - risk) * 0.75 + ml * 0.25
 
     rank = np.argsort(-final)
@@ -115,10 +182,8 @@ def mines_ai(server, client, nonce):
     safe5 = rank[:5]
     risky = rank[-5:]
 
-    # confidence stable (normalization)
     confidence = float(np.clip(np.max(final) * 100, 0, 100))
 
-    # learning (IMPORTANT)
     st.session_state.memory.append((feat, int(safe5[0])))
 
     return safe5, risky, confidence
@@ -141,24 +206,31 @@ if not st.session_state.login:
     st.stop()
 
 # ================= UI =================
-st.title("🚀 HUBRIS V800 AI (ML STRONG CORE)")
+st.title("🚀 HUBRIS V800 AI (ULTRA COSMOS + ML MINES)")
 
 tab1, tab2 = st.tabs(["🌌 COSMOS", "💎 MINES AI"])
 
-# ================= COSMOS =================
+# ================= COSMOS UI =================
 with tab1:
     s = st.text_input("Server Seed")
     c = st.text_input("Client Seed")
     n = st.number_input("Nonce", 1)
 
     if st.button("SCAN COSMOS"):
-        series, avg, signal = analyse_crash_series(s, c, n)
+        series, avg, var, streak, score, offset, entry, signal = analyse_crash_series(s, c, n)
 
         st.success(signal)
-        st.write("AVG:", avg)
-        st.write(series)
+        st.write("📊 Série:", series)
+        st.write(f"AVG: {avg} | VAR: {var}")
+        st.write(f"STREAK LOW: {streak}")
 
-# ================= MINES =================
+        st.warning(f"⚡ OFFSET: +{offset}")
+        st.success(f"🎯 ENTRY NONCE: {entry}")
+
+        st.progress(int(score))
+        st.write(f"🔥 SCORE: {score}%")
+
+# ================= MINES UI =================
 with tab2:
     s = st.text_input("Server", key="m1")
     c = st.text_input("Client", key="m2")

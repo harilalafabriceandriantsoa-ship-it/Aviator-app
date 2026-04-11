@@ -7,7 +7,7 @@ from sklearn.ensemble import RandomForestClassifier
 from streamlit_autorefresh import st_autorefresh
 
 # ---------------- CONFIG ----------------
-st.set_page_config(page_title="HUBRIS V800 FULL AI", layout="wide")
+st.set_page_config(page_title="HUBRIS V900 GOD MODE", layout="wide")
 
 # ---------------- STYLE ----------------
 st.markdown("""
@@ -52,43 +52,65 @@ def crash(server, client, nonce):
     dec = int(h[-8:],16) or 1
     return round((4294967295*0.97)/dec,2)
 
-# ---------------- COSMOS AI ----------------
-def analyse_crash_series(server, client, nonce):
-    results = [crash(server, client, nonce+i) for i in range(20)]
-    avg = round(statistics.mean(results),2)
+# ================= COSMOS ULTRA =================
+def cosmos_ultra(server, client, nonce, ref=2.0):
+    base_series = [crash(server, client, nonce+i) for i in range(30)]
+
+    avg = statistics.mean(base_series)
+    var = statistics.pvariance(base_series)
 
     streak_low = 0
-    for r in reversed(results):
-        if r < 2:
+    for r in reversed(base_series):
+        if r < ref:
             streak_low += 1
         else:
             break
 
-    signal = "🔴 SKIP"
-    if streak_low >= 4 and avg > 1.8:
-        signal = "🟢 PLAY"
+    seed_val = int(hashlib.sha256(f"{server}{client}{nonce}".encode()).hexdigest(),16)
+    rng = random.Random(seed_val)
 
-    return results, avg, streak_low, signal
+    jumps = []
+    used = set()
 
-# ---------------- COSMOS ENTRY ----------------
-def cosmos_signals(series):
-    signals = []
-    for i in range(3):
-        part = series[i*5:(i+1)*5]
-        if sum(x<2 for x in part) > 3:
-            signals.append("🔴")
+    while len(jumps) < 3:
+        base_jump = int((avg + streak_low + (var % 5)))
+        jump = max(2, base_jump + rng.randint(1,5))
+        if jump not in used:
+            jumps.append(jump)
+            used.add(jump)
+
+    tours = []
+
+    for idx, j in enumerate(jumps):
+        t_nonce = nonce + j
+        future = [crash(server, client, t_nonce + k) for k in range(10)]
+
+        min_v = round(min(future),2)
+        avg_v = round(statistics.mean(future),2)
+        max_v = round(max(future),2)
+
+        variance = statistics.pvariance(future)
+        acc = max(0, 100 - variance)
+
+        if acc >= 80 and avg_v > ref:
+            sig = "🟢 GO"
+        elif acc >= 60:
+            sig = "🟡 WAIT"
         else:
-            signals.append("🟢")
-    return signals
+            sig = "🔴 SKIP"
 
-# ---------------- MINES CORE ----------------
-def mines_core(server, client, nonce):
-    h = hashlib.sha512(f"{server}:{client}:{nonce}".encode()).digest()
-    seed = int.from_bytes(h[:16],"big")
-    rng = random.Random(seed)
-    grid = list(range(25))
-    rng.shuffle(grid)
-    return grid
+        tours.append({
+            "tour": idx+1,
+            "nonce": t_nonce,
+            "jump": j,
+            "min": min_v,
+            "avg": avg_v,
+            "max": max_v,
+            "acc": round(acc,2),
+            "signal": sig
+        })
+
+    return tours
 
 # ---------------- MONTE CARLO ----------------
 def monte_carlo(server, client, nonce):
@@ -117,7 +139,7 @@ def train_model():
     return model
 
 # ---------------- MINES AI ----------------
-def mines_ai(server, client, nonce):
+def mines_ai_multi(server, client, nonce, mines_count):
     risk = monte_carlo(server, client, nonce)
     model = train_model()
 
@@ -130,14 +152,14 @@ def mines_ai(server, client, nonce):
     final = (1-risk)*0.7 + ml*0.3
     rank = np.argsort(-final)
 
-    safe5 = rank[:5]
-    risky = rank[-5:]
-    confidence = round(float(np.max(final)*100),2)
+    safe = rank[:(5-mines_count)]
+    risky = rank[-(5+mines_count)]
 
-    # learning
-    st.session_state.memory.append((features(server,client,nonce), int(safe5[0])))
+    confidence = round(float(np.max(final)*100 - mines_count*5),2)
 
-    return safe5, risky, confidence
+    st.session_state.memory.append((features(server,client,nonce), int(safe[0])))
+
+    return safe, risky, confidence
 
 # ---------------- AUTO BET ----------------
 def auto_bet(conf):
@@ -181,7 +203,7 @@ if not st.session_state.login:
             st.error("Wrong password")
 
 else:
-    st.title("🔥 HUBRIS V800 FULL AI SYSTEM")
+    st.title("🔥 HUBRIS V900 GOD MODE")
 
     tab1, tab2, tab3, tab4 = st.tabs(["🌌 COSMOS", "💎 MINES", "🤖 AUTO", "💬 CHAT"])
 
@@ -192,12 +214,18 @@ else:
         nonce = st.number_input("Nonce", value=1)
 
         if st.button("SCAN COSMOS"):
-            series, avg, streak, signal = analyse_crash_series(server, client, nonce)
-            signals3 = cosmos_signals(series)
+            tours = cosmos_ultra(server, client, nonce)
 
-            st.success(f"GLOBAL: {signal}")
-            st.write("3 SIGNAL:", signals3)
-            st.write("AVG:", avg)
+            for t in tours:
+                st.markdown(f"""
+                <div style='background:#111;padding:15px;border-radius:12px;
+                            border:1px solid #00ffcc;margin-bottom:10px'>
+                    <h3>🎯 TOUR {t['tour']} → {t['signal']}</h3>
+                    <p>Nonce: {t['nonce']} (+{t['jump']})</p>
+                    <p>MIN: {t['min']} | AVG: {t['avg']} | MAX: {t['max']}</p>
+                    <p>ACCURACY: {t['acc']}%</p>
+                </div>
+                """, unsafe_allow_html=True)
 
     # ---------------- MINES ----------------
     with tab2:
@@ -205,12 +233,14 @@ else:
         client_m = st.text_input("Client", key="m2")
         nonce_m = st.number_input("Nonce", value=1, key="m3")
 
+        mines_count = st.selectbox("Nombre de mines", [1,2,3])
+
         if st.button("SCAN MINES"):
-            safe, risky, conf = mines_ai(server_m, client_m, nonce_m)
+            safe, risky, conf = mines_ai_multi(server_m, client_m, nonce_m, mines_count)
 
             st.markdown(draw_grid(safe, risky), unsafe_allow_html=True)
-            st.success(f"SAFE 5 💎: {list(safe)}")
-            st.error(f"RISKY ☠️: {list(risky)}")
+            st.success(f"SAFE 💎: {list(safe)}")
+            st.error(f"RISK ☠️: {list(risky)}")
             st.info(f"CONFIDENCE: {conf}%")
 
     # ---------------- AUTO ----------------

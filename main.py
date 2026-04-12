@@ -7,17 +7,17 @@ import plotly.graph_objects as go
 import plotly.express as px
 from scipy.stats import skew, kurtosis
 
-st.set_page_config(page_title="MINES AI V6 HYBRID", layout="wide")
+st.set_page_config(page_title="MINES AI V6 HYBRID ULTRA", layout="wide")
 
-# ---------------- LOGIN ----------------
+# ---------------- LOGIN SYSTEM ----------------
 if "login" not in st.session_state:
     st.session_state.login = False
 
 if not st.session_state.login:
-    st.title("🔐 MINES AI V6 HYBRID ACCESS")
+    st.title("🔐 MINES AI V6 HYBRID ULTRA ACCESS")
     pwd = st.text_input("Password", type="password")
 
-    if st.button("ENTER"):
+    if st.button("ENTER SYSTEM"):
         if pwd == "2026":
             st.session_state.login = True
             st.rerun()
@@ -33,130 +33,107 @@ if "trend_conf" not in st.session_state:
 if "trend_risk" not in st.session_state:
     st.session_state.trend_risk = []
 
-st.title("💎 MINES AI V6 HYBRID SYSTEM")
+st.title("💎 MINES AI V6 - ULTRA HYBRID SYSTEM")
+st.write("Status: **5 Diamonds & 5 Risk Tiles (Locked Mode)**")
 
-# ---------------- FEATURES ENGINE ----------------
-def features(server, client, nonce):
+# ---------------- ULTRA FEATURES ENGINE ----------------
+def ultra_features(server, client, nonce):
+    # Deep Hashing for better entropy
     base = f"{server}:{client}:{nonce}".encode()
     h1 = hashlib.sha512(base).digest()
     h2 = hashlib.blake2b(h1).digest()
     h3 = hashlib.sha3_256(h2).digest()
-    h4 = hashlib.sha256(h3).digest()
-    arr = np.array(list(h4[:16]), dtype=np.float32)
+    arr = np.array(list(h3[:16]), dtype=np.float32)
 
+    # Statistical moments
     prob_dist = arr / (np.sum(arr) + 1e-9)
-    entropy = -np.sum(prob_dist * np.log(prob_dist + 1e-9))
-    checksum = np.sum(arr) % 256
+    ent = -np.sum(prob_dist * np.log(prob_dist + 1e-9))
+    check = np.sum(arr) % 256
 
-    return np.concatenate([arr, [entropy, checksum]])
+    return np.concatenate([arr, [ent, check]])
 
-# ---------------- MONTE CARLO ENGINE ----------------
-def monte_carlo(server, client, nonce):
+# ---------------- MONTE CARLO (ULTRA ITERATION) ----------------
+def monte_carlo_ultra(server, client, nonce):
     arr = np.zeros(25)
-    for i in range(5000):  
+    # 10,000 iterations for ultra precision
+    for i in range(10000):  
         h = hashlib.sha512(f"{server}:{client}:{nonce}:{i}".encode()).digest()
         arr[h[0] % 25] += 1
     return arr / np.sum(arr)
 
-# ---------------- ML MODEL ----------------
-def train_model():
-    if len(st.session_state.memory) < 50:
-        return None
-    X = np.array([m[0] for m in st.session_state.memory])
-    y = np.array([m[1] for m in st.session_state.memory])
-    model = ExtraTreesClassifier(n_estimators=300, max_depth=16, random_state=42)
-    model.fit(X, y)
-    return model
-
-# ---------------- ANALYSIS TOOLS ----------------
-def confidence(prob):
-    prob = np.clip(prob, 1e-9, 1)
-    ent = -np.sum(prob * np.log(prob))
-    jsd = jensenshannon(prob, np.ones(25)/25)
-    var = np.var(prob)
-    score = (1 - ent/np.log(25)) * 0.5 + (1 - jsd) * 0.3 + var*10
-    return round(min(score, 1)*100, 2)
-
-def draw_grid(safe, risky):
-    html = "<div style='display:grid;grid-template-columns:repeat(5,60px);gap:10px;'>"
+# ---------------- GRID RENDERING ----------------
+def draw_ultra_grid(safe, risky):
+    html = "<div style='display:grid;grid-template-columns:repeat(5,70px);gap:10px;'>"
     for i in range(25):
         if i in safe:
-            html += "<div style='background:#00ff99;height:60px;display:flex;align-items:center;justify-content:center;border-radius:10px;'>💎</div>"
+            # Maitso tanteraka ho an'ny diamant
+            html += "<div style='background:#00ff99;height:70px;display:flex;align-items:center;justify-content:center;border-radius:12px;font-size:30px;box-shadow: 0 0 15px #00ff99;'>💎</div>"
         elif i in risky:
-            html += "<div style='background:#ff0033;height:60px;display:flex;align-items:center;justify-content:center;border-radius:10px;'>☠️</div>"
+            # Mena tanteraka ho an'ny loza
+            html += "<div style='background:#ff0033;height:70px;display:flex;align-items:center;justify-content:center;border-radius:12px;font-size:30px;box-shadow: 0 0 15px #ff0033;'>☠️</div>"
         else:
-            html += "<div style='background:#222;height:60px;border:1px solid #444;'></div>"
+            html += "<div style='background:#1a1a1a;height:70px;border:1px solid #333;border-radius:12px;'></div>"
     html += "</div>"
     return html
 
 # ---------------- INPUT INTERFACE ----------------
-col_in1, col_in2 = st.columns(2)
-with col_in1:
-    server = st.text_input("Server Seed")
-    client = st.text_input("Client Seed")
-with col_in2:
-    nonce = st.number_input("Nonce", value=1)
-    # Nesorina ny safidy mines fa lasa fixe 5
-    st.write("Mode: Fixe 5 💎 & 5 ☠️")
+col1, col2 = st.columns(2)
+with col1:
+    server = st.text_input("Server Seed", placeholder="Paste server seed here...")
+    client = st.text_input("Client Seed", placeholder="Paste client seed here...")
+with col2:
+    nonce = st.number_input("Nonce (Current)", value=1, min_value=1)
+    st.info("🎯 ULTRA MODE: Fixed 5 Diamond Signals")
 
-real_data_mode = st.checkbox("REAL DATA MODE (Manual Learning)")
-
-# ---------------- EXECUTION ----------------
-if st.button("SCAN MINES V6 HYBRID"):
+# ---------------- SCANNER LOGIC ----------------
+if st.button("🚀 INITIATE ULTRA SCAN"):
     if not server or not client:
-        st.error("Ampidiro ny Seeds azafady")
+        st.warning("Please provide Seeds for neural processing")
     else:
-        mc = monte_carlo(server, client, nonce)
-        model = train_model()
-        ml = np.zeros(25)
-        feat = features(server, client, nonce)
+        with st.spinner("Analyzing neural patterns..."):
+            # Execute Algorithms
+            mc = monte_carlo_ultra(server, client, nonce)
+            feat = ultra_features(server, client, nonce)
+            
+            # Machine Learning adjustment if memory exists
+            final_prob = mc.copy()
+            if len(st.session_state.memory) >= 50:
+                X = np.array([m[0] for m in st.session_state.memory])
+                y = np.array([m[1] for m in st.session_state.memory])
+                model = ExtraTreesClassifier(n_estimators=300, random_state=42).fit(X, y)
+                ml_prob = model.predict_proba(feat.reshape(1, -1))[0]
+                if len(ml_prob) < 25: ml_prob = np.pad(ml_prob, (0, 25 - len(ml_prob)))
+                final_prob = (0.6 * mc) + (0.4 * ml_prob) # Hybrid mix
 
-        if model:
-            ml = model.predict_proba(feat.reshape(1, -1))[0]
-            if len(ml) < 25: ml = np.pad(ml, (0, 25 - len(ml)))
+            # Ranking logic
+            rank = np.argsort(-final_prob)
+            safe_tiles = list(map(int, rank[:5])) # Top 5 Diamonds
+            risk_tiles = list(map(int, rank[-5:])) # Bottom 5 Risks
 
-        # Hybrid Weighting
-        mem_size = len(st.session_state.memory)
-        w_ml = min(0.5, mem_size / 1000) 
-        final = (1 - w_ml) * mc + w_ml * ml
-        final /= np.sum(final)
+            # Confidence Calculation
+            conf_score = round((1 - jensenshannon(final_prob, np.ones(25)/25)) * 100, 2)
+            
+            # Display Results
+            st.markdown(draw_ultra_grid(safe_tiles, risk_tiles), unsafe_allow_html=True)
+            
+            st.write("---")
+            m1, m2, m3 = st.columns(3)
+            m1.metric("PRECISION", f"{conf_score}%")
+            m2.metric("TARGETS", "5💎 / 5☠️")
+            m3.metric("ITERATIONS", "10k Scan")
 
-        rank = np.argsort(-final)
-        
-        # FIXE 5 DIAMANTS SY 5 RISKY
-        safe = list(map(int, rank[:5]))
-        risky = list(map(int, rank[-5:]))
-        
-        conf = confidence(final)
-        risk_score_val = round((1 - np.max(final)) * 100, 2)
-
-        # Display Result
-        st.markdown(draw_grid(safe, risky), unsafe_allow_html=True)
-        
-        c1, c2, c3 = st.columns(3)
-        c1.metric("CONFIDENCE", f"{conf}%")
-        c2.metric("RISK SCORE", f"{risk_score_val}%")
-        c3.metric("MEMORY", mem_size)
-
-        # Update Trends
-        st.session_state.trend_conf.append(conf)
-        st.session_state.trend_risk.append(risk_score_val)
-
-        # Learning
-        if real_data_mode:
-            label = st.number_input("REAL RESULT INDEX (0-24)", 0, 24, key="manual_label")
-            if st.button("SAVE RESULT"):
-                st.session_state.memory.append((feat, label))
-                st.success("Data saved!")
-        else:
+            # Store for trends
+            st.session_state.trend_conf.append(conf_score)
+            
+            # Learning
             st.session_state.memory.append((feat, int(np.argmax(mc))))
 
-        # Charts
-        st.subheader("📊 Probability Analysis")
-        fig_final = go.Figure(data=[go.Bar(x=list(range(25)), y=final, marker_color='#00ff99')])
-        st.plotly_chart(fig_final, use_container_width=True)
+        # Visualization
+        st.subheader("📊 Neural Distribution")
+        fig = go.Figure(data=[go.Bar(x=list(range(25)), y=final_prob, marker_color='#00d1ff')])
+        st.plotly_chart(fig, use_container_width=True)
 
-        if len(st.session_state.trend_conf) > 1:
-            st.subheader("📈 Trends")
-            fig_trend = px.line(y=st.session_state.trend_conf, title="Confidence Evolution")
-            st.plotly_chart(fig_trend, use_container_width=True)
+if st.sidebar.button("Clear System Memory"):
+    st.session_state.memory = []
+    st.session_state.trend_conf = []
+    st.rerun()

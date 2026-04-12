@@ -44,7 +44,6 @@ def features(server, client, nonce):
     h4 = hashlib.sha256(h3).digest()
     arr = np.array(list(h4[:16]), dtype=np.float32)
 
-    # Fanitsiana ny entropy
     prob_dist = arr / (np.sum(arr) + 1e-9)
     entropy = -np.sum(prob_dist * np.log(prob_dist + 1e-9))
     checksum = np.sum(arr) % 256
@@ -55,7 +54,6 @@ def features(server, client, nonce):
 def monte_carlo(server, client, nonce):
     arr = np.zeros(25)
     for i in range(5000):  
-        # Fanitsiana ny fomba fanaovana hash
         h = hashlib.sha512(f"{server}:{client}:{nonce}:{i}".encode()).digest()
         arr[h[0] % 25] += 1
     return arr / np.sum(arr)
@@ -98,7 +96,8 @@ with col_in1:
     client = st.text_input("Client Seed")
 with col_in2:
     nonce = st.number_input("Nonce", value=1)
-    mines_count = st.selectbox("MINES MODE", [1,2,3,4,5])
+    # Nesorina ny safidy mines fa lasa fixe 5
+    st.write("Mode: Fixe 5 💎 & 5 ☠️")
 
 real_data_mode = st.checkbox("REAL DATA MODE (Manual Learning)")
 
@@ -118,32 +117,35 @@ if st.button("SCAN MINES V6 HYBRID"):
 
         # Hybrid Weighting
         mem_size = len(st.session_state.memory)
-        w_ml = min(0.5, mem_size / 1000) # Miakatra ny lanjan'ny ML arakaraka ny memory
+        w_ml = min(0.5, mem_size / 1000) 
         final = (1 - w_ml) * mc + w_ml * ml
         final /= np.sum(final)
 
         rank = np.argsort(-final)
-        safe = list(map(int, rank[:mines_count]))
-        risky = list(map(int, rank[-mines_count:]))
+        
+        # FIXE 5 DIAMANTS SY 5 RISKY
+        safe = list(map(int, rank[:5]))
+        risky = list(map(int, rank[-5:]))
+        
         conf = confidence(final)
-        risk_score = round((1 - np.max(final)) * 100, 2)
+        risk_score_val = round((1 - np.max(final)) * 100, 2)
 
         # Display Result
         st.markdown(draw_grid(safe, risky), unsafe_allow_html=True)
         
         c1, c2, c3 = st.columns(3)
         c1.metric("CONFIDENCE", f"{conf}%")
-        c2.metric("RISK SCORE", f"{risk_score}%")
+        c2.metric("RISK SCORE", f"{risk_score_val}%")
         c3.metric("MEMORY", mem_size)
 
         # Update Trends
         st.session_state.trend_conf.append(conf)
-        st.session_state.trend_risk.append(risk_score)
+        st.session_state.trend_risk.append(risk_score_val)
 
         # Learning
         if real_data_mode:
-            label = st.number_input("REAL RESULT INDEX (0-24)", 0, 24)
-            if st.button("SAVE RESULT TO MEMORY"):
+            label = st.number_input("REAL RESULT INDEX (0-24)", 0, 24, key="manual_label")
+            if st.button("SAVE RESULT"):
                 st.session_state.memory.append((feat, label))
                 st.success("Data saved!")
         else:

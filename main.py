@@ -192,4 +192,14 @@ else:
         st.plotly_chart(go.Figure(data=[go.Bar(x=list(range(25)), y=final)]))
 
         st.subheader("📈 Confidence & Risk Trend")
-        if len(st.session_state.trend_conf) >
+        if len(st.session_state.trend_conf) > 1:
+            fig = px.line(
+                x=list(range(len(st.session_state.trend_conf))),
+                y=st.session_state.trend_conf,
+                title="Confidence Trend",
+                labels={"x": "Round", "y": "Confidence %"}
+            )
+            st.plotly_chart(fig)
+
+            fig2 = px.line(
+                x=list(range

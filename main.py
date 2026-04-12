@@ -7,7 +7,7 @@ from sklearn.ensemble import RandomForestClassifier
 from streamlit_autorefresh import st_autorefresh
 
 # ---------------- CONFIG ----------------
-st.set_page_config(page_title="HUBRIS V900 FINAL", layout="wide")
+st.set_page_config(page_title="HUBRIS V1000 GOD MODE", layout="wide")
 
 # ---------------- STYLE ----------------
 st.markdown("""
@@ -30,6 +30,7 @@ h1,h2,h3{text-align:center;color:#00ffcc;}
 }
 .safe {background:#00ffcc;color:#000;}
 .risk {background:#ff0033;color:#fff;}
+.best {background:#ffff00;color:#000;font-weight:bold;}
 .empty {background:#222;border:1px solid #444;}
 </style>
 """, unsafe_allow_html=True)
@@ -66,34 +67,31 @@ def crash(server, client, nonce):
     dec = int(h[-8:],16) or 1
     return round((4294967295*0.97)/dec,2)
 
-# ---------------- COSMOS ULTRA ----------------
-def cosmos_ultra(server, client, nonce, ref=2.0):
+# ---------------- COSMOS ----------------
+def cosmos_ultra(server, client, nonce, ref):
     base = [crash(server, client, nonce+i) for i in range(30)]
-
-    avg = statistics.mean(base)
-    var = statistics.pvariance(base)
 
     seed_val = int(hashlib.sha256(f"{server}{client}{nonce}".encode()).hexdigest(),16)
     rng = random.Random(seed_val)
 
-    jumps = list(set([max(2,int(avg)+rng.randint(2,6)) for _ in range(6)]))[:3]
+    jumps = sorted(list(set([rng.randint(3,10) for _ in range(6)])))[:3]
 
     tours = []
 
     for i,j in enumerate(jumps):
         n2 = nonce + j
-        future = [crash(server, client, n2+k) for k in range(10)]
+        future = [crash(server, client, n2+k) for k in range(12)]
 
         min_v = round(max(1.01, min(future)),2)
         avg_v = round(statistics.mean(future),2)
         max_v = round(max(future),2)
 
         variance = statistics.pvariance(future)
-        acc = max(0, 100 - variance)
+        acc = max(0, 100 - (variance*5))
 
-        if acc > 80 and avg_v > ref:
+        if min_v > ref:
             sig = "🟢 GO"
-        elif acc > 60:
+        elif avg_v > ref:
             sig = "🟡 WAIT"
         else:
             sig = "🔴 SKIP"
@@ -120,42 +118,58 @@ def features(s,c,n):
 def train_model():
     if len(st.session_state.memory) < 30:
         return None
-
     X = [m[0] for m in st.session_state.memory]
     y = [m[1] for m in st.session_state.memory]
-
     model = RandomForestClassifier(n_estimators=100)
     model.fit(X,y)
     return model
 
-# ---------------- MINES AI (FIX 5 DIAMOND) ----------------
-def mines_ai(server, client, nonce):
-    risk = monte_carlo(server, client, nonce)
+# ---------------- MINES GOD MODE ----------------
+def mines_ai(server, client, nonce, mines_count):
+
+    combined_scores = np.zeros(25)
+
+    # 🔁 multi-nonce scan
+    for offset in range(5):
+        risk = monte_carlo(server, client, nonce+offset)
+        combined_scores += (1-risk)
+
+    combined_scores /= 5
+
+    # 🧠 ML
     model = train_model()
-
     ml = np.zeros(25)
-
     if model:
         pred = model.predict([features(server,client,nonce)])[0]
         ml[pred]+=1
 
-    final = (1-risk)*0.7 + ml*0.3
+    # 📊 stability
+    variance = np.var(combined_scores)
+    stability = 1/(1+variance)
+
+    # 🎯 final score
+    final = combined_scores*0.6 + ml*0.2 + stability*0.2
+
     rank = np.argsort(-final)
 
-    safe = rank[:5]          # ✅ TOUJOURS 5 DIAMANTS
-    risky = rank[-5:]
+    safe = rank[:5]
+    risky = rank[-(5+mines_count)]
 
-    confidence = round(float(np.mean(final[safe]) * 100),2)
+    best = safe[:2]
+
+    confidence = round(np.mean(final[safe])*100 - (mines_count*5),2)
 
     st.session_state.memory.append((features(server,client,nonce), int(safe[0])))
 
-    return safe, risky, confidence
+    return safe, risky, best, confidence
 
 # ---------------- GRID ----------------
-def draw_grid(safe, risky):
+def draw_grid(safe, risky, best):
     html = "<div class='grid'>"
     for i in range(25):
-        if i in list(safe):
+        if i in list(best):
+            html += "<div class='cell best'>⭐</div>"
+        elif i in list(safe):
             html += "<div class='cell safe'>💎</div>"
         elif i in list(risky):
             html += "<div class='cell risk'>☠️</div>"
@@ -164,19 +178,32 @@ def draw_grid(safe, risky):
     html += "</div>"
     return html
 
+# ---------------- AUTO ----------------
+def auto_bet(conf):
+    bet = st.session_state.balance * 0.01
+    if conf > 75:
+        if random.random() > 0.5:
+            st.session_state.balance += bet
+            return "WIN"
+        else:
+            st.session_state.balance -= bet
+            return "LOSE"
+    return "SKIP"
+
 # ---------------- UI ----------------
-st.title("🔥 HUBRIS V900 FINAL SYSTEM")
+st.title("🔥 HUBRIS V1000 GOD MODE")
 
-tab1, tab2 = st.tabs(["🌌 COSMOS", "💎 MINES"])
+tab1, tab2, tab3, tab4 = st.tabs(["🌌 COSMOS", "💎 MINES", "🤖 AUTO", "💬 CHAT"])
 
-# ---------------- COSMOS ----------------
+# COSMOS
 with tab1:
     s = st.text_input("Server Seed")
     c = st.text_input("Client Seed")
     n = st.number_input("Nonce",1)
+    ref = st.number_input("Côte référence",2.0)
 
     if st.button("SCAN COSMOS"):
-        res = cosmos_ultra(s,c,n)
+        res = cosmos_ultra(s,c,n,ref)
         for t in res:
             st.write(f"""
 🎯 TOUR {t[0]} → {t[7]}
@@ -185,17 +212,34 @@ MIN: {t[3]} | AVG: {t[4]} | MAX: {t[5]}
 ACCURACY: {t[6]}%
 """)
 
-# ---------------- MINES ----------------
+# MINES
 with tab2:
     s = st.text_input("Server",key="m1")
     c = st.text_input("Client",key="m2")
     n = st.number_input("Nonce",1,key="m3")
+    mines_count = st.selectbox("Mines", [1,2,3])
 
     if st.button("SCAN MINES"):
-        safe,risk,conf = mines_ai(s,c,n)
-        st.markdown(draw_grid(safe,risk),unsafe_allow_html=True)
+        safe,risk,best,conf = mines_ai(s,c,n,mines_count)
+        st.markdown(draw_grid(safe,risk,best),unsafe_allow_html=True)
+        st.write("BEST ⭐:",list(best))
         st.write("SAFE 💎:",list(safe))
-        st.write("RISK ☠️:",list(risk))
         st.write("CONFIDENCE:",conf,"%")
+
+# AUTO
+with tab3:
+    conf = st.slider("Confidence",0,100,50)
+    result = auto_bet(conf)
+    st.write("RESULT:",result)
+    st.write("BALANCE:",st.session_state.balance)
+
+# CHAT
+with tab4:
+    msg = st.text_input("Message")
+    if st.button("SEND"):
+        if "play" in msg.lower():
+            st.success("🟢 Good entry")
+        else:
+            st.warning("⚠️ Wait better signal")
 
 st_autorefresh(interval=10000,limit=None)

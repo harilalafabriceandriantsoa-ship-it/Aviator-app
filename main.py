@@ -126,7 +126,6 @@ else:
         final = final / np.sum(final)
         rank = np.argsort(-final)
 
-        # ✅ mifanaraka amin'ny MINES MODE 1,2,3...
         safe = list(map(int, rank[:mines_count]))
         risky = list(map(int, rank[-mines_count:]))
         conf = confidence(final)
@@ -156,7 +155,7 @@ else:
     server = st.text_input("Server Seed")
     client = st.text_input("Client Seed")
     nonce = st.number_input("Nonce", value=1)
-    mines_count = st.selectbox("MINES MODE", [1,2,3,4,5,6,7])  # ✅ azo isafidianana 1–7
+    mines_count = st.selectbox("MINES MODE", [1,2,3,4,5,6,7])
     st.session_state.real_data_mode = st.checkbox("REAL DATA MODE")
 
     # ---------------- RUN ----------------
@@ -169,7 +168,6 @@ else:
         else:
             st.success("✅ PLAY ALLOWED")
 
-            # ✅ Schema prediction grid (case 0–24)
             st.markdown(draw_grid(safe, risky), unsafe_allow_html=True)
 
             st.success(f"SAFE 💎: {safe}")
@@ -179,7 +177,6 @@ else:
             rs = risk_score(final)
             st.write("⚠️ Risk Score:", rs)
 
-            # Trend update
             st.session_state.trend_conf.append(conf)
             st.session_state.trend_risk.append(rs)
 
@@ -195,7 +192,4 @@ else:
         st.plotly_chart(go.Figure(data=[go.Bar(x=list(range(25)), y=final)]))
 
         st.subheader("📈 Confidence & Risk Trend")
-        if len(st.session_state.trend_conf) > 1:
-            fig = px.line(
-                x=list(range(len(st.session_state.trend_conf))),
-                y=st.session_state.trend_conf,
+        if len(st.session_state.trend_conf) >

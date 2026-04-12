@@ -199,5 +199,3 @@ else:
             fig = px.line(
                 x=list(range(len(st.session_state.trend_conf))),
                 y=st.session_state.trend_conf,
-                title="Confidence Trend",
-                labels={"

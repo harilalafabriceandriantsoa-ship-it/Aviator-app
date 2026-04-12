@@ -1,158 +1,91 @@
 import streamlit as st
 import hashlib
+import hmac
 import numpy as np
-from sklearn.ensemble import ExtraTreesClassifier
-from scipy.spatial.distance import jensenshannon
+import plotly.graph_objects as go
 
-st.set_page_config(page_title="MINES AI V6 HYBRID", layout="wide")
+st.set_page_config(page_title="Provably Fair Analyzer", layout="wide")
 
-# ---------------- LOGIN ----------------
-if "login" not in st.session_state:
-    st.session_state.login = False
+st.title("🔐 PROVABLY FAIR ANALYZER TOOL")
 
-if not st.session_state.login:
-    st.title("🔐 MINES AI V6 HYBRID ACCESS")
-    pwd = st.text_input("Password", type="password")
+# ---------------- INPUT ----------------
+server_seed = st.text_input("Server Seed (revealed)")
+client_seed = st.text_input("Client Seed")
+nonce_start = st.number_input("Nonce Start", value=0)
+nonce_end = st.number_input("Nonce End", value=20)
 
-    if st.button("ENTER"):
-        if pwd == "2026":
-            st.session_state.login = True
-            st.rerun()
-        else:
-            st.error("Wrong password")
-else:
+# ---------------- HASH ENGINE ----------------
+def get_hash(server_seed, client_seed, nonce):
+    msg = f"{client_seed}:{nonce}".encode()
+    key = server_seed.encode()
+    return hmac.new(key, msg, hashlib.sha256).hexdigest()
 
-    st.title("💎 MINES AI V6 HYBRID SYSTEM")
+# ---------------- BOARD GENERATION (25 tiles) ----------------
+def generate_board(hash_hex):
+    arr = []
+    for i in range(0, 50, 2):
+        val = int(hash_hex[i:i+2], 16)
+        arr.append(val % 25)
+    return arr
 
-    # ---------------- MEMORY ----------------
-    if "memory" not in st.session_state:
-        st.session_state.memory = []
+# ---------------- ANALYSIS ----------------
+def analyze(server_seed, client_seed, start, end):
+    results = np.zeros(25)
 
-    if "real_data_mode" not in st.session_state:
-        st.session_state.real_data_mode = False
+    history = []
 
-    # ---------------- FEATURES ----------------
-    def features(server, client, nonce):
-        base = f"{server}:{client}:{nonce}".encode()
-        h1 = hashlib.sha512(base).digest()
-        h2 = hashlib.blake2b(h1).digest()
-        h3 = hashlib.sha3_256(h2).digest()
-        h4 = hashlib.sha256(h3).digest()
-        arr = np.array(list(h4[:16]), dtype=np.float32)
+    for nonce in range(start, end + 1):
+        h = get_hash(server_seed, client_seed, nonce)
+        board = generate_board(h)
 
-        entropy = -np.sum((arr/255) * np.log((arr/255)+1e-9))
-        checksum = np.sum(arr) % 256
+        for b in board:
+            results[b] += 1
 
-        return np.concatenate([arr, [entropy, checksum]])
+        history.append(board)
 
-    # ---------------- MONTE CARLO ----------------
-    def monte_carlo(server, client, nonce):
-        arr = np.zeros(25)
-        for i in range(700):
-            h = hashlib.sha256(f"{server}:{client}:{nonce*i}".encode()).digest()
-            arr[h[0] % 25] += 1
-        return arr / np.sum(arr)
+    results = results / np.sum(results)
+    return results, history
 
-    # ---------------- MODEL ----------------
-    def train_model():
-        if len(st.session_state.memory) < 50:
-            return None
+# ---------------- RENDER GRID ----------------
+def draw_grid(prob):
+    fig = go.Figure()
 
-        X = np.array([m[0] for m in st.session_state.memory])
-        y = np.array([m[1] for m in st.session_state.memory])
+    fig.add_trace(go.Bar(
+        x=list(range(25)),
+        y=prob
+    ))
 
-        model = ExtraTreesClassifier(
-            n_estimators=250,
-            max_depth=14,
-            random_state=42
-        )
-        model.fit(X, y)
-        return model
+    fig.update_layout(
+        title="📊 Tile Probability Distribution (From Seeds)",
+        xaxis_title="Tile Index (0-24)",
+        yaxis_title="Frequency",
+        height=400
+    )
 
-    # ---------------- CONFIDENCE ----------------
-    def confidence(prob):
-        prob = np.clip(prob, 1e-9, 1)
-        ent = -np.sum(prob * np.log(prob))
-        jsd = jensenshannon(prob, np.ones(25)/25)
-        return round(((1 - ent/np.log(25)) * 0.6 + (1 - jsd) * 0.4) * 100, 2)
+    return fig
 
-    # ---------------- CORE ENGINE ----------------
-    def predict(server, client, nonce, mines_count):
+# ---------------- EXECUTE ----------------
+if st.button("ANALYZE FAIRNESS"):
 
-        mc = monte_carlo(server, client, nonce)
-        model = train_model()
+    if server_seed and client_seed:
 
-        ml = np.zeros(25)
+        prob, history = analyze(server_seed, client_seed, nonce_start, nonce_end)
 
-        feat = features(server, client, nonce)
+        st.plotly_chart(draw_grid(prob), use_container_width=True)
 
-        if model:
-            ml = model.predict_proba(feat.reshape(1, -1))[0]
-            if len(ml) < 25:
-                ml = np.pad(ml, (0, 25 - len(ml)))
+        st.subheader("📦 Normalized Distribution")
+        st.write(prob)
 
-        # ---------------- ADAPTIVE FUSION ----------------
-        mem = len(st.session_state.memory)
+        st.subheader("🔁 Sample Generated Boards")
+        st.write(history[:5])
 
-        if mem < 100:
-            final = 0.75 * mc + 0.25 * ml
-        elif mem < 500:
-            final = 0.55 * mc + 0.45 * ml
-        else:
-            final = 0.4 * mc + 0.6 * ml
+        # entropy check
+        entropy = -np.sum(prob * np.log(prob + 1e-9))
+        st.info(f"📉 Entropy Score: {entropy:.4f}")
 
-        final = final / np.sum(final)
+        uniform = np.ones(25) / 25
+        deviation = np.sum(np.abs(prob - uniform))
+        st.info(f"📊 Deviation from uniform randomness: {deviation:.4f}")
 
-        rank = np.argsort(-final)
-
-        # ---------------- PRESERVED STYLE ----------------
-        safe = list(map(int, rank[:5]))
-        risky = list(map(int, rank[-5:]))
-
-        conf = confidence(final)
-
-        # ---------------- HYBRID LEARNING ----------------
-        if st.session_state.real_data_mode:
-            label = int(input("REAL RESULT INDEX (0-24): "))
-        else:
-            label = int(np.argmax(mc))  # simulation mode
-
-        st.session_state.memory.append((feat, label))
-
-        return safe, risky, conf, final
-
-    # ---------------- GRID UI ----------------
-    def draw_grid(safe, risky):
-        html = "<div style='display:grid;grid-template-columns:repeat(5,60px);gap:10px;'>"
-        for i in range(25):
-            if i in safe:
-                html += "<div style='background:#00ff99;height:60px;display:flex;align-items:center;justify-content:center;border-radius:10px;'>💎</div>"
-            elif i in risky:
-                html += "<div style='background:#ff0033;height:60px;display:flex;align-items:center;justify-content:center;border-radius:10px;'>☠️</div>"
-            else:
-                html += "<div style='background:#222;height:60px;border:1px solid #444;'></div>"
-        html += "</div>"
-        return html
-
-    # ---------------- INPUT ----------------
-    server = st.text_input("Server Seed")
-    client = st.text_input("Client Seed")
-    nonce = st.number_input("Nonce", value=1)
-
-    mines_count = st.selectbox("MINES MODE", [1, 2, 3, 4, 5, 6, 7])
-
-    st.session_state.real_data_mode = st.checkbox("REAL DATA MODE (manual label training)")
-
-    # ---------------- RUN ----------------
-    if st.button("SCAN MINES V6 HYBRID"):
-
-        safe, risky, conf, prob = predict(server, client, nonce, mines_count)
-
-        # GRID (UNCHANGED)
-        st.markdown(draw_grid(safe, risky), unsafe_allow_html=True)
-
-        st.success(f"SAFE 💎: {safe}")
-        st.error(f"RISK ☠️: {risky}")
-        st.info(f"CONFIDENCE: {conf}%")
-
-        st.write("📦 Memory:", len(st.session_state.memory))
+    else:
+        st.error("Please enter both seeds")

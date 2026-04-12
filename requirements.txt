@@ -1,10 +1,6 @@
-streamlit 
+streamlit
 numpy
 pandas
-matplotlib
-scikit-learn
-fastapi
-uvicorn
-streamlit-autorefresh
 plotly
+scikit-learn
 torch

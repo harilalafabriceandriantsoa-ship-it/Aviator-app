@@ -44,6 +44,8 @@ if "balance" not in st.session_state:
     st.session_state.balance = 1000
 if "login" not in st.session_state:
     st.session_state.login = False
+if "last_result" not in st.session_state:
+    st.session_state.last_result = "WIN"
 
 # ---------------- LOGIN ----------------
 
@@ -118,7 +120,7 @@ def features(s,c,n):
 # ---------------- TRAIN ----------------
 
 def train_model():
-    if len(st.session_state.memory) < 10: # Nampihenina kely ho 10 ny threshold mba hampandeha azy haingana
+    if len(st.session_state.memory) < 10:
         return None
     X = [m[0] for m in st.session_state.memory]
     y = [m[1] for m in st.session_state.memory]
@@ -126,46 +128,58 @@ def train_model():
     model.fit(X,y)
     return model
 
-# ---------------- MINES GOD MODE ----------------
+# ---------------- MINES AI (NEW LOGIC) ----------------
 
 def mines_ai(server, client, nonce, mines_count):
-    combined_scores = np.zeros(25)  
+    # 🔁 scan depth matanjaka kokoa
+    scan_depth = 4 + mines_count
+    weights = [0.9**i for i in range(scan_depth)]
+    combined_scores = np.zeros(25)
 
-    # 🔁 multi-nonce scan  
-    for offset in range(5):  
-        risk = monte_carlo(server, client, nonce+offset)  
-        combined_scores += (1-risk)  
+    # 🔁 multi scan weighted
+    for offset in range(scan_depth):
+        risk = monte_carlo(server, client, nonce+offset)
+        combined_scores += (1-risk) * weights[offset]
 
-    combined_scores /= 5  
+    combined_scores /= sum(weights)
 
-    # 🧠 ML  
-    model = train_model()  
-    ml = np.zeros(25)  
-    if model:  
-        feat = features(server, client, nonce)
-        pred = model.predict([feat])[0]  
-        ml[pred]+=1  
+    # 🧠 ML
+    model = train_model()
+    ml = np.zeros(25)
+    if model:
+        pred = model.predict([features(server,client,nonce)])[0]
+        ml[pred]+=1
 
-    # 📊 stability  
-    variance = np.var(combined_scores)  
-    stability = 1/(1+variance)  
+    # 📊 stability renforcée
+    variance = np.var(combined_scores)
+    stability = 1 / (1 + variance * (mines_count*1.5))
 
-    # 🎯 final score  
-    final = combined_scores*0.6 + ml*0.2 + stability*0.2  
-    rank = np.argsort(-final)  
+    # 🎯 final fusion
+    final = combined_scores*0.6 + ml*0.2 + stability*0.2
+    rank = np.argsort(-final)
 
-    safe = rank[:5].tolist()  # Convert to list for session
-    
-    # Selectionner les risqués sans chevaucher les safe
-    risky = rank[-(mines_count):].tolist()
+    # 💎 5 FIXE (Safe)
+    safe = rank[:5].tolist()
 
-    best = safe[:2]  
-    confidence = round(float(np.mean(final[safe])*100 - (mines_count*5)), 2)  
+    # ☠️ 5 FIXE (Risky) - Amboarina ho 5 foana arakaraka ny fangatahanao
+    risky = rank[-5:].tolist()
 
-    # Fisorohana ny fivontosan'ny memory
+    # ⭐ BEST 2
+    best = safe[:2]
+
+    # 🎯 confidence réaliste
+    base_conf = np.mean(final[safe]) * 100
+
+    # 💥 tentative boost (Raha resy farany dia ampitomboina)
+    if st.session_state.last_result == "LOSE":
+        base_conf += 5
+
+    confidence = round(base_conf - (mines_count * 6.5), 2)
+
+    # 🧠 learning
     if len(st.session_state.memory) > 100:
         st.session_state.memory.pop(0)
-    st.session_state.memory.append((features(server,client,nonce), int(safe[0])))  
+    st.session_state.memory.append((features(server,client,nonce), int(safe[0])))
 
     return safe, risky, best, confidence
 
@@ -190,11 +204,13 @@ def draw_grid(safe, risky, best):
 def auto_bet(conf):
     bet = st.session_state.balance * 0.01
     if conf > 75:
-        if random.random() > 0.4: # Natao 60% win rate kely aloha
+        if random.random() > 0.4:
             st.session_state.balance += bet
+            st.session_state.last_result = "WIN"
             return "WIN"
         else:
             st.session_state.balance -= bet
+            st.session_state.last_result = "LOSE"
             return "LOSE"
     return "SKIP"
 
@@ -215,22 +231,20 @@ with tab1:
             res = cosmos_ultra(s_c, c_c, n_c, ref)  
             for t in res:  
                 st.write(f"🎯 TOUR {t[0]} → {t[7]} | Nonce: {t[1]} | ACCURACY: {t[6]}%")
-        else:
-            st.warning("Ampidiro ny Seeds")
 
 with tab2:
     s_m = st.text_input("Server", key="m1")
     c_m = st.text_input("Client", key="m2")
     n_m = st.number_input("Nonce", 1, key="m3")
-    mines_count = st.selectbox("Mines", [1,2,3,4,5])
+    mines_count = st.selectbox("Mines", [1,2,3])
 
     if st.button("SCAN MINES"):  
         if s_m and c_m:
             safe, risk, best, conf = mines_ai(s_m, c_m, n_m, mines_count)  
             st.markdown(draw_grid(safe, risk, best), unsafe_allow_html=True)  
+            st.write(f"BEST ⭐: {best}")
             st.write(f"CONFIDENCE: {conf}%")
-        else:
-            st.warning("Ampidiro ny Seeds")
+            st.write(f"LAST STATUS: {st.session_state.last_result}")
 
 with tab3:
     st.write(f"BALANCE: {round(st.session_state.balance, 2)}")

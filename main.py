@@ -77,7 +77,7 @@ else:
         jsd = jensenshannon(prob, np.ones(25)/25)
         return round(((1 - ent/np.log(25)) * 0.6 + (1 - jsd) * 0.4) * 100, 2)
 
-    # ---------------- VISUAL FUNCTIONS ----------------
+    # ---------------- VISUAL ----------------
     def plot_bar(data, title):
         fig = go.Figure()
         fig.add_trace(go.Bar(x=list(range(25)), y=data))
@@ -99,6 +99,21 @@ else:
         html += "</div>"
         return html
 
+    # ---------------- ANTI LOSS ----------------
+    def should_skip(prob):
+        if np.max(prob) < 0.055:
+            return True, "No edge (flat distribution)"
+        if np.std(prob) < 0.006:
+            return True, "Too uniform (random state)"
+        return False, ""
+
+    def best_tiles(prob):
+        ranked = np.argsort(-prob)
+        return list(map(int, ranked[:2]))
+
+    def risk_score(prob):
+        return round((1 - np.max(prob)) * 100, 2)
+
     # ---------------- CORE ENGINE ----------------
     def predict(server, client, nonce, mines_count):
 
@@ -113,7 +128,7 @@ else:
             if len(ml) < 25:
                 ml = np.pad(ml, (0, 25 - len(ml)))
 
-        # ---------------- ADAPTIVE FUSION ----------------
+        # ADAPTIVE FUSION
         mem = len(st.session_state.memory)
 
         if mem < 100:
@@ -127,13 +142,13 @@ else:
 
         rank = np.argsort(-final)
 
-        # ---------------- STYLE PRESERVED ----------------
+        # STYLE PRESERVED
         safe = list(map(int, rank[:5]))
         risky = list(map(int, rank[-5:]))
 
         conf = confidence(final)
 
-        # ---------------- LEARNING ----------------
+        # LEARNING
         if st.session_state.real_data_mode:
             label = st.number_input("REAL RESULT INDEX (0-24)", 0, 24, 0)
         else:
@@ -143,7 +158,7 @@ else:
 
         return safe, risky, conf, final, mc, ml
 
-    # ---------------- GRID UI ----------------
+    # ---------------- GRID ----------------
     def draw_grid(safe, risky):
         html = "<div style='display:grid;grid-template-columns:repeat(5,60px);gap:10px;'>"
         for i in range(25):
@@ -161,7 +176,7 @@ else:
     client = st.text_input("Client Seed")
     nonce = st.number_input("Nonce", value=1)
 
-    mines_count = st.selectbox("MINES MODE", [1, 2, 3, 4, 5, 6, 7])
+    mines_count = st.selectbox("MINES MODE", [1,2,3,4,5,6,7])
     st.session_state.real_data_mode = st.checkbox("REAL DATA MODE")
 
     # ---------------- RUN ----------------
@@ -169,24 +184,33 @@ else:
 
         safe, risky, conf, final, mc, ml = predict(server, client, nonce, mines_count)
 
-        # ORIGINAL GRID
-        st.markdown(draw_grid(safe, risky), unsafe_allow_html=True)
+        skip, reason = should_skip(final)
 
-        st.success(f"SAFE 💎: {safe}")
-        st.error(f"RISK ☠️: {risky}")
-        st.info(f"CONFIDENCE: {conf}%")
+        if skip:
+            st.error(f"🛑 SKIP ROUND: {reason}")
+        else:
+            st.success("✅ PLAY ALLOWED")
+
+            st.markdown(draw_grid(safe, risky), unsafe_allow_html=True)
+
+            st.success(f"SAFE 💎: {safe}")
+            st.error(f"RISK ☠️: {risky}")
+            st.info(f"CONFIDENCE: {conf}%")
+
+            st.warning(f"🎯 BEST TILES: {best_tiles(final)}")
+            st.write("⚠️ Risk Score:", risk_score(final))
 
         st.write("📦 Memory:", len(st.session_state.memory))
 
-        # ---------------- VISUAL MODE ----------------
+        # VISUAL MODE
         st.subheader("📊 Monte Carlo")
-        st.plotly_chart(plot_bar(mc, "Monte Carlo Distribution"))
+        st.plotly_chart(plot_bar(mc, "Monte Carlo"))
 
-        st.subheader("🤖 Machine Learning")
+        st.subheader("🤖 ML")
         st.plotly_chart(plot_bar(ml, "ML Prediction"))
 
-        st.subheader("⚖️ Final Decision")
+        st.subheader("⚖️ Final")
         st.plotly_chart(plot_bar(final, "Final AI Output"))
 
-        st.subheader("🔥 AI Heatmap Vision")
+        st.subheader("🔥 Heatmap")
         st.markdown(draw_heatmap(final), unsafe_allow_html=True)

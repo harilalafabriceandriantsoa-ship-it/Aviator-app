@@ -58,7 +58,7 @@ else:
     # ---------------- MONTE CARLO ----------------
     def monte_carlo(server, client, nonce):
         arr = np.zeros(25)
-        for i in range(5000):  # ✅ iteration betsaka kokoa
+        for i in range(5000):  # iteration betsaka kokoa
             h = hashlib.sha512(f"{server}:{client}:{nonce*i}".encode()).digest()
             arr[h[0] % 25] += 1
         return arr / np.sum(arr)
@@ -117,17 +117,18 @@ else:
 
         mem = len(st.session_state.memory)
         if mem < 100:
-            final = 0.75 * mc + 0.25 * ml
+            final = 0.85 * mc + 0.15 * ml if mines_count <= 3 else 0.75 * mc + 0.25 * ml
         elif mem < 500:
-            final = 0.55 * mc + 0.45 * ml
+            final = 0.65 * mc + 0.35 * ml if mines_count <= 3 else 0.55 * mc + 0.45 * ml
         else:
-            final = 0.4 * mc + 0.6 * ml
+            final = 0.5 * mc + 0.5 * ml if mines_count <= 3 else 0.4 * mc + 0.6 * ml
 
         final = final / np.sum(final)
         rank = np.argsort(-final)
 
-        safe = list(map(int, rank[:5]))
-        risky = list(map(int, rank[-5:]))
+        # ✅ mifanaraka amin'ny MINES MODE 1,2,3...
+        safe = list(map(int, rank[:mines_count]))
+        risky = list(map(int, rank[-mines_count:]))
         conf = confidence(final)
 
         if st.session_state.real_data_mode:
@@ -155,7 +156,7 @@ else:
     server = st.text_input("Server Seed")
     client = st.text_input("Client Seed")
     nonce = st.number_input("Nonce", value=1)
-    mines_count = st.selectbox("MINES MODE", [1,2,3,4,5,6,7])
+    mines_count = st.selectbox("MINES MODE", [1,2,3,4,5,6,7])  # ✅ azo isafidianana 1–7
     st.session_state.real_data_mode = st.checkbox("REAL DATA MODE")
 
     # ---------------- RUN ----------------
@@ -168,7 +169,7 @@ else:
         else:
             st.success("✅ PLAY ALLOWED")
 
-            # ✅ Schema prediction grid
+            # ✅ Schema prediction grid (case 0–24)
             st.markdown(draw_grid(safe, risky), unsafe_allow_html=True)
 
             st.success(f"SAFE 💎: {safe}")
@@ -199,14 +200,4 @@ else:
                 x=list(range(len(st.session_state.trend_conf))),
                 y=st.session_state.trend_conf,
                 title="Confidence Trend",
-                labels={"x":"Round","y":"Confidence %"}
-            )
-            st.plotly_chart(fig)
-
-            fig2 = px.line(
-                x=list(range(len(st.session_state.trend_risk))),
-                y=st.session_state.trend_risk,
-                title="Risk Score Trend",
-                labels={"x":"Round","y":"Risk Score"}
-            )
-            st.plotly_chart(fig2)
+                labels={"

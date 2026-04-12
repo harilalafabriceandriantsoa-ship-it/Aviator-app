@@ -167,7 +167,10 @@ else:
             st.error(f"🛑 SKIP ROUND: {reason}")
         else:
             st.success("✅ PLAY ALLOWED")
+
+            # ✅ Schema prediction grid
             st.markdown(draw_grid(safe, risky), unsafe_allow_html=True)
+
             st.success(f"SAFE 💎: {safe}")
             st.error(f"RISK ☠️: {risky}")
             st.info(f"CONFIDENCE: {conf}%")

@@ -3,6 +3,7 @@ import hashlib
 import numpy as np
 from sklearn.ensemble import ExtraTreesClassifier
 from scipy.spatial.distance import jensenshannon
+import plotly.graph_objects as go
 
 st.set_page_config(page_title="MINES AI V6 HYBRID", layout="wide")
 
@@ -76,6 +77,28 @@ else:
         jsd = jensenshannon(prob, np.ones(25)/25)
         return round(((1 - ent/np.log(25)) * 0.6 + (1 - jsd) * 0.4) * 100, 2)
 
+    # ---------------- VISUAL FUNCTIONS ----------------
+    def plot_bar(data, title):
+        fig = go.Figure()
+        fig.add_trace(go.Bar(x=list(range(25)), y=data))
+        fig.update_layout(title=title, height=300)
+        return fig
+
+    def draw_heatmap(prob):
+        html = "<div style='display:grid;grid-template-columns:repeat(5,60px);gap:10px;'>"
+        for i in range(25):
+            val = prob[i]
+            if val > 0.06:
+                color = "#00ff99"
+            elif val < 0.02:
+                color = "#ff0033"
+            else:
+                color = "#ffaa00"
+
+            html += f"<div style='background:{color};height:60px;display:flex;align-items:center;justify-content:center;border-radius:10px;font-size:11px;'>{round(val,3)}</div>"
+        html += "</div>"
+        return html
+
     # ---------------- CORE ENGINE ----------------
     def predict(server, client, nonce, mines_count):
 
@@ -83,7 +106,6 @@ else:
         model = train_model()
 
         ml = np.zeros(25)
-
         feat = features(server, client, nonce)
 
         if model:
@@ -105,21 +127,21 @@ else:
 
         rank = np.argsort(-final)
 
-        # ---------------- PRESERVED STYLE ----------------
+        # ---------------- STYLE PRESERVED ----------------
         safe = list(map(int, rank[:5]))
         risky = list(map(int, rank[-5:]))
 
         conf = confidence(final)
 
-        # ---------------- HYBRID LEARNING ----------------
+        # ---------------- LEARNING ----------------
         if st.session_state.real_data_mode:
-            label = int(input("REAL RESULT INDEX (0-24): "))
+            label = st.number_input("REAL RESULT INDEX (0-24)", 0, 24, 0)
         else:
-            label = int(np.argmax(mc))  # simulation mode
+            label = int(np.argmax(mc))
 
         st.session_state.memory.append((feat, label))
 
-        return safe, risky, conf, final
+        return safe, risky, conf, final, mc, ml
 
     # ---------------- GRID UI ----------------
     def draw_grid(safe, risky):
@@ -140,15 +162,14 @@ else:
     nonce = st.number_input("Nonce", value=1)
 
     mines_count = st.selectbox("MINES MODE", [1, 2, 3, 4, 5, 6, 7])
-
-    st.session_state.real_data_mode = st.checkbox("REAL DATA MODE (manual label training)")
+    st.session_state.real_data_mode = st.checkbox("REAL DATA MODE")
 
     # ---------------- RUN ----------------
     if st.button("SCAN MINES V6 HYBRID"):
 
-        safe, risky, conf, prob = predict(server, client, nonce, mines_count)
+        safe, risky, conf, final, mc, ml = predict(server, client, nonce, mines_count)
 
-        # GRID (UNCHANGED)
+        # ORIGINAL GRID
         st.markdown(draw_grid(safe, risky), unsafe_allow_html=True)
 
         st.success(f"SAFE 💎: {safe}")
@@ -156,3 +177,16 @@ else:
         st.info(f"CONFIDENCE: {conf}%")
 
         st.write("📦 Memory:", len(st.session_state.memory))
+
+        # ---------------- VISUAL MODE ----------------
+        st.subheader("📊 Monte Carlo")
+        st.plotly_chart(plot_bar(mc, "Monte Carlo Distribution"))
+
+        st.subheader("🤖 Machine Learning")
+        st.plotly_chart(plot_bar(ml, "ML Prediction"))
+
+        st.subheader("⚖️ Final Decision")
+        st.plotly_chart(plot_bar(final, "Final AI Output"))
+
+        st.subheader("🔥 AI Heatmap Vision")
+        st.markdown(draw_heatmap(final), unsafe_allow_html=True)

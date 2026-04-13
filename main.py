@@ -1,18 +1,176 @@
 import streamlit as st
 import hashlib
+import random
+import statistics
 import numpy as np
-from sklearn.ensemble import ExtraTreesClassifier
-from scipy.spatial.distance import jensenshannon
-import plotly.graph_objects as go
+from sklearn.ensemble import RandomForestClassifier
+from streamlit_autorefresh import st_autorefresh
 
-st.set_page_config(page_title="MINES AI V7 SAFE EDGE", layout="wide")
+# ---------------- CONFIG ----------------
+st.set_page_config(page_title="HUBRIS V800 FULL AI", layout="wide")
+
+# ---------------- STYLE ----------------
+st.markdown("""
+<style>
+.stApp {background: linear-gradient(135deg,#0f0f0f,#1c1c1c);color:#00ffcc;}
+h1,h2,h3{text-align:center;color:#00ffcc;}
+.stButton>button {
+    background: linear-gradient(90deg,#00ffcc,#0066ff);
+    color:white;border-radius:10px;height:45px;
+}
+.grid {
+    display:grid;
+    grid-template-columns:repeat(5,60px);
+    gap:10px;justify-content:center;margin-top:20px;
+}
+.cell {
+    width:60px;height:60px;
+    display:flex;align-items:center;justify-content:center;
+    border-radius:10px;font-size:22px;
+}
+.safe {background:#00ffcc;color:#000;}
+.risk {background:#ff0033;color:#fff;}
+.empty {background:#222;border:1px solid #444;}
+</style>
+""", unsafe_allow_html=True)
+
+# ---------------- SESSION ----------------
+if "history" not in st.session_state:
+    st.session_state.history = []
+if "memory" not in st.session_state:
+    st.session_state.memory = []
+if "balance" not in st.session_state:
+    st.session_state.balance = 1000
+
+# ---------------- HASH ----------------
+def verify_hash(server, client, nonce):
+    return hashlib.sha512(f"{server}:{client}:{nonce}".encode()).hexdigest()
+
+# ---------------- CRASH ----------------
+def crash(server, client, nonce):
+    h = verify_hash(server, client, nonce)
+    dec = int(h[-8:],16) or 1
+    return round((4294967295*0.97)/dec,2)
+
+# ---------------- COSMOS AI ----------------
+def analyse_crash_series(server, client, nonce):
+    results = [crash(server, client, nonce+i) for i in range(20)]
+    avg = round(statistics.mean(results),2)
+
+    streak_low = 0
+    for r in reversed(results):
+        if r < 2:
+            streak_low += 1
+        else:
+            break
+
+    signal = "🔴 SKIP"
+    if streak_low >= 4 and avg > 1.8:
+        signal = "🟢 PLAY"
+
+    return results, avg, streak_low, signal
+
+# ---------------- COSMOS ENTRY ----------------
+def cosmos_signals(series):
+    signals = []
+    for i in range(3):
+        part = series[i*5:(i+1)*5]
+        if sum(x<2 for x in part) > 3:
+            signals.append("🔴")
+        else:
+            signals.append("🟢")
+    return signals
+
+# ---------------- MINES CORE ----------------
+def mines_core(server, client, nonce):
+    h = hashlib.sha512(f"{server}:{client}:{nonce}".encode()).digest()
+    seed = int.from_bytes(h[:16],"big")
+    rng = random.Random(seed)
+    grid = list(range(25))
+    rng.shuffle(grid)
+    return grid
+
+# ---------------- MONTE CARLO ----------------
+def monte_carlo(server, client, nonce):
+    scores = np.zeros(25)
+    for i in range(200):
+        h = hashlib.sha512(f"{server}:{client}:{nonce+i}".encode()).digest()
+        val = int.from_bytes(h[:2],"big") % 25
+        scores[val]+=1
+    return scores/200
+
+# ---------------- FEATURES ----------------
+def features(s,c,n):
+    h = hashlib.sha256(f"{s}:{c}:{n}".encode()).hexdigest()
+    return [int(h[i:i+2],16) for i in range(0,20,2)]
+
+# ---------------- TRAIN ----------------
+def train_model():
+    if len(st.session_state.memory) < 30:
+        return None
+
+    X = [m[0] for m in st.session_state.memory]
+    y = [m[1] for m in st.session_state.memory]
+
+    model = RandomForestClassifier(n_estimators=100)
+    model.fit(X,y)
+    return model
+
+# ---------------- MINES AI ----------------
+def mines_ai(server, client, nonce):
+    risk = monte_carlo(server, client, nonce)
+    model = train_model()
+
+    ml = np.zeros(25)
+
+    if model:
+        pred = model.predict([features(server,client,nonce)])[0]
+        ml[pred]+=1
+
+    final = (1-risk)*0.7 + ml*0.3
+    rank = np.argsort(-final)
+
+    safe5 = rank[:5]
+    risky = rank[-5:]
+    confidence = round(float(np.max(final)*100),2)
+
+    # learning
+    st.session_state.memory.append((features(server,client,nonce), int(safe5[0])))
+
+    return safe5, risky, confidence
+
+# ---------------- AUTO BET ----------------
+def auto_bet(conf):
+    bet = st.session_state.balance * 0.01
+
+    if conf > 70:
+        if random.random() > 0.5:
+            st.session_state.balance += bet
+            return "WIN"
+        else:
+            st.session_state.balance -= bet
+            return "LOSE"
+    return "SKIP"
+
+# ---------------- GRID ----------------
+def draw_grid(safe, risky):
+    html = "<div class='grid'>"
+    for i in range(25):
+        if i in safe:
+            html += "<div class='cell safe'>💎</div>"
+        elif i in risky:
+            html += "<div class='cell risk'>☠️</div>"
+        else:
+            html += "<div class='cell empty'></div>"
+    html += "</div>"
+    return html
 
 # ---------------- LOGIN ----------------
 if "login" not in st.session_state:
     st.session_state.login = False
 
 if not st.session_state.login:
-    st.title("🔐 MINES AI V7 SAFE EDGE ACCESS")
+    st.title("🔐 HUBRIS SECURE ACCESS")
     pwd = st.text_input("Password", type="password")
 
     if st.button("ENTER"):
@@ -21,139 +179,56 @@ if not st.session_state.login:
             st.rerun()
         else:
             st.error("Wrong password")
-    st.stop()
 
-# ---------------- INIT ----------------
-if "memory" not in st.session_state:
-    st.session_state.memory = []
+else:
+    st.title("🔥 HUBRIS V800 FULL AI SYSTEM")
 
-if "model" not in st.session_state:
-    st.session_state.model = None
+    tab1, tab2, tab3, tab4 = st.tabs(["🌌 COSMOS", "💎 MINES", "🤖 AUTO", "💬 CHAT"])
 
-st.title("💎 MINES AI V7 - SAFE EDGE SYSTEM")
+    # ---------------- COSMOS ----------------
+    with tab1:
+        server = st.text_input("Server Seed")
+        client = st.text_input("Client Seed")
+        nonce = st.number_input("Nonce", value=1)
 
-# ---------------- FEATURES ----------------
-def features(server, client, nonce):
-    base = f"{server}:{client}:{nonce}".encode()
-    h = hashlib.sha512(base).digest()
-    arr = np.array(list(h[:16]), dtype=np.float32)
-    return np.concatenate([arr, [np.sum(arr) % 256]])
+        if st.button("SCAN COSMOS"):
+            series, avg, streak, signal = analyse_crash_series(server, client, nonce)
+            signals3 = cosmos_signals(series)
 
-# ---------------- MONTE CARLO ----------------
-def monte_carlo(server, client, nonce):
-    arr = np.zeros(25)
-    for i in range(500):
-        h = hashlib.sha256(f"{server}:{client}:{nonce*i}".encode()).digest()
-        arr[h[0] % 25] += 1
-    return arr / np.sum(arr)
+            st.success(f"GLOBAL: {signal}")
+            st.write("3 SIGNAL:", signals3)
+            st.write("AVG:", avg)
 
-# ---------------- EDGE FILTER ----------------
-def edge_score(p):
-    return np.max(p) - np.mean(p)
+    # ---------------- MINES ----------------
+    with tab2:
+        server_m = st.text_input("Server", key="m1")
+        client_m = st.text_input("Client", key="m2")
+        nonce_m = st.number_input("Nonce", value=1, key="m3")
 
-def volatility(p):
-    return np.std(p)
+        if st.button("SCAN MINES"):
+            safe, risky, conf = mines_ai(server_m, client_m, nonce_m)
 
-def allow_trade(p):
-    if np.max(p) < 0.06:
-        return False, "LOW SIGNAL"
-    if edge_score(p) < 0.015:
-        return False, "NO EDGE"
-    if volatility(p) < 0.005:
-        return False, "FLAT MARKET"
-    return True, "OK"
+            st.markdown(draw_grid(safe, risky), unsafe_allow_html=True)
+            st.success(f"SAFE 5 💎: {list(safe)}")
+            st.error(f"RISKY ☠️: {list(risky)}")
+            st.info(f"CONFIDENCE: {conf}%")
 
-# ---------------- MODEL TRAIN ----------------
-def train_model():
-    if len(st.session_state.memory) < 40:
-        return None
+    # ---------------- AUTO ----------------
+    with tab3:
+        conf = st.slider("Confidence",0,100,50)
+        result = auto_bet(conf)
 
-    X = np.array([m[0] for m in st.session_state.memory])
-    y = np.array([m[1] for m in st.session_state.memory])
+        st.write("RESULT:", result)
+        st.write("BALANCE:", st.session_state.balance)
 
-    model = ExtraTreesClassifier(
-        n_estimators=200,
-        max_depth=12,
-        random_state=42
-    )
-    model.fit(X, y)
-    return model
+    # ---------------- CHAT ----------------
+    with tab4:
+        msg = st.text_input("Message")
 
-# ---------------- CONFIDENCE ----------------
-def confidence(p):
-    p = np.clip(p, 1e-9, 1)
-    ent = -np.sum(p * np.log(p))
-    jsd = jensenshannon(p, np.ones(25)/25)
-    return round(((1 - ent/np.log(25)) * 0.6 + (1 - jsd) * 0.4) * 100, 2)
+        if st.button("SEND"):
+            if "play" in msg.lower():
+                st.success("🟢 Good entry")
+            else:
+                st.warning("⚠️ Wait better signal")
 
-# ---------------- VISUAL ----------------
-def draw_grid(safe, risky):
-    html = "<div style='display:grid;grid-template-columns:repeat(5,60px);gap:10px;'>"
-    for i in range(25):
-        if i in safe:
-            html += "<div style='background:#00ff99;height:60px;display:flex;align-items:center;justify-content:center;border-radius:10px;'>💎</div>"
-        elif i in risky:
-            html += "<div style='background:#ff0033;height:60px;display:flex;align-items:center;justify-content:center;border-radius:10px;'>☠️</div>"
-        else:
-            html += "<div style='background:#222;height:60px;border:1px solid #444;'></div>"
-    html += "</div>"
-    return html
-
-def plot_bar(data, title):
-    fig = go.Figure()
-    fig.add_trace(go.Bar(x=list(range(25)), y=data))
-    fig.update_layout(title=title, height=300)
-    return fig
-
-# ---------------- INPUT ----------------
-server = st.text_input("Server Seed")
-client = st.text_input("Client Seed")
-nonce = st.number_input("Nonce", value=1)
-
-# ---------------- RUN ----------------
-if st.button("SCAN MINES V7 SAFE EDGE"):
-
-    mc = monte_carlo(server, client, nonce)
-    feat = features(server, client, nonce)
-
-    model = train_model()
-
-    ml = np.zeros(25)
-    if model:
-        ml = model.predict_proba(feat.reshape(1, -1))[0]
-        if len(ml) < 25:
-            ml = np.pad(ml, (0, 25-len(ml)))
-
-    # FUSION
-    final = 0.6 * mc + 0.4 * ml
-    final = final / np.sum(final)
-
-    # EDGE CHECK
-    ok, reason = allow_trade(final)
-
-    rank = np.argsort(-final)
-    safe = list(map(int, rank[:5]))
-    risky = list(map(int, rank[-5:]))
-
-    conf = confidence(final)
-
-    # MEMORY (FIXED - no fake label)
-    st.session_state.memory.append((feat, np.argmax(final)))
-
-    # OUTPUT
-    if not ok:
-        st.error(f"🛑 SKIP ROUND: {reason}")
-    else:
-        st.success("✅ PLAY SIGNAL DETECTED")
-
-        st.markdown(draw_grid(safe, risky), unsafe_allow_html=True)
-
-        st.success(f"SAFE 💎: {safe}")
-        st.error(f"RISK ☠️: {risky}")
-        st.info(f"CONFIDENCE: {conf}%")
-
-    st.write("📦 Memory:", len(st.session_state.memory))
-
-    # VISUAL
-    st.subheader("📊 Distribution")
-    st.plotly_chart(plot_bar(final, "FINAL PROBABILITY"))
+    st_autorefresh(interval=10000, limit=None)

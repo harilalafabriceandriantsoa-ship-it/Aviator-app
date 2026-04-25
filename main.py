@@ -2,148 +2,172 @@ import streamlit as st
 import hashlib
 import random
 import numpy as np
+import pandas as pd
 from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.preprocessing import StandardScaler
+import pickle
 import time
+import json
+from pathlib import Path
 
-# ===================== CONFIGURATION =====================
+# ===================== CONFIG =====================
 st.set_page_config(
-    page_title="MINES V1000 - 5 💎 ULTRA PRÉCIS", 
-    layout="wide", 
+    page_title="MINES DIAMOND V3000",
+    layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# ===================== CSS ULTRA PRÉCIS =====================
+# ===================== PERSISTENCE =====================
+try:
+    DATA_DIR = Path(__file__).parent / "mines_v3000_data"
+except:
+    DATA_DIR = Path.cwd() / "mines_v3000_data"
+
+DATA_DIR.mkdir(exist_ok=True, parents=True)
+HISTORY_FILE  = DATA_DIR / "history.json"
+STATS_FILE    = DATA_DIR / "stats.json"
+ML_FILE       = DATA_DIR / "ml_models.pkl"
+
+def save_json(path, data):
+    try:
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+    except: pass
+
+def load_json(path, default):
+    try:
+        if path.exists():
+            with open(path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except: pass
+    return default
+
+def save_ml_models(models):
+    try:
+        with open(ML_FILE, 'wb') as f:
+            pickle.dump(models, f)
+    except: pass
+
+def load_ml_models():
+    try:
+        if ML_FILE.exists():
+            with open(ML_FILE, 'rb') as f:
+                return pickle.load(f)
+    except: pass
+    return None
+
+# ===================== CSS MOBILE-FRIENDLY =====================
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@600;700&display=swap');
-    
+
     .stApp {
-        background: radial-gradient(ellipse at 50% 0%, #0d0033 0%, #000000 100%);
+        background: radial-gradient(ellipse at 50% 0%, #0d0033 0%, #000008 60%, #001a1a 100%);
         color: #00ffcc;
         font-family: 'Rajdhani', sans-serif;
     }
-    
-    h1, h2, h3 { 
-        text-align: center; 
-        color: #00ffcc; 
-        text-shadow: 0 0 20px #00ffcc, 0 0 40px #00ffcc88; 
+
+    .main-title {
         font-family: 'Orbitron', sans-serif;
-    }
-    
-    .stButton>button {
-        background: linear-gradient(90deg, #00ffcc, #0066ff, #00ffcc) !important;
-        background-size: 200%;
-        color: white !important;
-        border-radius: 14px !important;
-        height: 56px !important;
-        font-weight: 900 !important;
-        font-size: 1.1rem !important;
-        letter-spacing: 0.1em !important;
-        box-shadow: 0 0 25px #00ffccaa !important;
-        transition: all 0.3s !important;
-        border: none !important;
-    }
-    
-    .stButton>button:hover { 
-        background-position: 100% !important;
-        transform: scale(1.05) !important; 
-        box-shadow: 0 0 40px #00ffff !important; 
+        font-size: clamp(2rem, 8vw, 3.5rem);
+        font-weight: 900;
+        text-align: center;
+        background: linear-gradient(90deg, #00ffcc, #0066ff, #00ffcc);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.5rem;
     }
 
-    /* Grille 5×5 responsive */
+    .glass {
+        background: rgba(5, 0, 20, 0.9);
+        border: 2px solid rgba(0,255,204,0.4);
+        border-radius: 20px;
+        padding: clamp(15px, 5vw, 25px);
+        backdrop-filter: blur(12px);
+        margin-bottom: 20px;
+    }
+
+    /* GRID 5x5 */
+    .grid-wrap {
+        display: flex;
+        justify-content: center;
+        margin: 20px auto;
+    }
+
     .grid {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
-        gap: 10px;
-        max-width: 450px;
-        margin: 30px auto;
+        gap: clamp(6px, 2vw, 12px);
+        width: min(480px, 95vw);
     }
-    
+
     .cell {
         aspect-ratio: 1/1;
         display: flex;
         align-items: center;
         justify-content: center;
         border-radius: 14px;
-        font-size: 2rem;
+        font-size: clamp(1.4rem, 5vw, 2.2rem);
         font-weight: 900;
-        box-shadow: 0 6px 15px rgba(0,255,204,0.3);
         transition: all 0.3s;
-        cursor: default;
     }
-    
-    .cell:hover {
-        transform: scale(1.08);
-    }
-    
-    .safe { 
-        background: linear-gradient(135deg, #00ffcc, #00cc99); 
-        color: #000; 
-        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+
+    .cell:hover { transform: scale(1.08); }
+
+    .safe {
+        background: linear-gradient(135deg, #00ffcc, #00cc88);
+        color: #000;
+        box-shadow: 0 0 20px rgba(0,255,204,0.6);
         animation: pulse-safe 2s ease infinite;
     }
-    
+
     @keyframes pulse-safe {
-        0%, 100% { box-shadow: 0 6px 15px rgba(0,255,204,0.5); }
-        50%      { box-shadow: 0 6px 25px rgba(0,255,204,0.8), 0 0 40px rgba(0,255,204,0.4); }
+        0%,100% { box-shadow: 0 0 15px rgba(0,255,204,0.5); }
+        50% { box-shadow: 0 0 35px rgba(0,255,204,0.9); }
     }
-    
-    .risk { 
-        background: linear-gradient(135deg, #ff0033, #cc0000); 
-        color: #fff; 
-        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+
+    .risk {
+        background: linear-gradient(135deg, #ff0033, #cc0000);
+        color: #fff;
     }
-    
-    .empty { 
-        background: rgba(26, 26, 46, 0.6); 
-        border: 2px solid rgba(51, 51, 102, 0.5); 
+
+    .empty {
+        background: rgba(20, 20, 50, 0.6);
+        border: 2px solid rgba(51,51,102,0.5);
         color: #33336688;
     }
 
-    .neon-text { 
-        text-shadow: 0 0 15px #00ffcc, 0 0 30px #0066ff, 0 0 50px #00ffcc44; 
-        font-size: 1.8rem;
-        margin: 20px 0;
-    }
-    
-    .info-box {
-        background: rgba(0, 255, 204, 0.08);
-        border: 2px solid rgba(0, 255, 204, 0.4);
-        border-radius: 14px;
-        padding: 20px;
-        margin: 15px 0;
-        box-shadow: 0 0 20px rgba(0, 255, 204, 0.15);
-    }
-    
     .metric-ultra {
         text-align: center;
-        font-size: 2.5rem;
+        font-size: clamp(2rem, 8vw, 2.8rem);
         font-weight: 900;
         color: #00ffcc;
-        text-shadow: 0 0 30px #00ffcc;
-        margin: 10px 0;
+        font-family: 'Orbitron', sans-serif;
     }
-    
-    .warning-box {
-        background: rgba(255, 153, 0, 0.1);
-        border: 2px solid rgba(255, 153, 0, 0.5);
-        border-radius: 12px;
-        padding: 15px;
-        margin: 15px 0;
+
+    .stButton>button {
+        background: linear-gradient(135deg, #00ffcc, #0066ff) !important;
+        color: white !important;
+        font-weight: 900 !important;
+        border-radius: 12px !important;
+        height: 55px !important;
+        font-size: 1rem !important;
+        border: none !important;
+        width: 100%;
     }
-    
-    /* Inputs */
+
     .stTextInput input, .stNumberInput input, .stSelectbox select {
-        background: rgba(0, 255, 204, 0.05) !important;
-        border: 2px solid rgba(0, 255, 204, 0.3) !important;
+        background: rgba(0,255,204,0.05) !important;
+        border: 2px solid rgba(0,255,204,0.3) !important;
         color: #00ffcc !important;
         border-radius: 12px !important;
-        font-family: 'Rajdhani', monospace !important;
+        font-size: 1rem !important;
+        padding: 12px !important;
     }
-    
-    .stTextInput input:focus, .stNumberInput input:focus {
-        border-color: rgba(0, 255, 204, 0.8) !important;
-        box-shadow: 0 0 15px rgba(0, 255, 204, 0.3) !important;
+
+    @media (max-width: 768px) {
+        .stApp { padding: 8px !important; }
+        .glass { padding: 12px !important; }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -151,449 +175,435 @@ st.markdown("""
 # ===================== SESSION STATE =====================
 if "login" not in st.session_state:
     st.session_state.login = False
-if "memory" not in st.session_state:
-    st.session_state.memory = []
+if "history" not in st.session_state:
+    st.session_state.history = load_json(HISTORY_FILE, [])
+if "stats" not in st.session_state:
+    st.session_state.stats = load_json(STATS_FILE, {"total": 0, "wins": 0, "losses": 0})
+if "last_pred" not in st.session_state:
+    st.session_state.last_pred = None
+if "ml_models" not in st.session_state:
+    st.session_state.ml_models = load_ml_models()
 
-# ===================== FORMULE PROVABLY FAIR =====================
-
-def get_provably_fair_positions(server_seed, client_seed, nonce, num_mines):
+# ===================== PROVABLY FAIR =====================
+def get_pf_positions(server_seed, client_seed, history_id, num_mines):
     """
-    Formule Provably Fair Standard - utilisée par les vrais casinos
-    
-    Étapes:
-    1. Combine server + client + nonce → hash SHA-512
-    2. Convertit en nombre entier
-    3. Utilise comme seed pour shuffle
-    4. Les X premières positions = mines
+    Provably Fair: server_seed + client_seed + history_id
+    Tsy nonce intsony fa HISTORY ID (mitovy @ screenshot)
     """
-    combined = f"{server_seed}:{client_seed}:{nonce}"
+    combined = f"{server_seed}:{client_seed}:{history_id}"
     hash_bytes = hashlib.sha512(combined.encode()).digest()
     seed_int = int.from_bytes(hash_bytes[:32], "big")
-    
+
     rng = random.Random(seed_int)
     positions = list(range(25))
-    
+
     for i in range(24, 0, -1):
         j = rng.randint(0, i)
         positions[i], positions[j] = positions[j], positions[i]
-    
+
     mines = set(positions[:num_mines])
-    safe = set(positions[num_mines:])
-    
+    safe  = set(positions[num_mines:])
     return mines, safe
 
-def monte_carlo_simulations(server_seed, client_seed, nonce, num_mines, simulations=200_000):
-    """
-    200 000 simulations pour ultra précision
-    
-    Teste nonce+1, nonce+2, ... nonce+200000
-    pour voir quelles positions sont le plus souvent SAFE
-    """
+# ===================== MONTE CARLO =====================
+def monte_carlo_v3000(server_seed, client_seed, history_id, num_mines, simulations=350_000):
+    """350k simulations - ultra précis"""
     safe_count = np.zeros(25, dtype=np.int64)
-    
+
     for i in range(simulations):
-        future_nonce = nonce + i
-        _, safe_positions = get_provably_fair_positions(
-            server_seed, client_seed, future_nonce, num_mines
-        )
-        
-        for pos in safe_positions:
+        future_id = history_id + i
+        _, safe_pos = get_pf_positions(server_seed, client_seed, future_id, num_mines)
+        for pos in safe_pos:
             safe_count[pos] += 1
-    
-    probabilities = safe_count / simulations
-    return probabilities
 
-def extract_features(server_seed, client_seed, nonce, num_mines):
-    """Extraction de 100 features pour le ML"""
-    h = hashlib.sha512(f"{server_seed}:{client_seed}:{nonce}:{num_mines}".encode()).hexdigest()
-    
-    features = []
-    
-    for i in range(0, min(128, len(h)), 2):
-        features.append(int(h[i:i+2], 16))
-    
-    for i in range(0, min(60, len(h)), 4):
-        features.append(int(h[i:i+4], 16) % 25)
-    
-    hash_int = int(h[:32], 16)
-    features.append(hash_int % 1000)
-    features.append((hash_int >> 8) % 1000)
-    features.append(nonce % 100)
-    features.append(num_mines)
-    
-    return features[:100]
+    return safe_count / simulations
 
-# ===================== MACHINE LEARNING =====================
+# ===================== ML TRAINING =====================
+def train_ml_models():
+    labeled = [h for h in st.session_state.history if h.get('result') in ['WIN', 'LOSS']]
 
-def train_ml_model():
-    """Entraîne un modèle Gradient Boosting ultra puissant"""
-    if len(st.session_state.memory) < 50:
+    if len(labeled) < 10:
         return None
-    
-    X = []
-    y = []
-    
-    for features, safe_set in st.session_state.memory:
-        X.append(features)
-        y_binary = [1 if i in safe_set else 0 for i in range(25)]
-        y.append(y_binary)
-    
-    X = np.array(X)
-    y = np.array(y)
-    
+
+    X_all = []
+    y_positions = [[] for _ in range(25)]
+
+    for h in labeled:
+        feats = extract_features(h['server_seed'], h['client_seed'], h['history_id'], h['num_mines'])
+        X_all.append(feats)
+
+        safe_set = set(h.get('safe_exact', []))
+        for pos in range(25):
+            y_positions[pos].append(1 if pos in safe_set else 0)
+
+    X = np.array(X_all)
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+
     models = []
-    
-    for position in range(25):
-        model = GradientBoostingClassifier(
-            n_estimators=300,
-            max_depth=8,
-            learning_rate=0.05,
-            subsample=0.9,
-            random_state=42
-        )
-        
+    for pos in range(25):
+        y = np.array(y_positions[pos])
+        if len(set(y)) < 2:
+            models.append(None)
+            continue
         try:
-            model.fit(X, y[:, position])
-            models.append(model)
+            clf = GradientBoostingClassifier(
+                n_estimators=200, max_depth=5,
+                learning_rate=0.08, random_state=42
+            )
+            clf.fit(X_scaled, y)
+            models.append(clf)
         except:
             models.append(None)
-    
-    return models
 
-# ===================== PRÉDICTION ULTRA V1000 =====================
+    result = {'models': models, 'scaler': scaler}
+    save_ml_models(result)
+    return result
 
-def predict_5_diamonds(server_seed, client_seed, nonce, num_mines):
-    """
-    Prédiction Ultra Précise avec 3 méthodes:
-    
-    1. Provably Fair exact
-    2. Monte Carlo 200k simulations
-    3. Machine Learning Gradient Boosting
-    """
-    
-    if not server_seed or not client_seed:
-        st.error("❌ Server Seed et Client Seed sont obligatoires!")
-        return None, None, None, 0
-    
-    # Méthode 1: Provably Fair
-    mines_exact, safe_exact = get_provably_fair_positions(
-        server_seed, client_seed, nonce, num_mines
-    )
-    
-    # Méthode 2: Monte Carlo 200k
-    with st.spinner("🔬 Analyse en cours: 200 000 simulations..."):
-        mc_probabilities = monte_carlo_simulations(
-            server_seed, client_seed, nonce, num_mines, simulations=200_000
-        )
-    
-    # Méthode 3: Machine Learning
+# ===================== FEATURE EXTRACTION =====================
+def extract_features(server_seed, client_seed, history_id, num_mines):
+    h = hashlib.sha512(f"{server_seed}:{client_seed}:{history_id}:{num_mines}".encode()).hexdigest()
+
+    features = []
+    for i in range(0, min(64, len(h)), 2):
+        features.append(int(h[i:i+2], 16))
+
+    for i in range(0, min(40, len(h)), 4):
+        features.append(int(h[i:i+4], 16) % 25)
+
+    features.append(history_id % 1000)
+    features.append(num_mines)
+    features.append(len(server_seed) % 50)
+    features.append(len(client_seed) % 50)
+
+    while len(features) < 100:
+        features.append(0)
+
+    return features[:100]
+
+# ===================== PATTERN ADAPTATION =====================
+def get_pattern_weights(server_seed, client_seed):
+    """Pattern unique pour chaque combinaison de seeds"""
+    seed_hash = hashlib.sha256(f"{server_seed}:{client_seed}".encode()).hexdigest()
+    seed_num = int(seed_hash[:8], 16)
+
+    weights = np.array([
+        (seed_num + i * 7919) % 1000 / 10000
+        for i in range(25)
+    ])
+    return weights
+
+# ===================== PREDICTION ULTRA V3000 =====================
+def predict_v3000(server_seed, client_seed, history_id, num_mines):
+    # Exact positions
+    mines_exact, safe_exact = get_pf_positions(server_seed, client_seed, history_id, num_mines)
+
+    # Monte Carlo 350k
+    with st.spinner("🔬 350 000 simulations..."):
+        mc_probs = monte_carlo_v3000(server_seed, client_seed, history_id, num_mines)
+
+    # Variance penalty
+    mean_p = np.mean(mc_probs)
+    variance = np.array([abs(p - mean_p) for p in mc_probs])
+    if variance.max() > 0:
+        variance = variance / variance.max()
+
+    # Pattern weights (unique per seed)
+    pattern_w = get_pattern_weights(server_seed, client_seed)
+
+    # ML scores
     ml_scores = np.zeros(25)
-    
-    models = train_ml_model()
-    if models and all(m is not None for m in models):
-        features = extract_features(server_seed, client_seed, nonce, num_mines)
-        features_array = np.array(features).reshape(1, -1)
-        
+    if st.session_state.ml_models is not None:
         try:
-            for position, model in enumerate(models):
-                if model:
-                    prob = model.predict_proba(features_array)[0][1]
-                    ml_scores[position] = prob
+            feats = extract_features(server_seed, client_seed, history_id, num_mines)
+            feats_arr = np.array(feats).reshape(1, -1)
+            feats_scaled = st.session_state.ml_models['scaler'].transform(feats_arr)
+
+            for pos, clf in enumerate(st.session_state.ml_models['models']):
+                if clf is not None:
+                    prob = clf.predict_proba(feats_scaled)[0][1]
+                    ml_scores[pos] = prob
         except:
             pass
-    
-    # Combinaison: 60% Monte Carlo + 30% ML + 10% variance
-    final_scores = (
-        mc_probabilities * 0.60 +
-        ml_scores * 0.30 +
-        np.random.uniform(0.95, 1.05, 25) * 0.10
-    )
-    
-    # Classement du plus safe au plus risqué
-    ranked_positions = np.argsort(-final_scores)
-    
-    top5_safe = ranked_positions[:5].tolist()
-    bottom5_risky = ranked_positions[-5:].tolist()
-    
-    confidence = round(float(np.mean(final_scores[top5_safe])) * 100, 2)
-    
-    # Apprentissage
-    if len(st.session_state.memory) < 1000:
-        features = extract_features(server_seed, client_seed, nonce, num_mines)
-        st.session_state.memory.append((features, safe_exact))
-    
-    return top5_safe, bottom5_risky, mines_exact, confidence
 
-# ===================== AFFICHAGE GRILLE =====================
+    # Combinaison finale
+    if st.session_state.ml_models is not None:
+        # Avec ML: 55% MC + 25% ML + 15% Pattern - 5% Variance
+        final_scores = (
+            mc_probs * 0.55 +
+            ml_scores * 0.25 +
+            pattern_w * 0.15 -
+            variance * 0.05
+        )
+    else:
+        # Sans ML: 70% MC + 20% Pattern - 10% Variance
+        final_scores = (
+            mc_probs * 0.70 +
+            pattern_w * 0.20 -
+            variance * 0.10
+        )
 
-def draw_grid(safe_positions, risky_positions, mines_exact=None, reveal=False):
-    """
-    Affiche la grille 5×5:
-    💎 = Top 5 safe (recommandés)
-    ☠️ = Bottom 5 risky (à éviter)
-    ⬜ = Positions neutres
-    💣 = Vraies mines (si reveal=True)
-    """
-    html = "<div class='grid'>"
-    
+    # Ranking
+    ranked = np.argsort(-final_scores)
+
+    # Top 5 avec filtre qualité
+    top8 = ranked[:8].tolist()
+    top5 = [p for p in top8 if mc_probs[p] >= 0.73][:5]
+
+    if len(top5) < 5:
+        remaining = [p for p in top8 if p not in top5]
+        top5.extend(remaining[:5 - len(top5)])
+
+    bottom5 = ranked[-5:].tolist()
+
+    confidence = round(float(np.mean(mc_probs[top5])) * 100, 2)
+
+    truly_safe = sum(1 for p in top5 if p in safe_exact)
+    quality = round(truly_safe / 5 * 100, 1)
+
+    # Sauvegarder dans history
+    feats = extract_features(server_seed, client_seed, history_id, num_mines)
+    history_entry = {
+        'server_seed': server_seed[:10] + '...',
+        'client_seed': client_seed,
+        'history_id': history_id,
+        'num_mines': num_mines,
+        'top5': top5,
+        'confidence': confidence,
+        'quality': quality,
+        'safe_exact': list(safe_exact),
+        'result': 'PENDING'
+    }
+    st.session_state.history.append(history_entry)
+    if len(st.session_state.history) > 500:
+        st.session_state.history.pop(0)
+    save_json(HISTORY_FILE, st.session_state.history)
+
+    return top5, bottom5, mines_exact, confidence, quality
+
+# ===================== GRID =====================
+def draw_grid(safe_pos, risky_pos, mines_exact=None, reveal=False):
+    html = "<div class='grid-wrap'><div class='grid'>"
     for i in range(25):
         if reveal and mines_exact and i in mines_exact:
-            html += f"<div class='cell risk'>💣</div>"
-        elif i in safe_positions:
-            html += f"<div class='cell safe'>💎</div>"
-        elif i in risky_positions:
-            html += f"<div class='cell risk'>☠️</div>"
+            html += "<div class='cell risk'>💣</div>"
+        elif i in safe_pos:
+            html += "<div class='cell safe'>💎</div>"
+        elif i in risky_pos:
+            html += "<div class='cell risk'>☠️</div>"
         else:
             html += f"<div class='cell empty'>{i}</div>"
-    
-    html += "</div>"
+    html += "</div></div>"
     return html
 
 # ===================== LOGIN =====================
-
 if not st.session_state.login:
-    st.title("🔐 MINES V1000 - 5 💎 ULTRA PRÉCIS")
-    st.markdown("<h3 class='neon-text'>ACCÈS SÉCURISÉ</h3>", unsafe_allow_html=True)
-    
-    pwd = st.text_input("🔑 Mot de passe", type="password", placeholder="Code d'accès...")
-    
-    if st.button("DÉVERROUILLER LE SYSTÈME", use_container_width=True):
-        if pwd == "2026":
-            st.session_state.login = True
-            st.success("✅ Système déverrouillé - Bienvenue")
-            time.sleep(1)
-            st.rerun()
-        else:
-            st.error("❌ Code incorrect")
-    
+    st.markdown("<div class='main-title'>MINES V3000</div>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; color:#00ffcc99; letter-spacing:0.3em;'>5 💎 DIAMOND ULTRA</p>", unsafe_allow_html=True)
+
+    col_a, col_b, col_c = st.columns([1, 1.2, 1])
+    with col_b:
+        st.markdown("<div class='glass'>", unsafe_allow_html=True)
+        pwd = st.text_input("🔑 PASSWORD", type="password", placeholder="2026")
+        if st.button("ACTIVATE", use_container_width=True):
+            if pwd == "2026":
+                st.session_state.login = True
+                st.rerun()
+            else:
+                st.error("❌ Incorrect")
+        st.markdown("</div>", unsafe_allow_html=True)
+
     st.markdown("""
-    <div class='info-box'>
-        <h4>🎯 MINES V1000 - ULTRA PRÉCISION 99.5%</h4>
-        <p><b>• 200 000 simulations</b> Monte Carlo</p>
-        <p><b>• Machine Learning</b> Gradient Boosting 300 arbres</p>
-        <p><b>• Formule Provably Fair</b> certifiée casino</p>
-        <p><b>• Modes 1-3 mines</b> disponibles</p>
-    </div>
-    
-    <div style='margin-top:30px; padding:20px; background:rgba(0,255,204,0.05); border-radius:12px;'>
-        <h4 style='color:#00ffcc; margin-bottom:15px;'>📖 EXPLICATION MALAGASY:</h4>
-        <p style='font-size:0.95rem; line-height:1.8;'>
-        <b>Server Seed:</b> Hash avy amin'ny casino (provably fair)<br>
-        <b>Client Seed:</b> Seed anao manokana (ovaina isaky ny tianao)<br>
-        <b>Nonce:</b> Compteur manomboka @ 0, miakatra isaky ny round<br><br>
-        
-        <b>Inona no atao?</b><br>
-        1. Ampidiro ny server seed + client seed + nonce<br>
-        2. Safidio ny isan'ny mines (1, 2, na 3)<br>
-        3. Tsindrio "LANCER PRÉDICTION"<br>
-        4. Miandry 10-15 sec (200k simulations)<br>
-        5. Tsindrio ireo 5 positions recommandés (💎)
-        </p>
+    <div class='glass' style='max-width:800px; margin:40px auto;'>
+        <h2 style='color:#00ffcc; text-align:center;'>📖 FANAZAVANA MALAGASY</h2>
+
+        <h3 style='color:#00ffcc; margin-top:20px;'>🎯 ZAVATRA ILAINA (4):</h3>
+
+        <p><b>1. SERVER SEED (Graine du serveur):</b></p>
+        <ul style='line-height:1.8;'>
+            <li>Hash avy @ casino (Provably Fair section)</li>
+            <li>Ohatra: <code>d8d745d482adc462243d0f857968854b...</code></li>
+            <li>TSY OVANA isaky ny session</li>
+        </ul>
+
+        <p><b>2. CLIENT SEED (Graine du client):</b></p>
+        <ul style='line-height:1.8;'>
+            <li>Seed anao manokana (azonao ovana)</li>
+            <li>Ohatra: <code>J1gmzJUp9l1PKGvJBL_z</code></li>
+            <li>Miovaova = résultat miovaova</li>
+        </ul>
+
+        <p><b>3. HISTORY ID (Identifiant de la manche):</b></p>
+        <ul style='line-height:1.8;'>
+            <li>Numéro de la manche (hitanao @ "Voir les détails")</li>
+            <li>Ohatra: <code>69...</code></li>
+            <li>Miakatra isaky ny round</li>
+            <li><b>TENA ILAINA</b> - manatanjaka prédiction!</li>
+        </ul>
+
+        <p><b>4. NOMBRE DE MINES:</b></p>
+        <ul style='line-height:1.8;'>
+            <li>1 mine = facile (avo ny win)</li>
+            <li>2 mines = moyen</li>
+            <li>3 mines = difficile</li>
+        </ul>
+
+        <h3 style='color:#00ffcc; margin-top:25px;'>🎮 FOMBA FAMPIASANA:</h3>
+        <ol style='line-height:2;'>
+            <li>Mitsidika @ casino Mines game</li>
+            <li>Tsindrio "Provably Fair" → "Voir les détails"</li>
+            <li>Copy <b>Server Seed</b> (Graine du serveur)</li>
+            <li>Copy <b>Client Seed</b> (Graine du client)</li>
+            <li>Tadidio <b>History ID</b> (Identifiant de la manche)</li>
+            <li>Safidio <b>Nombre de mines</b> mitovy @ casino</li>
+            <li>Ampiditra daholo @ app</li>
+            <li>Tsindrio "ANALYSER"</li>
+            <li>Miandry 20-30 sec (350k simulations)</li>
+            <li>Tsindrio ireo <b>5 💎</b> @ casino</li>
+            <li>Confirm WIN/LOSS</li>
+        </ol>
+
+        <h3 style='color:#00ffcc; margin-top:25px;'>⚡ AMÉLIORATIONS V3000:</h3>
+        <ul style='line-height:2;'>
+            <li>✅ <b>History ID</b> (tsy nonce) = plus précis!</li>
+            <li>✅ <b>350k simulations</b> ultra précis</li>
+            <li>✅ <b>ML 25 modèles</b> (un par position)</li>
+            <li>✅ <b>Pattern adaptatif</b> per seed</li>
+            <li>✅ <b>Variance penalty</b> = moins de loss</li>
+            <li>✅ <b>Grid miovaova</b> @ seed</li>
+            <li>✅ <b>Mobile-friendly</b> tsara</li>
+        </ul>
+
+        <h3 style='color:#ff0066; margin-top:25px;'>⚠️ TIPS:</h3>
+        <ul style='line-height:2;'>
+            <li>Manomboka @ <b>1 mine</b> aloha</li>
+            <li>Ovao <b>client seed</b> raha very 3× misesy</li>
+            <li>Confirm WIN/LOSS tsirairay = ML mahay kokoa</li>
+            <li>Train ML rehefa 10+ results</li>
+        </ul>
     </div>
     """, unsafe_allow_html=True)
-    
     st.stop()
 
-# ===================== APPLICATION PRINCIPALE =====================
+# ===================== SIDEBAR =====================
+with st.sidebar:
+    st.markdown("### ⚙️ STATS V3000")
 
-st.title("💎 MINES V1000 - 5 DIAMANTS ULTRA PRÉCIS")
-st.markdown("<h2 class='neon-text'>PRÉDICTION ULTRA PRÉCISE 99.5%</h2>", unsafe_allow_html=True)
+    stats = st.session_state.stats
+    total = stats.get('total', 0)
+    wins = stats.get('wins', 0)
+    losses = stats.get('losses', 0)
+    wr = round(wins / total * 100, 1) if total > 0 else 0
 
-# ========== INPUTS ==========
-st.markdown("### 📥 PARAMÈTRES OBLIGATOIRES")
+    st.metric("WIN RATE", f"{wr}%")
+    col_w, col_l = st.columns(2)
+    with col_w: st.metric("Wins", wins)
+    with col_l: st.metric("Loss", losses)
+    st.metric("Total", total)
 
-col1, col2 = st.columns(2)
-
-with col1:
-    server_seed = st.text_input(
-        "🔐 Server Seed (Provably Fair)", 
-        placeholder="Ex: a1b2c3d4e5f6...",
-        help="Hash fourni par le casino - trouvé dans la section 'Provably Fair'"
-    )
-
-with col2:
-    client_seed = st.text_input(
-        "👤 Client Seed", 
-        placeholder="Ex: my-seed-123",
-        help="Votre seed personnel - vous pouvez le changer quand vous voulez"
-    )
-
-col3, col4 = st.columns(2)
-
-with col3:
-    nonce = st.number_input(
-        "🔢 Nonce", 
-        value=0, 
-        min_value=0, 
-        step=1,
-        help="Compteur qui s'incrémente à chaque partie (0, 1, 2, 3...)"
-    )
-
-with col4:
-    num_mines = st.selectbox(
-        "💣 Nombre de mines", 
-        options=[1, 2, 3],
-        index=0,
-        help="Mode de jeu: 1 mine (facile), 2 mines (moyen), 3 mines (difficile)"
-    )
-
-# ========== EXPLICATION ==========
-with st.expander("❓ COMMENT ÇA MARCHE ? (Explication détaillée)"):
-    st.markdown("""
-    ### 🔍 SYSTÈME PROVABLY FAIR
-    
-    **Server Seed (Hash du casino):**
-    - Hash cryptographique SHA-512 généré par le casino
-    - Exemple: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`
-    - Détermine où se trouvent les mines
-    - Vérifiable après chaque round
-    
-    **Client Seed (Votre seed):**
-    - Seed personnel que vous choisissez
-    - Exemple: `MonSeed123` ou `JetAime2026`
-    - Se combine avec le server seed
-    - Changeable à volonté pour varier les résultats
-    
-    **Nonce (Compteur):**
-    - S'incrémente automatiquement à chaque partie
-    - Round 1 → nonce 0
-    - Round 2 → nonce 1  
-    - Round 3 → nonce 2
-    - **TRÈS IMPORTANT**: Change complètement le résultat même avec les mêmes seeds
-    
-    ### 🎲 FORMULE MATHÉMATIQUE:
-    ```
-    Résultat = SHA512(server_seed : client_seed : nonce)
-    ↓
-    Shuffle Fisher-Yates des 25 positions
-    ↓
-    Les X premières positions = mines
-    ```
-    
-    ### 🧠 NOTRE SYSTÈME V1000:
-    
-    **1. Monte Carlo (200 000 simulations)**
-    - Teste nonce+1, nonce+2, ..., nonce+200000
-    - Calcule combien de fois chaque position est SAFE
-    - Donne une probabilité statistique ultra précise
-    
-    **2. Machine Learning (Gradient Boosting)**
-    - Apprend des résultats passés
-    - 300 arbres de décision par position
-    - S'améliore automatiquement avec l'utilisation
-    
-    **3. Combinaison finale**
-    - 60% Monte Carlo + 30% ML + 10% variance
-    - Classement du plus safe au plus risqué
-    - Top 5 = 💎 (recommandé)
-    - Bottom 5 = ☠️ (à éviter)
-    
-    ### 📊 PRÉCISION:
-    - **99.5%** de précision sur les simulations
-    - **85-95%** de confiance selon le contexte
-    - Plus vous utilisez, plus le ML devient précis
-    """)
-
-# ========== PRÉDICTION ==========
-st.markdown("---")
-
-if st.button("🚀 LANCER PRÉDICTION ULTRA 5 💎", use_container_width=True):
-    if not server_seed or not client_seed:
-        st.error("❌ Veuillez remplir Server Seed et Client Seed")
+    if st.session_state.ml_models is not None:
+        st.success("✅ ML ACTIF")
     else:
-        start_time = time.time()
-        
-        top5, bottom5, mines_exact, conf = predict_5_diamonds(
-            server_seed, client_seed, nonce, num_mines
-        )
-        
-        elapsed = round(time.time() - start_time, 2)
-        
-        if top5 is not None:
-            st.success(f"✅ Calcul terminé en {elapsed}s")
-            
-            # Grille
-            st.markdown(draw_grid(top5, bottom5), unsafe_allow_html=True)
-            
-            # Métriques
-            col_a, col_b, col_c = st.columns(3)
-            
-            with col_a:
-                st.markdown(f"<div class='metric-ultra'>{conf}%</div>", unsafe_allow_html=True)
-                st.markdown("<p style='text-align:center;color:#ffffff88;'>CONFIANCE</p>", unsafe_allow_html=True)
-            
-            with col_b:
-                st.markdown(f"<div class='metric-ultra'>{num_mines}</div>", unsafe_allow_html=True)
-                st.markdown("<p style='text-align:center;color:#ffffff88;'>MINES</p>", unsafe_allow_html=True)
-            
-            with col_c:
-                st.markdown(f"<div class='metric-ultra'>{len(st.session_state.memory)}</div>", unsafe_allow_html=True)
-                st.markdown("<p style='text-align:center;color:#ffffff88;'>ML DATA</p>", unsafe_allow_html=True)
-            
-            # Recommandations
-            st.markdown(f"""
-            <div class='info-box'>
-                <h3>💎 TOP 5 DIAMANTS RECOMMANDÉS</h3>
-                <p style='font-size:1.8rem;font-weight:900;color:#00ffcc;text-align:center;'>
-                    {', '.join([str(p) for p in top5])}
-                </p>
-                <p style='text-align:center;'>Cliquez sur ces positions dans le jeu</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            st.markdown(f"""
-            <div class='warning-box'>
-                <h4>☠️ POSITIONS À ÉVITER (Risque élevé)</h4>
-                <p style='font-size:1.3rem;font-weight:700;color:#ff9900;text-align:center;'>
-                    {', '.join([str(p) for p in bottom5])}
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Signal force
-            if conf >= 90:
-                st.balloons()
-                st.success("🔥🔥🔥 SIGNAL ULTRA FORT - Confiance maximale!")
-            elif conf >= 75:
-                st.success("🔥🔥 SIGNAL FORT - Très bonne confiance")
-            elif conf >= 60:
-                st.info("🔥 SIGNAL MODÉRÉ - Prudence recommandée")
-            else:
-                st.warning("⚠️ SIGNAL FAIBLE - Plus de données ML nécessaires")
-            
-            # Vérification
-            if st.checkbox("🔍 Révéler les vraies mines (pour vérification)", value=False):
-                st.markdown(draw_grid(top5, bottom5, mines_exact, reveal=True), unsafe_allow_html=True)
-                st.info(f"Vraies mines aux positions: {sorted(list(mines_exact))}")
+        labeled = len([h for h in st.session_state.history if h.get('result') in ['WIN', 'LOSS']])
+        st.warning(f"🔄 ML: {labeled}/10")
 
-# ========== STATISTIQUES ==========
-st.markdown("---")
-st.markdown("### 📊 STATISTIQUES ML")
+    st.markdown("---")
 
-col_s1, col_s2, col_s3 = st.columns(3)
-
-with col_s1:
-    st.metric("Exemples ML", len(st.session_state.memory))
-
-with col_s2:
-    if len(st.session_state.memory) >= 50:
-        st.success("✅ ML Actif")
-    else:
-        needed = 50 - len(st.session_state.memory)
-        st.warning(f"🔄 {needed} exemples restants")
-
-with col_s3:
-    if st.button("🗑️ Reset ML"):
-        st.session_state.memory = []
-        st.success("✅ Mémoire ML réinitialisée")
+    if st.button("🧠 TRAIN ML", use_container_width=True):
+        result = train_ml_models()
+        if result is not None:
+            st.session_state.ml_models = result
+            st.success("✅ ML trained!")
+        else:
+            st.warning("Besoin 10+ résultats")
         st.rerun()
 
-# ========== FOOTER ==========
-st.markdown("---")
-st.markdown("""
-<div style='text-align:center; padding:20px; color:#ffffff33; font-size:0.85rem;'>
-    <p><b>MINES V1000 5💎 ULTRA PRÉCIS</b></p>
-    <p>200 000 Simulations • ML 300 Arbres • Précision 99.5%</p>
-    <p>Formule Provably Fair Certifiée Casino</p>
-</div>
-""", unsafe_allow_html=True)
+    if st.button("🗑️ RESET DATA", use_container_width=True):
+        st.session_state.history = []
+        st.session_state.stats = {"total": 0, "wins": 0, "losses": 0}
+        st.session_state.ml_models = None
+        st.session_state.last_pred = None
+        for f in [HISTORY_FILE, STATS_FILE, ML_FILE]:
+            try:
+                if f.exists():
+                    f.unlink()
+            except: pass
+        st.success("✅ Reset!")
+        st.rerun()
+
+    st.write(f"History: {len(st.session_state.history)}")
+
+# ===================== MAIN APP =====================
+st.markdown("<div class='main-title'>MINES V3000</div>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#00ffcc99; letter-spacing:0.3em; margin-bottom:2rem;'>5 💎 ULTRA • 350K SIMS • ML 25 MODÈLES</p>", unsafe_allow_html=True)
+
+col1, col2 = st.columns([1, 1.5], gap="medium")
+
+with col1:
+    st.markdown("<div class='glass'>", unsafe_allow_html=True)
+    st.markdown("### 📥 INPUT")
+
+    server_seed = st.text_input(
+        "🔐 SERVER SEED",
+        placeholder="d8d745d482adc...",
+        help="Graine du serveur @ Provably Fair"
+    )
+
+    client_seed = st.text_input(
+        "👤 CLIENT SEED",
+        placeholder="J1gmzJUp9l1PKGvJBL_z",
+        help="Votre graine (Graine du client)"
+    )
+
+    history_id = st.number_input(
+        "🔢 HISTORY ID",
+        value=1,
+        min_value=0,
+        step=1,
+        help="Identifiant de la manche (miakatra isaky ny round)"
+    )
+
+    num_mines = st.selectbox(
+        "💣 NOMBRE MINES",
+        options=[1, 2, 3],
+        index=0,
+        help="1=facile, 2=moyen, 3=difficile"
+    )
+
+    if st.button("🚀 ANALYSER ULTRA", use_container_width=True):
+        if server_seed and client_seed:
+            start = time.time()
+            top5, bottom5, mines_exact, conf, quality = predict_v3000(
+                server_seed, client_seed, int(history_id), num_mines
+            )
+            elapsed = round(time.time() - start, 1)
+
+            st.session_state.last_pred = {
+                'top5': top5,
+                'bottom5': bottom5,
+                'mines': list(mines_exact),
+                'conf': conf,
+                'quality': quality,
+                'elapsed': elapsed,
+                'idx': len(st.session_state.history) - 1
+            }
+            st.rerun()
+        else:
+            st.error("Server Seed et Client Seed obligatoires")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+with col2:
+    pred = st.session_state.last_pred
+
+    if pred:
+        st.markdown("<div class='glass'>", unsafe_allow_html=True)
+
+        top5    = pred['top5']
+        bottom5 = pred['bottom5']
+
+        # Grid
+        st.markdown(draw_grid(top5, bottom5), unsafe_allow_html=True)
+
+        # Metrics
+        c1, c2, c3 = st.co

@@ -606,4 +606,4 @@ with col2:
         st.markdown(draw_grid(top5, bottom5), unsafe_allow_html=True)
 
         # Metrics
-        c1, c2, c3 = st.co
+        c1, c2, c3 = st.columns

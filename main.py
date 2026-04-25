@@ -188,7 +188,6 @@ if "ml_models" not in st.session_state:
 def get_pf_positions(server_seed, client_seed, history_id, num_mines):
     """
     Provably Fair: server_seed + client_seed + history_id
-    Tsy nonce intsony fa HISTORY ID (mitovy @ screenshot)
     """
     combined = f"{server_seed}:{client_seed}:{history_id}"
     hash_bytes = hashlib.sha512(combined.encode()).digest()
@@ -207,7 +206,6 @@ def get_pf_positions(server_seed, client_seed, history_id, num_mines):
 
 # ===================== MONTE CARLO =====================
 def monte_carlo_v3000(server_seed, client_seed, history_id, num_mines, simulations=350_000):
-    """350k simulations - ultra précis"""
     safe_count = np.zeros(25, dtype=np.int64)
 
     for i in range(simulations):
@@ -283,7 +281,6 @@ def extract_features(server_seed, client_seed, history_id, num_mines):
 
 # ===================== PATTERN ADAPTATION =====================
 def get_pattern_weights(server_seed, client_seed):
-    """Pattern unique pour chaque combinaison de seeds"""
     seed_hash = hashlib.sha256(f"{server_seed}:{client_seed}".encode()).hexdigest()
     seed_num = int(seed_hash[:8], 16)
 
@@ -295,23 +292,18 @@ def get_pattern_weights(server_seed, client_seed):
 
 # ===================== PREDICTION ULTRA V3000 =====================
 def predict_v3000(server_seed, client_seed, history_id, num_mines):
-    # Exact positions
     mines_exact, safe_exact = get_pf_positions(server_seed, client_seed, history_id, num_mines)
 
-    # Monte Carlo 350k
     with st.spinner("🔬 350 000 simulations..."):
         mc_probs = monte_carlo_v3000(server_seed, client_seed, history_id, num_mines)
 
-    # Variance penalty
     mean_p = np.mean(mc_probs)
     variance = np.array([abs(p - mean_p) for p in mc_probs])
     if variance.max() > 0:
         variance = variance / variance.max()
 
-    # Pattern weights (unique per seed)
     pattern_w = get_pattern_weights(server_seed, client_seed)
 
-    # ML scores
     ml_scores = np.zeros(25)
     if st.session_state.ml_models is not None:
         try:
@@ -326,9 +318,7 @@ def predict_v3000(server_seed, client_seed, history_id, num_mines):
         except:
             pass
 
-    # Combinaison finale
     if st.session_state.ml_models is not None:
-        # Avec ML: 55% MC + 25% ML + 15% Pattern - 5% Variance
         final_scores = (
             mc_probs * 0.55 +
             ml_scores * 0.25 +
@@ -336,17 +326,14 @@ def predict_v3000(server_seed, client_seed, history_id, num_mines):
             variance * 0.05
         )
     else:
-        # Sans ML: 70% MC + 20% Pattern - 10% Variance
         final_scores = (
             mc_probs * 0.70 +
             pattern_w * 0.20 -
             variance * 0.10
         )
 
-    # Ranking
     ranked = np.argsort(-final_scores)
 
-    # Top 5 avec filtre qualité
     top8 = ranked[:8].tolist()
     top5 = [p for p in top8 if mc_probs[p] >= 0.73][:5]
 
@@ -357,12 +344,9 @@ def predict_v3000(server_seed, client_seed, history_id, num_mines):
     bottom5 = ranked[-5:].tolist()
 
     confidence = round(float(np.mean(mc_probs[top5])) * 100, 2)
-
     truly_safe = sum(1 for p in top5 if p in safe_exact)
     quality = round(truly_safe / 5 * 100, 1)
 
-    # Sauvegarder dans history
-    feats = extract_features(server_seed, client_seed, history_id, num_mines)
     history_entry = {
         'server_seed': server_seed[:10] + '...',
         'client_seed': client_seed,
@@ -412,77 +396,6 @@ if not st.session_state.login:
             else:
                 st.error("❌ Incorrect")
         st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class='glass' style='max-width:800px; margin:40px auto;'>
-        <h2 style='color:#00ffcc; text-align:center;'>📖 FANAZAVANA MALAGASY</h2>
-
-        <h3 style='color:#00ffcc; margin-top:20px;'>🎯 ZAVATRA ILAINA (4):</h3>
-
-        <p><b>1. SERVER SEED (Graine du serveur):</b></p>
-        <ul style='line-height:1.8;'>
-            <li>Hash avy @ casino (Provably Fair section)</li>
-            <li>Ohatra: <code>d8d745d482adc462243d0f857968854b...</code></li>
-            <li>TSY OVANA isaky ny session</li>
-        </ul>
-
-        <p><b>2. CLIENT SEED (Graine du client):</b></p>
-        <ul style='line-height:1.8;'>
-            <li>Seed anao manokana (azonao ovana)</li>
-            <li>Ohatra: <code>J1gmzJUp9l1PKGvJBL_z</code></li>
-            <li>Miovaova = résultat miovaova</li>
-        </ul>
-
-        <p><b>3. HISTORY ID (Identifiant de la manche):</b></p>
-        <ul style='line-height:1.8;'>
-            <li>Numéro de la manche (hitanao @ "Voir les détails")</li>
-            <li>Ohatra: <code>69...</code></li>
-            <li>Miakatra isaky ny round</li>
-            <li><b>TENA ILAINA</b> - manatanjaka prédiction!</li>
-        </ul>
-
-        <p><b>4. NOMBRE DE MINES:</b></p>
-        <ul style='line-height:1.8;'>
-            <li>1 mine = facile (avo ny win)</li>
-            <li>2 mines = moyen</li>
-            <li>3 mines = difficile</li>
-        </ul>
-
-        <h3 style='color:#00ffcc; margin-top:25px;'>🎮 FOMBA FAMPIASANA:</h3>
-        <ol style='line-height:2;'>
-            <li>Mitsidika @ casino Mines game</li>
-            <li>Tsindrio "Provably Fair" → "Voir les détails"</li>
-            <li>Copy <b>Server Seed</b> (Graine du serveur)</li>
-            <li>Copy <b>Client Seed</b> (Graine du client)</li>
-            <li>Tadidio <b>History ID</b> (Identifiant de la manche)</li>
-            <li>Safidio <b>Nombre de mines</b> mitovy @ casino</li>
-            <li>Ampiditra daholo @ app</li>
-            <li>Tsindrio "ANALYSER"</li>
-            <li>Miandry 20-30 sec (350k simulations)</li>
-            <li>Tsindrio ireo <b>5 💎</b> @ casino</li>
-            <li>Confirm WIN/LOSS</li>
-        </ol>
-
-        <h3 style='color:#00ffcc; margin-top:25px;'>⚡ AMÉLIORATIONS V3000:</h3>
-        <ul style='line-height:2;'>
-            <li>✅ <b>History ID</b> (tsy nonce) = plus précis!</li>
-            <li>✅ <b>350k simulations</b> ultra précis</li>
-            <li>✅ <b>ML 25 modèles</b> (un par position)</li>
-            <li>✅ <b>Pattern adaptatif</b> per seed</li>
-            <li>✅ <b>Variance penalty</b> = moins de loss</li>
-            <li>✅ <b>Grid miovaova</b> @ seed</li>
-            <li>✅ <b>Mobile-friendly</b> tsara</li>
-        </ul>
-
-        <h3 style='color:#ff0066; margin-top:25px;'>⚠️ TIPS:</h3>
-        <ul style='line-height:2;'>
-            <li>Manomboka @ <b>1 mine</b> aloha</li>
-            <li>Ovao <b>client seed</b> raha very 3× misesy</li>
-            <li>Confirm WIN/LOSS tsirairay = ML mahay kokoa</li>
-            <li>Train ML rehefa 10+ results</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
     st.stop()
 
 # ===================== SIDEBAR =====================
@@ -531,8 +444,6 @@ with st.sidebar:
         st.success("✅ Reset!")
         st.rerun()
 
-    st.write(f"History: {len(st.session_state.history)}")
-
 # ===================== MAIN APP =====================
 st.markdown("<div class='main-title'>MINES V3000</div>", unsafe_allow_html=True)
 st.markdown("<p style='text-align:center; color:#00ffcc99; letter-spacing:0.3em; margin-bottom:2rem;'>5 💎 ULTRA • 350K SIMS • ML 25 MODÈLES</p>", unsafe_allow_html=True)
@@ -543,32 +454,10 @@ with col1:
     st.markdown("<div class='glass'>", unsafe_allow_html=True)
     st.markdown("### 📥 INPUT")
 
-    server_seed = st.text_input(
-        "🔐 SERVER SEED",
-        placeholder="d8d745d482adc...",
-        help="Graine du serveur @ Provably Fair"
-    )
-
-    client_seed = st.text_input(
-        "👤 CLIENT SEED",
-        placeholder="J1gmzJUp9l1PKGvJBL_z",
-        help="Votre graine (Graine du client)"
-    )
-
-    history_id = st.number_input(
-        "🔢 HISTORY ID",
-        value=1,
-        min_value=0,
-        step=1,
-        help="Identifiant de la manche (miakatra isaky ny round)"
-    )
-
-    num_mines = st.selectbox(
-        "💣 NOMBRE MINES",
-        options=[1, 2, 3],
-        index=0,
-        help="1=facile, 2=moyen, 3=difficile"
-    )
+    server_seed = st.text_input("🔐 SERVER SEED", placeholder="d8d745d482adc...")
+    client_seed = st.text_input("👤 CLIENT SEED", placeholder="J1gmzJUp9l1PKGvJBL_z")
+    history_id = st.number_input("🔢 HISTORY ID", value=1, min_value=0, step=1)
+    num_mines = st.selectbox("💣 NOMBRE MINES", options=[1, 2, 3], index=0)
 
     if st.button("🚀 ANALYSER ULTRA", use_container_width=True):
         if server_seed and client_seed:
@@ -590,7 +479,6 @@ with col1:
             st.rerun()
         else:
             st.error("Server Seed et Client Seed obligatoires")
-
     st.markdown("</div>", unsafe_allow_html=True)
 
 with col2:
@@ -602,8 +490,37 @@ with col2:
         top5    = pred['top5']
         bottom5 = pred['bottom5']
 
+        # Fanatsarana ny fizarana eo amin'ny tabilao
+        c1, c2, c3 = st.columns(3)
+        with c1: st.markdown(f"<div style='text-align:center;color:#00ffcc;'>CONFIDENCE<br><b>{pred['conf']}%</b></div>", unsafe_allow_html=True)
+        with c2: st.markdown(f"<div style='text-align:center;color:#00ffcc;'>QUALITÉ<br><b>{pred['quality']}%</b></div>", unsafe_allow_html=True)
+        with c3: st.markdown(f"<div style='text-align:center;color:#00ffcc;'>TEMPS<br><b>{pred['elapsed']}s</b></div>", unsafe_allow_html=True)
+
         # Grid
         st.markdown(draw_grid(top5, bottom5), unsafe_allow_html=True)
 
-        # Metrics
-        c1, c2, c3 = st.columns
+        # Bokotra valiny
+        st.markdown("<hr style='border-color:rgba(0,255,204,0.2);'>", unsafe_allow_html=True)
+        btn1, btn2 = st.columns(2)
+        
+        with btn1:
+            if st.button("✅ WIN", use_container_width=True):
+                st.session_state.history[pred['idx']]['result'] = 'WIN'
+                save_json(HISTORY_FILE, st.session_state.history)
+                st.session_state.stats['total'] += 1
+                st.session_state.stats['wins'] += 1
+                save_json(STATS_FILE, st.session_state.stats)
+                st.session_state.last_pred = None
+                st.rerun()
+                
+        with btn2:
+            if st.button("❌ LOSS", use_container_width=True):
+                st.session_state.history[pred['idx']]['result'] = 'LOSS'
+                save_json(HISTORY_FILE, st.session_state.history)
+                st.session_state.stats['total'] += 1
+                st.session_state.stats['losses'] += 1
+                save_json(STATS_FILE, st.session_state.stats)
+                st.session_state.last_pred = None
+                st.rerun()
+
+        st.markdown("</div>", unsafe_allow_html=True)

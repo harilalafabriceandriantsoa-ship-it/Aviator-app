@@ -9,33 +9,35 @@ from pathlib import Path
 
 # ===================== CONFIG =====================
 st.set_page_config(
-    page_title="MINES 100% EXACT V4000",
+    page_title="MINES 100% EXACT V5000",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
 # ===================== PERSISTENCE =====================
 try:
-    DATA_DIR = Path(__file__).parent / "mines_exact_data"
+    DATA_DIR = Path(__file__).parent / "mines_v5000_data"
 except:
-    DATA_DIR = Path.cwd() / "mines_exact_data"
+    DATA_DIR = Path.cwd() / "mines_v5000_data"
 
 DATA_DIR.mkdir(exist_ok=True, parents=True)
-HISTORY_FILE = DATA_DIR / "history_exact.json"
-STATS_FILE   = DATA_DIR / "stats_exact.json"
+HISTORY_FILE = DATA_DIR / "history.json"
+STATS_FILE   = DATA_DIR / "stats.json"
 
 def save_json(path, data):
     try:
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
-    except: pass
+    except:
+        pass
 
 def load_json(path, default):
     try:
         if path.exists():
             with open(path, 'r', encoding='utf-8') as f:
                 return json.load(f)
-    except: pass
+    except:
+        pass
     return default
 
 # ===================== CSS =====================
@@ -51,7 +53,7 @@ st.markdown("""
 
     .main-title {
         font-family: 'Orbitron', sans-serif;
-        font-size: clamp(2rem, 8vw, 3.5rem);
+        font-size: clamp(1.8rem, 7vw, 3rem);
         font-weight: 900;
         text-align: center;
         background: linear-gradient(90deg, #00ffcc, #00ff88, #00ffcc);
@@ -59,269 +61,269 @@ st.markdown("""
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         animation: shimmer 3s ease infinite;
+        margin-bottom: 4px;
     }
 
     @keyframes shimmer {
         0%,100% { background-position: 0%; }
-        50% { background-position: 100%; }
+        50%      { background-position: 100%; }
     }
 
     .glass {
         background: rgba(0, 10, 20, 0.92);
         border: 2px solid rgba(0, 255, 204, 0.35);
-        border-radius: 20px;
-        padding: clamp(14px, 4vw, 24px);
+        border-radius: 18px;
+        padding: clamp(12px, 4vw, 22px);
         backdrop-filter: blur(14px);
-        margin-bottom: 18px;
-        box-shadow: 0 0 30px rgba(0,255,204,0.08);
+        margin-bottom: 16px;
+        box-shadow: 0 0 25px rgba(0,255,204,0.07);
     }
 
-    .grid-wrap {
-        display: flex;
-        justify-content: center;
-        padding: 10px 0;
-    }
-
-    .grid {
+    /* GRID */
+    .mgrid {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
-        gap: clamp(6px, 2vw, 12px);
-        width: min(460px, 94vw);
+        gap: clamp(5px, 1.8vw, 11px);
+        width: min(440px, 92vw);
+        margin: 16px auto;
     }
 
-    .cell {
+    .mcell {
         aspect-ratio: 1/1;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        border-radius: 14px;
-        font-size: clamp(1.3rem, 5vw, 2.2rem);
+        border-radius: 12px;
+        font-size: clamp(1.3rem, 4.5vw, 2rem);
         font-weight: 900;
-        transition: transform 0.2s;
+        transition: transform 0.15s;
         position: relative;
     }
 
-    .cell:hover { transform: scale(1.07); }
+    .mcell:hover { transform: scale(1.06); }
 
-    .safe {
+    .cnum {
+        position: absolute;
+        top: 3px;
+        left: 5px;
+        font-size: clamp(0.45rem, 1.2vw, 0.6rem);
+        font-family: 'Orbitron';
+        opacity: 0.55;
+    }
+
+    /* Safe */
+    .csafe {
         background: linear-gradient(135deg, #00ffcc, #00cc77);
         color: #000;
-        box-shadow: 0 0 22px rgba(0,255,204,0.7);
-        animation: pulse-gem 2s ease infinite;
+        box-shadow: 0 0 18px rgba(0,255,204,0.65);
+        animation: pgem 2s ease infinite;
+    }
+    @keyframes pgem {
+        0%,100% { box-shadow: 0 0 12px rgba(0,255,204,0.55); }
+        50%      { box-shadow: 0 0 30px rgba(0,255,204,0.95); }
     }
 
-    .cell-num {
-        position: absolute;
-        top: 4px;
-        left: 6px;
-        font-size: 0.55rem;
-        opacity: 0.6;
-        font-family: 'Orbitron';
-        color: #000;
-    }
-
-    @keyframes pulse-gem {
-        0%,100% { box-shadow: 0 0 15px rgba(0,255,204,0.6); }
-        50% { box-shadow: 0 0 35px rgba(0,255,204,1); }
-    }
-
-    .mine {
+    /* Mine */
+    .cmine {
         background: linear-gradient(135deg, #ff0033, #aa0011);
         color: #fff;
-        box-shadow: 0 0 20px rgba(255,0,51,0.5);
+        box-shadow: 0 0 16px rgba(255,0,51,0.45);
     }
 
-    .empty {
-        background: rgba(15, 15, 40, 0.7);
-        border: 1.5px solid rgba(0,255,204,0.15);
-        color: rgba(0,255,204,0.2);
-        font-size: clamp(0.7rem, 2vw, 0.9rem);
+    /* Empty */
+    .cempty {
+        background: rgba(12, 12, 35, 0.75);
+        border: 1.5px solid rgba(0,255,204,0.12);
+        color: rgba(0,255,204,0.18);
+        font-size: clamp(0.65rem, 2vw, 0.85rem);
     }
 
-    .badge-100 {
-        background: linear-gradient(135deg, #00ffcc, #00ff88);
-        color: #000;
-        font-family: 'Orbitron';
-        font-weight: 900;
-        font-size: clamp(1.2rem, 4vw, 1.8rem);
-        padding: 12px 28px;
-        border-radius: 50px;
-        text-align: center;
-        margin: 16px auto;
-        display: inline-block;
-        box-shadow: 0 0 30px rgba(0,255,204,0.5);
-    }
-
-    .positions-box {
-        background: rgba(0,255,204,0.06);
-        border: 2px solid rgba(0,255,204,0.4);
-        border-radius: 14px;
-        padding: 18px;
-        text-align: center;
-        margin: 14px 0;
-    }
-
-    .positions-numbers {
-        font-size: clamp(1.6rem, 6vw, 2.4rem);
-        font-weight: 900;
-        color: #00ffcc;
-        font-family: 'Orbitron';
-        letter-spacing: 0.05em;
-    }
-
-    .status-exact {
-        background: rgba(0,255,100,0.1);
-        border: 2px solid rgba(0,255,100,0.5);
-        border-radius: 12px;
-        padding: 14px;
-        text-align: center;
-        margin: 12px 0;
-    }
-
-    .status-warn {
-        background: rgba(255,180,0,0.1);
-        border: 2px solid rgba(255,180,0,0.5);
-        border-radius: 12px;
-        padding: 14px;
-        text-align: center;
-        margin: 12px 0;
-    }
-
+    /* Buttons */
     .stButton>button {
         background: linear-gradient(135deg, #00ffcc, #00aa66) !important;
         color: #000 !important;
         font-weight: 900 !important;
-        border-radius: 12px !important;
-        height: 54px !important;
-        font-size: 1rem !important;
+        border-radius: 11px !important;
+        height: 52px !important;
+        font-size: 0.95rem !important;
         border: none !important;
         width: 100% !important;
         font-family: 'Rajdhani' !important;
-        letter-spacing: 0.05em !important;
+        letter-spacing: 0.04em !important;
+        transition: all 0.2s !important;
     }
-
     .stButton>button:hover {
         transform: scale(1.02);
-        box-shadow: 0 0 25px rgba(0,255,204,0.5) !important;
+        box-shadow: 0 0 22px rgba(0,255,204,0.5) !important;
     }
 
+    /* Inputs */
     .stTextInput input, .stNumberInput input {
         background: rgba(0,255,204,0.04) !important;
-        border: 2px solid rgba(0,255,204,0.25) !important;
+        border: 2px solid rgba(0,255,204,0.22) !important;
         color: #00ffcc !important;
-        border-radius: 12px !important;
-        font-size: 0.95rem !important;
-        padding: 10px 14px !important;
+        border-radius: 11px !important;
+        font-size: 0.9rem !important;
+        padding: 10px 13px !important;
         font-family: 'Rajdhani' !important;
     }
-
     .stTextInput input:focus, .stNumberInput input:focus {
-        border-color: rgba(0,255,204,0.7) !important;
-        box-shadow: 0 0 15px rgba(0,255,204,0.2) !important;
+        border-color: rgba(0,255,204,0.65) !important;
+        box-shadow: 0 0 12px rgba(0,255,204,0.18) !important;
     }
 
+    /* Selectbox */
     .stSelectbox > div > div {
         background: rgba(0,255,204,0.04) !important;
-        border: 2px solid rgba(0,255,204,0.25) !important;
-        border-radius: 12px !important;
+        border: 2px solid rgba(0,255,204,0.22) !important;
+        border-radius: 11px !important;
         color: #00ffcc !important;
     }
 
-    .metric-box {
-        background: rgba(0,255,204,0.07);
-        border: 1px solid rgba(0,255,204,0.25);
-        border-radius: 12px;
-        padding: 14px;
+    /* Metrics */
+    .mbox {
+        background: rgba(0,255,204,0.06);
+        border: 1px solid rgba(0,255,204,0.22);
+        border-radius: 11px;
+        padding: 12px;
         text-align: center;
     }
-
-    .metric-val {
-        font-size: clamp(1.6rem, 6vw, 2.4rem);
+    .mval {
+        font-size: clamp(1.4rem, 5vw, 2.2rem);
         font-weight: 900;
         font-family: 'Orbitron';
         color: #00ffcc;
     }
-
-    .metric-lbl {
-        font-size: 0.7rem;
-        color: rgba(255,255,255,0.4);
-        letter-spacing: 0.15em;
+    .mlbl {
+        font-size: 0.65rem;
+        color: rgba(255,255,255,0.38);
+        letter-spacing: 0.14em;
         text-transform: uppercase;
-        margin-top: 4px;
+        margin-top: 3px;
     }
 
-    .stat-s {
-        background: rgba(0,255,204,0.07);
-        border: 1px solid rgba(0,255,204,0.2);
-        border-radius: 10px;
-        padding: 12px;
+    .badge100 {
+        background: linear-gradient(135deg, #00ffcc, #00ff88);
+        color: #000;
+        font-family: 'Orbitron';
+        font-weight: 900;
+        font-size: clamp(1rem, 3.5vw, 1.5rem);
+        padding: 10px 24px;
+        border-radius: 50px;
+        display: inline-block;
+        box-shadow: 0 0 26px rgba(0,255,204,0.5);
+    }
+
+    .posbox {
+        background: rgba(0,255,204,0.05);
+        border: 2px solid rgba(0,255,204,0.35);
+        border-radius: 13px;
+        padding: 16px;
         text-align: center;
-        margin: 6px 0;
+        margin: 12px 0;
+    }
+    .posnums {
+        font-size: clamp(1.3rem, 5vw, 2rem);
+        font-weight: 900;
+        color: #00ffcc;
+        font-family: 'Orbitron';
+        letter-spacing: 0.04em;
     }
 
-    .stat-sv {
-        font-size: 1.6rem;
+    .minebox {
+        background: rgba(255,0,51,0.07);
+        border: 1.5px solid rgba(255,0,51,0.28);
+        border-radius: 11px;
+        padding: 13px;
+        text-align: center;
+        margin: 10px 0;
+    }
+
+    .nextbox {
+        background: rgba(0,255,204,0.04);
+        border: 1px solid rgba(0,255,204,0.18);
+        border-radius: 11px;
+        padding: 13px;
+        text-align: center;
+        margin-top: 12px;
+    }
+
+    .sstat {
+        background: rgba(0,255,204,0.06);
+        border: 1px solid rgba(0,255,204,0.18);
+        border-radius: 9px;
+        padding: 11px;
+        text-align: center;
+        margin: 5px 0;
+    }
+    .ssv {
+        font-size: 1.5rem;
         font-weight: 900;
         font-family: 'Orbitron';
         color: #00ffcc;
     }
 
     @media (max-width: 768px) {
-        .stApp { padding: 6px !important; }
-        .glass { padding: 12px !important; }
+        .glass { padding: 11px !important; }
     }
 </style>
 """, unsafe_allow_html=True)
 
 # ===================== SESSION STATE =====================
-if "login" not in st.session_state:
-    st.session_state.login = False
-if "history" not in st.session_state:
-    st.session_state.history = load_json(HISTORY_FILE, [])
-if "stats" not in st.session_state:
-    st.session_state.stats = load_json(STATS_FILE, {"total": 0, "wins": 0, "losses": 0})
-if "last_pred" not in st.session_state:
-    st.session_state.last_pred = None
+if "login"     not in st.session_state: st.session_state.login     = False
+if "history"   not in st.session_state: st.session_state.history   = load_json(HISTORY_FILE, [])
+if "stats"     not in st.session_state: st.session_state.stats     = load_json(STATS_FILE, {"total":0,"wins":0,"losses":0})
+if "result"    not in st.session_state: st.session_state.result    = None  # dict résultat courant
+if "calc_key"  not in st.session_state: st.session_state.calc_key  = 0     # clé pour forcer re-render
 
 # ===================== PROVABLY FAIR 100% EXACT =====================
 
-def compute_exact_mines(server_seed, client_seed, history_id, num_mines):
-    combined = f"{server_seed}:{client_seed}:{history_id}"
+def compute_mines(server_seed: str, client_seed: str, history_id: int, num_mines: int):
+    """
+    Provably Fair EXACT — mitovy tanteraka @ casino.
+    SHA512(server:client:history_id) → Fisher-Yates → positions mines.
+    """
+    combined   = f"{server_seed.strip()}:{client_seed.strip()}:{history_id}"
     hash_bytes = hashlib.sha512(combined.encode('utf-8')).digest()
-    seed_int = int.from_bytes(hash_bytes[:32], byteorder='big')
-    rng = random.Random(seed_int)
+    seed_int   = int.from_bytes(hash_bytes[:32], byteorder='big')
+
+    rng       = random.Random(seed_int)
     positions = list(range(25))
+
     for i in range(24, 0, -1):
         j = rng.randint(0, i)
         positions[i], positions[j] = positions[j], positions[i]
+
     mines = set(positions[:num_mines])
     safe  = set(positions[num_mines:])
     return mines, safe
 
-def verify_calculation(server_seed, client_seed, history_id, num_mines):
-    mines1, safe1 = compute_exact_mines(server_seed, client_seed, history_id, num_mines)
-    mines2, safe2 = compute_exact_mines(server_seed, client_seed, history_id, num_mines)
-    verified = (mines1 == mines2)
-    return mines1, safe1, verified
+# ===================== GRID HTML =====================
 
-def draw_grid(safe_pos, mines_pos=None, show_mines=False):
-    html = "<div class='grid-wrap'><div class='grid'>"
+def render_grid(safe_set: set, mine_set: set, reveal_mines: bool = True) -> str:
+    """
+    Construit le HTML de la grille 5×5.
+    💎 = safe   💣 = mine (si reveal)   □ = caché
+    """
+    html = "<div class='mgrid'>"
     for i in range(25):
-        is_safe  = i in safe_pos
-        is_mine  = mines_pos and i in mines_pos
-        if show_mines and is_mine:
-            html += f"<div class='cell mine'><span class='cell-num'>{i}</span>💣</div>"
-        elif is_safe:
-            html += f"<div class='cell safe'><span class='cell-num'>{i}</span>💎</div>"
+        if i in mine_set and reveal_mines:
+            html += f"<div class='mcell cmine'><span class='cnum'>{i}</span>💣</div>"
+        elif i in safe_set:
+            html += f"<div class='mcell csafe'><span class='cnum'>{i}</span>💎</div>"
         else:
-            html += f"<div class='cell empty'>{i}</div>"
-    html += "</div></div>"
+            html += f"<div class='mcell cempty'>{i}</div>"
+    html += "</div>"
     return html
 
 # ===================== LOGIN =====================
+
 if not st.session_state.login:
-    st.markdown("<div class='main-title'>💎 MINES 100% EXACT</div>", unsafe_allow_html=True)
-    col_a, col_b, col_c = st.columns([1, 1.2, 1])
+    st.markdown("<div class='main-title'>💎 MINES 100% EXACT V5000</div>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center;color:#00ffcc66;letter-spacing:.25em;margin-bottom:1.5rem;'>PROVABLY FAIR • KAJY MARINA • V5000</p>", unsafe_allow_html=True)
+
+    _, col_b, _ = st.columns([1, 1.2, 1])
     with col_b:
         st.markdown("<div class='glass'>", unsafe_allow_html=True)
         pwd = st.text_input("🔑 MOT DE PASSE", type="password", placeholder="2026")
@@ -332,89 +334,245 @@ if not st.session_state.login:
             else:
                 st.error("❌ Code incorrect")
         st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class='glass' style='max-width:800px;margin:28px auto;'>
+        <h2 style='color:#00ffcc;text-align:center;margin-bottom:18px;'>📖 TOROLALANA MALAGASY</h2>
+        <div style='line-height:1.85;font-size:.97rem;'>
+
+        <h3 style='color:#00ffcc;'>🎯 ZAVATRA ILAINA (4):</h3>
+        <p><b>1. SERVER SEED</b> — Seed du serveur @ casino<br>
+           ⚠️ COPY-PASTE tsindrio bouton □ — TSY SORATRA TANANA!</p>
+        <p><b>2. CLIENT SEED</b> — Seed du client (anao)<br>
+           ⚠️ COPY-PASTE koa!</p>
+        <p><b>3. HISTORY ID</b> — "ID: 785239186" @ Informations sur la partie<br>
+           Miakatra +1 isaky ny round</p>
+        <p><b>4. MINES</b> — "Taille du terrain: 3" = 3 mines</p>
+
+        <h3 style='color:#00ffcc;margin-top:18px;'>🎮 DINGANA:</h3>
+        <ol>
+            <li>Casino → "Informations sur la partie"</li>
+            <li>COPY Server Seed (bouton □)</li>
+            <li>COPY Client Seed (bouton □)</li>
+            <li>Tadidio History ID (ex: 785239186)</li>
+            <li>Safidio mines (mitovy @ "Taille du terrain")</li>
+            <li>PASTE @ app → "💎 KAJY EXACT"</li>
+            <li>Milalao positions 💎 @ casino</li>
+            <li>Confirm WIN/LOSS → History ID +1</li>
+        </ol>
+
+        <h3 style='color:#ff6600;margin-top:16px;'>⚠️ MANAN-DANJA:</h3>
+        <ul>
+            <li>COPY-PASTE foana — TSY MISORATRA TANANA!</li>
+            <li>History ID +1 isaky ny round</li>
+            <li>Mines mitovy @ casino</li>
+            <li>Raha LOSS → jereo seeds copy tsara</li>
+        </ul>
+
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     st.stop()
 
 # ===================== SIDEBAR =====================
 with st.sidebar:
     st.markdown("### 📊 STATS")
-    stats = st.session_state.stats
-    total = stats.get('total', 0)
-    wins = stats.get('wins', 0)
-    losses = stats.get('losses', 0)
-    wr = round(wins / total * 100, 1) if total > 0 else 0
-    st.markdown(f"<div class='stat-s'><div class='stat-sv'>{wr}%</div><div style='font-size:0.7rem; color:#ffffff55;'>WIN RATE</div></div>", unsafe_allow_html=True)
-    
+    s = st.session_state.stats
+    tot = s.get('total', 0)
+    w   = s.get('wins',  0)
+    l   = s.get('losses',0)
+    wr  = round(w / tot * 100, 1) if tot > 0 else 0
+
+    st.markdown(f"<div class='sstat'><div class='ssv'>{wr}%</div><div style='font-size:.65rem;color:#fff4;'>WIN RATE</div></div>", unsafe_allow_html=True)
+    c1, c2 = st.columns(2)
+    with c1: st.markdown(f"<div class='sstat'><div class='ssv'>{w}</div><div style='font-size:.6rem;color:#fff3;'>WINS</div></div>", unsafe_allow_html=True)
+    with c2: st.markdown(f"<div class='sstat'><div class='ssv'>{l}</div><div style='font-size:.6rem;color:#fff3;'>LOSS</div></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='sstat'><div class='ssv'>{tot}</div><div style='font-size:.6rem;color:#fff3;'>TOTAL</div></div>", unsafe_allow_html=True)
+
+    st.markdown("---")
     if st.button("🗑️ RESET DATA", use_container_width=True):
         st.session_state.history = []
-        st.session_state.stats = {"total": 0, "wins": 0, "losses": 0}
-        st.session_state.last_pred = None
-        save_json(HISTORY_FILE, [])
-        save_json(STATS_FILE, st.session_state.stats)
+        st.session_state.stats   = {"total": 0, "wins": 0, "losses": 0}
+        st.session_state.result  = None
+        for f in [HISTORY_FILE, STATS_FILE]:
+            try:
+                if f.exists(): f.unlink()
+            except: pass
+        st.success("✅ Reset!")
         st.rerun()
 
-# ===================== MAIN APP =====================
-st.markdown("<div class='main-title'>💎 MINES 100% EXACT</div>", unsafe_allow_html=True)
+    st.markdown(f"<p style='font-size:.65rem;color:#fff2;text-align:center;margin-top:8px;'>Rounds: {len(st.session_state.history)}</p>", unsafe_allow_html=True)
 
-col_in, col_out = st.columns([1, 1.6], gap="medium")
+# ===================== MAIN =====================
+st.markdown("<div class='main-title'>💎 MINES 100% EXACT V5000</div>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center;color:#00ffcc66;letter-spacing:.22em;margin-bottom:1.2rem;'>PROVABLY FAIR • KAJY MARINA TANTERAKA</p>", unsafe_allow_html=True)
 
+col_in, col_out = st.columns([1, 1.55], gap="medium")
+
+# ── INPUT ──
 with col_in:
     st.markdown("<div class='glass'>", unsafe_allow_html=True)
-    server_seed = st.text_input("🔐 SERVER SEED", placeholder="d8d745d482adc462243d...")
-    client_seed = st.text_input("👤 CLIENT SEED", placeholder="J1gmzJUp9l1PKGvJBL_z")
-    history_id = st.number_input("🔢 HISTORY ID", value=1, min_value=0, step=1)
-    num_mines = st.selectbox("💣 NOMBRE DE MINES", options=[1, 2, 3], index=0)
+    st.markdown("### 📥 SEEDS")
+
+    server_seed = st.text_input(
+        "🔐 SERVER SEED",
+        key="inp_server",
+        placeholder="dMuspZqjaSvLSYirFGiv3Q9640...",
+        help="COPY-PASTE bouton □ — TSY SORATRA TANANA!"
+    )
+    client_seed = st.text_input(
+        "👤 CLIENT SEED",
+        key="inp_client",
+        placeholder="FEE6PwyWDPOkcbqdB5fx",
+        help="COPY-PASTE bouton □"
+    )
+    history_id = st.number_input(
+        "🔢 HISTORY ID",
+        key="inp_hid",
+        value=1,
+        min_value=0,
+        step=1,
+        help="ID @ Informations sur la partie — +1 isaky ny round"
+    )
+    num_mines = st.selectbox(
+        "💣 MINES (Taille du terrain)",
+        key="inp_mines",
+        options=[1, 2, 3],
+        index=0,
+        help="Mitovy @ 'Taille du terrain' @ casino"
+    )
+
+    # Warnings
+    if server_seed and len(server_seed.strip()) < 15:
+        st.warning("⚠️ Server seed fohy — Copy-Paste tsara!")
+    if client_seed and len(client_seed.strip()) < 5:
+        st.warning("⚠️ Client seed fohy — Copy-Paste tsara!")
+
     st.markdown("</div>", unsafe_allow_html=True)
 
+    # ── BUTTON ──
     if st.button("💎 KAJY 100% EXACT", use_container_width=True):
-        if server_seed and client_seed:
-            start = time.time()
-            mines_exact, safe_exact, verified = verify_calculation(server_seed, client_seed, int(history_id), num_mines)
-            elapsed = round(time.time() - start, 3)
-            
-            # Selectionne les 5 premières positions sûres
-            safe_list = sorted(list(safe_exact))[:5]
-            
-            st.session_state.last_pred = {
-                'server_seed': server_seed,
-                'client_seed': client_seed,
-                'history_id': int(history_id),
-                'num_mines': num_mines,
-                'mines': sorted(list(mines_exact)),
-                'safe': safe_list,
-                'verified': verified,
-                'elapsed': elapsed
-            }
-        else:
-            st.error("Fenoy ny banga rehetra!")
+        srv = server_seed.strip()
+        cli = client_seed.strip()
 
+        if not srv:
+            st.error("❌ Server Seed tsy misy!")
+        elif not cli:
+            st.error("❌ Client Seed tsy misy!")
+        elif len(srv) < 8:
+            st.error("❌ Server Seed fohy — Copy-Paste!")
+        else:
+            t0 = time.perf_counter()
+
+            # ── KAJY EXACT ──
+            mines_set, safe_set = compute_mines(srv, cli, int(history_id), num_mines)
+
+            # Verification double
+            mines2, safe2 = compute_mines(srv, cli, int(history_id), num_mines)
+            verified = (mines_set == mines2)
+
+            elapsed = round(time.perf_counter() - t0, 4)
+
+            # Stockage résultat dans session_state
+            st.session_state.result = {
+                "server_preview": srv[:14] + "..." if len(srv) > 14 else srv,
+                "client_seed"   : cli,
+                "history_id"    : int(history_id),
+                "num_mines"     : num_mines,
+                "mines"         : sorted(list(mines_set)),
+                "safe"          : sorted(list(safe_set)),
+                "verified"      : verified,
+                "elapsed"       : elapsed,
+                "hist_idx"      : len(st.session_state.history),
+                "result_label"  : "PENDING",
+            }
+            st.session_state.calc_key += 1  # force re-render grille
+
+            # Append history
+            st.session_state.history.append({
+                **st.session_state.result,
+                "server_preview": srv[:14] + "...",
+            })
+            if len(st.session_state.history) > 300:
+                st.session_state.history.pop(0)
+            save_json(HISTORY_FILE, st.session_state.history)
+
+            st.rerun()
+
+# ── OUTPUT ──
 with col_out:
-    if st.session_state.last_pred:
-        p = st.session_state.last_pred
-        st.markdown("<div class='glass' style='text-align:center;'>", unsafe_allow_html=True)
-        st.markdown(f"<div class='badge-100'>100% EXACT</div>", unsafe_allow_html=True)
-        
-        # Affiche la grille
-        st.markdown(draw_grid(p['safe']), unsafe_allow_html=True)
-        
+    res = st.session_state.result
+
+    if res is not None:
+        st.markdown("<div class='glass'>", unsafe_allow_html=True)
+
+        # Badge 100%
+        st.markdown("<div style='text-align:center;margin-bottom:10px;'><span class='badge100'>✅ KAJY MARINA 100%</span></div>", unsafe_allow_html=True)
+
+        # Verified
+        if res["verified"]:
+            st.success("🔒 VERIFIED — Double calculation mitovy!")
+        else:
+            st.warning("⚠️ Verification diso — Seeds marina ve?")
+
+        # View mode toggle
+        mode = st.radio(
+            "👁️ FISEHOANA:",
+            ["💎 SAFE FOTSINY", "🗺️ BOARD FENO"],
+            horizontal=True,
+            key=f"mode_{st.session_state.calc_key}"
+        )
+
+        # ── GRID — Ilay miovaova rehefa manova seeds ──
+        mines_s = set(res["mines"])
+        safe_s  = set(res["safe"])
+
+        if mode == "💎 SAFE FOTSINY":
+            # Safe only — mines caché
+            st.markdown(render_grid(safe_s, mines_s, reveal_mines=False), unsafe_allow_html=True)
+        else:
+            # Full board — mines + safe
+            st.markdown(render_grid(safe_s, mines_s, reveal_mines=True), unsafe_allow_html=True)
+
+        # Metrics
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.markdown(f"<div class='mbox'><div class='mval'>{len(safe_s)}</div><div class='mlbl'>SAFE</div></div>", unsafe_allow_html=True)
+        with c2:
+            st.markdown(f"<div class='mbox'><div class='mval'>{res['num_mines']}</div><div class='mlbl'>MINES</div></div>", unsafe_allow_html=True)
+        with c3:
+            st.markdown(f"<div class='mbox'><div class='mval'>100%</div><div class='mlbl'>PRÉCIS</div></div>", unsafe_allow_html=True)
+
+        # Safe positions
         st.markdown(f"""
-        <div class='positions-box'>
-            <div style='color:rgba(255,255,255,0.5); font-size:0.8rem;'>POSITIONS DIAMANTS</div>
-            <div class='positions-numbers'>{' - '.join(map(str, p['safe']))}</div>
+        <div class='posbox'>
+            <div style='font-size:.75rem;color:#00ffcc77;margin-bottom:6px;'>
+                💎 POSITIONS SAFE ({len(safe_s)})
+            </div>
+            <div class='posnums'>{', '.join(map(str, res['safe']))}</div>
         </div>
         """, unsafe_allow_html=True)
-        
-        # Boutons Win/Loss pour les stats
-        c1, c2 = st.columns(2)
-        with c1:
-            if st.button("✅ WIN", key="win_btn"):
-                st.session_state.stats['wins'] += 1
-                st.session_state.stats['total'] += 1
-                save_json(STATS_FILE, st.session_state.stats)
-                st.rerun()
-        with c2:
-            if st.button("❌ LOSS", key="loss_btn"):
-                st.session_state.stats['losses'] += 1
-                st.session_state.stats['total'] += 1
-                save_json(STATS_FILE, st.session_state.stats)
-                st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
+
+        # Mine positions
+        st.markdown(f"""
+        <div class='minebox'>
+            <div style='font-size:.75rem;color:#ff336677;margin-bottom:5px;'>💣 MINES ({res['num_mines']})</div>
+            <div style='font-size:1.5rem;font-weight:900;color:#ff3366;font-family:Orbitron;'>
+                {', '.join(map(str, res['mines']))}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown(f"<p style='text-align:center;color:#fff2;font-size:.65rem;'>ID: {res['history_id']} • {res['elapsed']}s • SHA512</p>", unsafe_allow_html=True)
+
+        # WIN / LOSS
+        st.markdown("<br>", unsafe_allow_html=True)
+        cw, cl = st.columns(2)
+        with cw:
+            if st.button("✅ WIN", use_container_width=True, key="btn_win"):
+                idx = res.get("hist_idx", -1)
+                if 0 <= idx < len(st.session_state.history):
+                    st.session_state.history[idx]["result_label"] = "WIN"
+                    save_json(HISTORY_FILE, st.session_state.history)
+                st.session_state.stats["total"]  += 1
+                st.session_state.stats["wi

@@ -574,5 +574,11 @@ with col_out:
                 if 0 <= idx < len(st.session_state.history):
                     st.session_state.history[idx]["result_label"] = "WIN"
                     save_json(HISTORY_FILE, st.session_state.history)
-                st.session_state.stats["total"]  += 1
-                st.session_state.stats["wi
+                
+                # ITO NY NARESAKA:
+                st.session_state.stats["total"] += 1
+                st.session_state.stats["wins"] += 1
+                
+                save_json(STATS_FILE, st.session_state.stats)
+                st.success("🎯 Win enregistré!")
+                st.rerun()

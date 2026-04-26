@@ -283,11 +283,6 @@ def compute_mines_exact(server_seed: str, client_seed: str, history_id: int, num
 def select_best_5(safe_set: set, mines_set: set, server_seed: str, client_seed: str, history_id: int):
     """
     Safidy 5 positions tsara indrindra avy @ safe positions:
-
-    Fomba kajy 'score' isaky ny position:
-    1. Distance avy @ mines (farany kokoa = tsara)
-    2. Pattern hash (unique per seed)
-    3. Stability score (tsy akaikin'ny edge mines)
     """
     scores = {}
 
@@ -539,6 +534,7 @@ with col_in:
 
             elapsed = round(time.perf_counter() - t0, 4)
 
+            # --- ETO NY NOHITSINA SY NAMPINA NY NANARAKA REHETRA ---
             st.session_state.result = {
                 "srv_preview" : srv[:14] + "..." if len(srv) > 14 else srv,
                 "cli_seed"    : cli,
@@ -549,4 +545,7 @@ with col_in:
                 "top5"        : top5,
                 "verified"    : verified,
                 "elapsed"     : elapsed,
-                "hist_idx"    : len(st.session_state.hi
+                "hist_idx"    : len(st.session_state.history)
+            }
+            st.session_state.history.append(st.session_state.result)
+            save_json(H

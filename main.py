@@ -309,7 +309,6 @@ def compute_exact_mines(server_seed, client_seed, history_id, num_mines):
     → Mines = X positions voalohany
     → TSY PRÉDICTION - KAJY MARINA!
     """
-
     # Kombinasiona seeds
     combined = f"{server_seed}:{client_seed}:{history_id}"
 
@@ -641,4 +640,4 @@ with col_in:
                 'verified'     : verified,
                 'elapsed'      : elapsed,
                 'result'       : 'PENDING',
- 
+  

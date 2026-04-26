@@ -264,13 +264,6 @@ if "cur_nonce" not in st.session_state: st.session_state.cur_nonce = 0
 # ===================== PROVABLY FAIR - FOMBA ROA =====================
 
 def method_sha256_hmac(server_seed: str, client_seed: str, nonce: int, num_mines: int):
-    """
-    FOMBA 1: HMAC-SHA256
-    Mampiasa fomba HMAC-SHA256 mitovy @ casino maro (Spribe, etc.)
-    msg  = client_seed + ":" + nonce
-    key  = server_seed
-    → HMAC-SHA256 → bytes → Fisher-Yates
-    """
     msg  = f"{client_seed.strip()}:{nonce}".encode('utf-8')
     key  = server_seed.strip().encode('utf-8')
     h    = hmac.new(key, msg, hashlib.sha256).digest()
@@ -289,10 +282,6 @@ def method_sha256_hmac(server_seed: str, client_seed: str, nonce: int, num_mines
 
 
 def method_sha256_concat(server_seed: str, client_seed: str, nonce: int, num_mines: int):
-    """
-    FOMBA 2: SHA256 concatenation standard
-    SHA256(server_seed : client_seed : nonce)
-    """
     combined  = f"{server_seed.strip()}:{client_seed.strip()}:{nonce}"
     h         = hashlib.sha256(combined.encode('utf-8')).digest()
     seed_int  = int.from_bytes(h[:16], byteorder='big')
@@ -310,15 +299,10 @@ def method_sha256_concat(server_seed: str, client_seed: str, nonce: int, num_min
 
 
 def method_sha256_hash_chain(server_seed: str, client_seed: str, nonce: int, num_mines: int):
-    """
-    FOMBA 3: SHA256 Hash chain (casino manaraka)
-    server_hash = SHA256(server_seed)
-    combined    = server_hash + client_seed + nonce
-    """
     server_hash = hashlib.sha256(server_seed.strip().encode()).hexdigest()
     combined    = f"{server_hash}:{client_seed.strip()}:{nonce}"
-    h            = hashlib.sha256(combined.encode('utf-8')).digest()
-    seed_int     = int.from_bytes(h[:16], byteorder='big')
+    h           = hashlib.sha256(combined.encode('utf-8')).digest()
+    seed_int    = int.from_bytes(h[:16], byteorder='big')
 
     rng       = random.Random(seed_int)
     positions = list(range(25))
@@ -333,9 +317,6 @@ def method_sha256_hash_chain(server_seed: str, client_seed: str, nonce: int, num
 
 
 def method_sha512_fallback(server_seed: str, client_seed: str, nonce: int, num_mines: int):
-    """
-    FOMBA 4: SHA512 (fallback)
-    """
     combined  = f"{server_seed.strip()}:{client_seed.strip()}:{nonce}"
     h         = hashlib.sha512(combined.encode('utf-8')).digest()
     seed_int  = int.from_bytes(h[:32], byteorder='big')
@@ -353,10 +334,6 @@ def method_sha512_fallback(server_seed: str, client_seed: str, nonce: int, num_m
 
 
 def run_all_methods(server_seed, client_seed, nonce, num_mines):
-    """
-    Alefa fomba EFATRA miaraka
-    Raha 3/4 na 4/4 mitovy = 100% CONFIRMED
-    """
     r1_m, r1_s = method_sha256_hmac(server_seed, client_seed, nonce, num_mines)
     r2_m, r2_s = method_sha256_concat(server_seed, client_seed, nonce, num_mines)
     r3_m, r3_s = method_sha256_hash_chain(server_seed, client_seed, nonce, num_mines)
@@ -369,7 +346,6 @@ def run_all_methods(server_seed, client_seed, nonce, num_mines):
         ("SHA512",        r4_m, r4_s),
     ]
 
-    # Count matches
     all_mines = [r[1] for r in results]
     consensus_mine = max(set(frozenset(m) for m in all_mines),
                         key=lambda x: sum(1 for m in all_mines if frozenset(m)==x))
@@ -552,7 +528,28 @@ with col_in:
     st.markdown("<div class='glass'>", unsafe_allow_html=True)
     st.markdown("### 📥 SEEDS")
 
+    # Correction faite ici : ajout de la parenthèse fermante
     server_seed = st.text_input(
         "🔐 SERVER SEED SHA256",
         key="inp_srv",
-        placehol
+        placeholder="872ea85794b1090d42...",
+        help="'Prochain seed du serveur SHA256' → COPY □"
+    )
+    client_seed = st.text_input(
+        "👤 CLIENT SEED",
+        key="inp_cli",
+        placeholder="y4FU1V8w6xkeSNFtO...",
+        help="'Prochain seed du client' → COPY □"
+    )
+
+    nonce_val = st.number_input(
+        "🔢 NONCE",
+        key="inp_nonce",
+        value=st.session_state.cur_nonce,
+        min_value=0, step=1,
+        help="0 = session vaovao. App manao +1 auto!"
+    )
+    st.session_state.cur_nonce = int(nonce_val)
+
+    num_mines = st.selectbox(
+    

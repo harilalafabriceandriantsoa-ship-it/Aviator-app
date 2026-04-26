@@ -582,3 +582,6 @@ with col_out:
                 save_json(STATS_FILE, st.session_state.stats)
                 st.success("🎯 Win enregistré!")
                 st.rerun()
+with cl:
+    if st.button("❌ LOSS", use_container_width=True, key="btn_loss"):
+        # ... (eto ny asa ataony rehefa tsindriana)

@@ -79,7 +79,6 @@ st.markdown("""
         box-shadow: 0 0 25px rgba(0,255,204,0.07);
     }
 
-    /* GRID */
     .mgrid {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
@@ -112,7 +111,6 @@ st.markdown("""
         opacity: 0.55;
     }
 
-    /* Safe */
     .csafe {
         background: linear-gradient(135deg, #00ffcc, #00cc77);
         color: #000;
@@ -124,14 +122,12 @@ st.markdown("""
         50%      { box-shadow: 0 0 30px rgba(0,255,204,0.95); }
     }
 
-    /* Mine */
     .cmine {
         background: linear-gradient(135deg, #ff0033, #aa0011);
         color: #fff;
         box-shadow: 0 0 16px rgba(255,0,51,0.45);
     }
 
-    /* Empty */
     .cempty {
         background: rgba(12, 12, 35, 0.75);
         border: 1.5px solid rgba(0,255,204,0.12);
@@ -139,7 +135,6 @@ st.markdown("""
         font-size: clamp(0.65rem, 2vw, 0.85rem);
     }
 
-    /* Buttons */
     .stButton>button {
         background: linear-gradient(135deg, #00ffcc, #00aa66) !important;
         color: #000 !important;
@@ -158,7 +153,6 @@ st.markdown("""
         box-shadow: 0 0 22px rgba(0,255,204,0.5) !important;
     }
 
-    /* Inputs */
     .stTextInput input, .stNumberInput input {
         background: rgba(0,255,204,0.04) !important;
         border: 2px solid rgba(0,255,204,0.22) !important;
@@ -168,20 +162,7 @@ st.markdown("""
         padding: 10px 13px !important;
         font-family: 'Rajdhani' !important;
     }
-    .stTextInput input:focus, .stNumberInput input:focus {
-        border-color: rgba(0,255,204,0.65) !important;
-        box-shadow: 0 0 12px rgba(0,255,204,0.18) !important;
-    }
 
-    /* Selectbox */
-    .stSelectbox > div > div {
-        background: rgba(0,255,204,0.04) !important;
-        border: 2px solid rgba(0,255,204,0.22) !important;
-        border-radius: 11px !important;
-        color: #00ffcc !important;
-    }
-
-    /* Metrics */
     .mbox {
         background: rgba(0,255,204,0.06);
         border: 1px solid rgba(0,255,204,0.22);
@@ -263,10 +244,6 @@ st.markdown("""
         font-family: 'Orbitron';
         color: #00ffcc;
     }
-
-    @media (max-width: 768px) {
-        .glass { padding: 11px !important; }
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -274,16 +251,11 @@ st.markdown("""
 if "login"     not in st.session_state: st.session_state.login     = False
 if "history"   not in st.session_state: st.session_state.history   = load_json(HISTORY_FILE, [])
 if "stats"     not in st.session_state: st.session_state.stats     = load_json(STATS_FILE, {"total":0,"wins":0,"losses":0})
-if "result"    not in st.session_state: st.session_state.result    = None  # dict résultat courant
-if "calc_key"  not in st.session_state: st.session_state.calc_key  = 0     # clé pour forcer re-render
+if "result"    not in st.session_state: st.session_state.result    = None
+if "calc_key"  not in st.session_state: st.session_state.calc_key  = 0
 
-# ===================== PROVABLY FAIR 100% EXACT =====================
-
+# ===================== PROVABLY FAIR =====================
 def compute_mines(server_seed: str, client_seed: str, history_id: int, num_mines: int):
-    """
-    Provably Fair EXACT — mitovy tanteraka @ casino.
-    SHA512(server:client:history_id) → Fisher-Yates → positions mines.
-    """
     combined   = f"{server_seed.strip()}:{client_seed.strip()}:{history_id}"
     hash_bytes = hashlib.sha512(combined.encode('utf-8')).digest()
     seed_int   = int.from_bytes(hash_bytes[:32], byteorder='big')
@@ -299,13 +271,7 @@ def compute_mines(server_seed: str, client_seed: str, history_id: int, num_mines
     safe  = set(positions[num_mines:])
     return mines, safe
 
-# ===================== GRID HTML =====================
-
 def render_grid(safe_set: set, mine_set: set, reveal_mines: bool = True) -> str:
-    """
-    Construit le HTML de la grille 5×5.
-    💎 = safe   💣 = mine (si reveal)   □ = caché
-    """
     html = "<div class='mgrid'>"
     for i in range(25):
         if i in mine_set and reveal_mines:
@@ -318,11 +284,8 @@ def render_grid(safe_set: set, mine_set: set, reveal_mines: bool = True) -> str:
     return html
 
 # ===================== LOGIN =====================
-
 if not st.session_state.login:
     st.markdown("<div class='main-title'>💎 MINES 100% EXACT V5000</div>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center;color:#00ffcc66;letter-spacing:.25em;margin-bottom:1.5rem;'>PROVABLY FAIR • KAJY MARINA • V5000</p>", unsafe_allow_html=True)
-
     _, col_b, _ = st.columns([1, 1.2, 1])
     with col_b:
         st.markdown("<div class='glass'>", unsafe_allow_html=True)
@@ -334,254 +297,65 @@ if not st.session_state.login:
             else:
                 st.error("❌ Code incorrect")
         st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class='glass' style='max-width:800px;margin:28px auto;'>
-        <h2 style='color:#00ffcc;text-align:center;margin-bottom:18px;'>📖 TOROLALANA MALAGASY</h2>
-        <div style='line-height:1.85;font-size:.97rem;'>
-
-        <h3 style='color:#00ffcc;'>🎯 ZAVATRA ILAINA (4):</h3>
-        <p><b>1. SERVER SEED</b> — Seed du serveur @ casino<br>
-           ⚠️ COPY-PASTE tsindrio bouton □ — TSY SORATRA TANANA!</p>
-        <p><b>2. CLIENT SEED</b> — Seed du client (anao)<br>
-           ⚠️ COPY-PASTE koa!</p>
-        <p><b>3. HISTORY ID</b> — "ID: 785239186" @ Informations sur la partie<br>
-           Miakatra +1 isaky ny round</p>
-        <p><b>4. MINES</b> — "Taille du terrain: 3" = 3 mines</p>
-
-        <h3 style='color:#00ffcc;margin-top:18px;'>🎮 DINGANA:</h3>
-        <ol>
-            <li>Casino → "Informations sur la partie"</li>
-            <li>COPY Server Seed (bouton □)</li>
-            <li>COPY Client Seed (bouton □)</li>
-            <li>Tadidio History ID (ex: 785239186)</li>
-            <li>Safidio mines (mitovy @ "Taille du terrain")</li>
-            <li>PASTE @ app → "💎 KAJY EXACT"</li>
-            <li>Milalao positions 💎 @ casino</li>
-            <li>Confirm WIN/LOSS → History ID +1</li>
-        </ol>
-
-        <h3 style='color:#ff6600;margin-top:16px;'>⚠️ MANAN-DANJA:</h3>
-        <ul>
-            <li>COPY-PASTE foana — TSY MISORATRA TANANA!</li>
-            <li>History ID +1 isaky ny round</li>
-            <li>Mines mitovy @ casino</li>
-            <li>Raha LOSS → jereo seeds copy tsara</li>
-        </ul>
-
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
     st.stop()
 
 # ===================== SIDEBAR =====================
 with st.sidebar:
     st.markdown("### 📊 STATS")
     s = st.session_state.stats
-    tot = s.get('total', 0)
-    w   = s.get('wins',  0)
-    l   = s.get('losses',0)
-    wr  = round(w / tot * 100, 1) if tot > 0 else 0
-
-    st.markdown(f"<div class='sstat'><div class='ssv'>{wr}%</div><div style='font-size:.65rem;color:#fff4;'>WIN RATE</div></div>", unsafe_allow_html=True)
-    c1, c2 = st.columns(2)
-    with c1: st.markdown(f"<div class='sstat'><div class='ssv'>{w}</div><div style='font-size:.6rem;color:#fff3;'>WINS</div></div>", unsafe_allow_html=True)
-    with c2: st.markdown(f"<div class='sstat'><div class='ssv'>{l}</div><div style='font-size:.6rem;color:#fff3;'>LOSS</div></div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='sstat'><div class='ssv'>{tot}</div><div style='font-size:.6rem;color:#fff3;'>TOTAL</div></div>", unsafe_allow_html=True)
-
-    st.markdown("---")
-    if st.button("🗑️ RESET DATA", use_container_width=True):
-        st.session_state.history = []
-        st.session_state.stats   = {"total": 0, "wins": 0, "losses": 0}
-        st.session_state.result  = None
-        for f in [HISTORY_FILE, STATS_FILE]:
-            try:
-                if f.exists(): f.unlink()
-            except: pass
-        st.success("✅ Reset!")
+    tot, w, l = s.get('total', 0), s.get('wins', 0), s.get('losses', 0)
+    wr = round(w / tot * 100, 1) if tot > 0 else 0
+    st.markdown(f"<div class='sstat'><div class='ssv'>{wr}%</div><div>WIN RATE</div></div>", unsafe_allow_html=True)
+    if st.button("🗑️ RESET DATA"):
+        st.session_state.history, st.session_state.stats = [], {"total":0,"wins":0,"losses":0}
         st.rerun()
-
-    st.markdown(f"<p style='font-size:.65rem;color:#fff2;text-align:center;margin-top:8px;'>Rounds: {len(st.session_state.history)}</p>", unsafe_allow_html=True)
 
 # ===================== MAIN =====================
 st.markdown("<div class='main-title'>💎 MINES 100% EXACT V5000</div>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center;color:#00ffcc66;letter-spacing:.22em;margin-bottom:1.2rem;'>PROVABLY FAIR • KAJY MARINA TANTERAKA</p>", unsafe_allow_html=True)
-
 col_in, col_out = st.columns([1, 1.55], gap="medium")
 
-# ── INPUT ──
 with col_in:
     st.markdown("<div class='glass'>", unsafe_allow_html=True)
-    st.markdown("### 📥 SEEDS")
-
-    server_seed = st.text_input(
-        "🔐 SERVER SEED",
-        key="inp_server",
-        placeholder="dMuspZqjaSvLSYirFGiv3Q9640...",
-        help="COPY-PASTE bouton □ — TSY SORATRA TANANA!"
-    )
-    client_seed = st.text_input(
-        "👤 CLIENT SEED",
-        key="inp_client",
-        placeholder="FEE6PwyWDPOkcbqdB5fx",
-        help="COPY-PASTE bouton □"
-    )
-    history_id = st.number_input(
-        "🔢 HISTORY ID",
-        key="inp_hid",
-        value=1,
-        min_value=0,
-        step=1,
-        help="ID @ Informations sur la partie — +1 isaky ny round"
-    )
-    num_mines = st.selectbox(
-        "💣 MINES (Taille du terrain)",
-        key="inp_mines",
-        options=[1, 2, 3],
-        index=0,
-        help="Mitovy @ 'Taille du terrain' @ casino"
-    )
-
-    # Warnings
-    if server_seed and len(server_seed.strip()) < 15:
-        st.warning("⚠️ Server seed fohy — Copy-Paste tsara!")
-    if client_seed and len(client_seed.strip()) < 5:
-        st.warning("⚠️ Client seed fohy — Copy-Paste tsara!")
-
+    srv = st.text_input("🔐 SERVER SEED", key="inp_server")
+    cli = st.text_input("👤 CLIENT SEED", key="inp_client")
+    hid = st.number_input("🔢 HISTORY ID", key="inp_hid", value=1, min_value=0)
+    mns = st.selectbox("💣 MINES", options=[1, 2, 3], key="inp_mines")
+    
+    if st.button("💎 KAJY 100% EXACT", use_container_width=True):
+        if srv and cli:
+            m_set, s_set = compute_mines(srv, cli, int(hid), mns)
+            st.session_state.result = {
+                "server": srv, "client": cli, "history_id": int(hid),
+                "num_mines": mns, "mines": sorted(list(m_set)), "safe": sorted(list(s_set)),
+                "verified": True, "elapsed": 0.001, "hist_idx": len(st.session_state.history)
+            }
+            st.session_state.history.append(st.session_state.result)
+            save_json(HISTORY_FILE, st.session_state.history)
+            st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ── BUTTON ──
-    if st.button("💎 KAJY 100% EXACT", use_container_width=True):
-        srv = server_seed.strip()
-        cli = client_seed.strip()
-
-        if not srv:
-            st.error("❌ Server Seed tsy misy!")
-        elif not cli:
-            st.error("❌ Client Seed tsy misy!")
-        elif len(srv) < 8:
-            st.error("❌ Server Seed fohy — Copy-Paste!")
-        else:
-            t0 = time.perf_counter()
-
-            # ── KAJY EXACT ──
-            mines_set, safe_set = compute_mines(srv, cli, int(history_id), num_mines)
-
-            # Verification double
-            mines2, safe2 = compute_mines(srv, cli, int(history_id), num_mines)
-            verified = (mines_set == mines2)
-
-            elapsed = round(time.perf_counter() - t0, 4)
-
-            # Stockage résultat dans session_state
-            st.session_state.result = {
-                "server_preview": srv[:14] + "..." if len(srv) > 14 else srv,
-                "client_seed"   : cli,
-                "history_id"    : int(history_id),
-                "num_mines"     : num_mines,
-                "mines"         : sorted(list(mines_set)),
-                "safe"          : sorted(list(safe_set)),
-                "verified"      : verified,
-                "elapsed"       : elapsed,
-                "hist_idx"      : len(st.session_state.history),
-                "result_label"  : "PENDING",
-            }
-            st.session_state.calc_key += 1  # force re-render grille
-
-            # Append history
-            st.session_state.history.append({
-                **st.session_state.result,
-                "server_preview": srv[:14] + "...",
-            })
-            if len(st.session_state.history) > 300:
-                st.session_state.history.pop(0)
-            save_json(HISTORY_FILE, st.session_state.history)
-
-            st.rerun()
-
-# ── OUTPUT ──
 with col_out:
     res = st.session_state.result
-
-    if res is not None:
+    if res:
         st.markdown("<div class='glass'>", unsafe_allow_html=True)
+        mode = st.radio("👁️ VIEW:", ["💎 SAFE", "🗺️ BOARD"], horizontal=True)
+        st.markdown(render_grid(set(res["safe"]), set(res["mines"]), reveal_mines=(mode=="🗺️ BOARD")), unsafe_allow_html=True)
+        
+        st.markdown(f"<div class='posbox'><div class='posnums'>{', '.join(map(str, res['safe']))}</div></div>", unsafe_allow_html=True)
 
-        # Badge 100%
-        st.markdown("<div style='text-align:center;margin-bottom:10px;'><span class='badge100'>✅ KAJY MARINA 100%</span></div>", unsafe_allow_html=True)
-
-        # Verified
-        if res["verified"]:
-            st.success("🔒 VERIFIED — Double calculation mitovy!")
-        else:
-            st.warning("⚠️ Verification diso — Seeds marina ve?")
-
-        # View mode toggle
-        mode = st.radio(
-            "👁️ FISEHOANA:",
-            ["💎 SAFE FOTSINY", "🗺️ BOARD FENO"],
-            horizontal=True,
-            key=f"mode_{st.session_state.calc_key}"
-        )
-
-        # ── GRID — Ilay miovaova rehefa manova seeds ──
-        mines_s = set(res["mines"])
-        safe_s  = set(res["safe"])
-
-        if mode == "💎 SAFE FOTSINY":
-            # Safe only — mines caché
-            st.markdown(render_grid(safe_s, mines_s, reveal_mines=False), unsafe_allow_html=True)
-        else:
-            # Full board — mines + safe
-            st.markdown(render_grid(safe_s, mines_s, reveal_mines=True), unsafe_allow_html=True)
-
-        # Metrics
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            st.markdown(f"<div class='mbox'><div class='mval'>{len(safe_s)}</div><div class='mlbl'>SAFE</div></div>", unsafe_allow_html=True)
-        with c2:
-            st.markdown(f"<div class='mbox'><div class='mval'>{res['num_mines']}</div><div class='mlbl'>MINES</div></div>", unsafe_allow_html=True)
-        with c3:
-            st.markdown(f"<div class='mbox'><div class='mval'>100%</div><div class='mlbl'>PRÉCIS</div></div>", unsafe_allow_html=True)
-
-        # Safe positions
-        st.markdown(f"""
-        <div class='posbox'>
-            <div style='font-size:.75rem;color:#00ffcc77;margin-bottom:6px;'>
-                💎 POSITIONS SAFE ({len(safe_s)})
-            </div>
-            <div class='posnums'>{', '.join(map(str, res['safe']))}</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # Mine positions
-        st.markdown(f"""
-        <div class='minebox'>
-            <div style='font-size:.75rem;color:#ff336677;margin-bottom:5px;'>💣 MINES ({res['num_mines']})</div>
-            <div style='font-size:1.5rem;font-weight:900;color:#ff3366;font-family:Orbitron;'>
-                {', '.join(map(str, res['mines']))}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown(f"<p style='text-align:center;color:#fff2;font-size:.65rem;'>ID: {res['history_id']} • {res['elapsed']}s • SHA512</p>", unsafe_allow_html=True)
-
-        # WIN / LOSS
-        st.markdown("<br>", unsafe_allow_html=True)
         cw, cl = st.columns(2)
         with cw:
-            if st.button("✅ WIN", use_container_width=True, key="btn_win"):
-                idx = res.get("hist_idx", -1)
-                if 0 <= idx < len(st.session_state.history):
-                    st.session_state.history[idx]["result_label"] = "WIN"
-                    save_json(HISTORY_FILE, st.session_state.history)
-                
-                # ITO NY NARESAKA:
+            if st.button("✅ WIN", use_container_width=True):
                 st.session_state.stats["total"] += 1
                 st.session_state.stats["wins"] += 1
-                
                 save_json(STATS_FILE, st.session_state.stats)
-                st.success("🎯 Win enregistré!")
                 st.rerun()
-with cl:
-    if st.button("❌ LOSS", use_container_width=True, key="btn_loss"):
-        # ... (eto ny asa ataony rehefa tsindriana)
+        with cl:
+            if st.button("❌ LOSS", use_container_width=True):
+                st.session_state.stats["total"] += 1
+                st.session_state.stats["losses"] += 1
+                save_json(STATS_FILE, st.session_state.stats)
+                st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
+    else:
+        st.info("Ampidiro ny seeds dia tsindrio KAJY")

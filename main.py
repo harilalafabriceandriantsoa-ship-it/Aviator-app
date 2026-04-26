@@ -317,8 +317,8 @@ def method_sha256_hash_chain(server_seed: str, client_seed: str, nonce: int, num
     """
     server_hash = hashlib.sha256(server_seed.strip().encode()).hexdigest()
     combined    = f"{server_hash}:{client_seed.strip()}:{nonce}"
-    h           = hashlib.sha256(combined.encode('utf-8')).digest()
-    seed_int    = int.from_bytes(h[:16], byteorder='big')
+    h            = hashlib.sha256(combined.encode('utf-8')).digest()
+    seed_int     = int.from_bytes(h[:16], byteorder='big')
 
     rng       = random.Random(seed_int)
     positions = list(range(25))
@@ -555,4 +555,4 @@ with col_in:
     server_seed = st.text_input(
         "🔐 SERVER SEED SHA256",
         key="inp_srv",
-        placeholde
+        placehol

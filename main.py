@@ -1,8 +1,6 @@
 import streamlit as st
 import hashlib
 import random
-import numpy as np
-import pandas as pd
 import json
 import time
 from pathlib import Path
@@ -200,17 +198,6 @@ st.markdown("""
         margin-top: 12px;
     }
 
-    /* ===== METRIC ===== */
-    .mbox {
-        background: rgba(0,255,204,0.06);
-        border: 1px solid rgba(0,255,204,0.2);
-        border-radius: 11px;
-        padding: 11px;
-        text-align: center;
-    }
-    .mval { font-size: clamp(1.3rem,5vw,2rem); font-weight:900; font-family:'Orbitron'; color:#00ffcc; }
-    .mlbl { font-size:.62rem; color:rgba(255,255,255,.35); letter-spacing:.12em; text-transform:uppercase; margin-top:3px; }
-
     /* ===== SIDEBAR STAT ===== */
     .sstat { background:rgba(0,255,204,.06); border:1px solid rgba(0,255,204,.18); border-radius:9px; padding:10px; text-align:center; margin:5px 0; }
     .ssv   { font-size:1.4rem; font-weight:900; font-family:'Orbitron'; color:#00ffcc; }
@@ -253,16 +240,10 @@ if "login"    not in st.session_state: st.session_state.login    = False
 if "history"  not in st.session_state: st.session_state.history  = load_json(HISTORY_FILE, [])
 if "stats"    not in st.session_state: st.session_state.stats    = load_json(STATS_FILE, {"total":0,"wins":0,"losses":0})
 if "result"   not in st.session_state: st.session_state.result   = None
-if "calc_key" not in st.session_state: st.session_state.calc_key = 0
 
 # ===================== PROVABLY FAIR 100% EXACT =====================
 
 def compute_mines_exact(server_seed: str, client_seed: str, history_id: int, num_mines: int):
-    """
-    Provably Fair EXACT — SHA512 + Fisher-Yates
-    Mitovy TANTERAKA @ casino algorithm.
-    Returns: mines (set), safe (set)
-    """
     combined   = f"{server_seed.strip()}:{client_seed.strip()}:{history_id}"
     hash_bytes = hashlib.sha512(combined.encode('utf-8')).digest()
     seed_int   = int.from_bytes(hash_bytes[:32], byteorder='big')
@@ -270,7 +251,6 @@ def compute_mines_exact(server_seed: str, client_seed: str, history_id: int, num
     rng       = random.Random(seed_int)
     positions = list(range(25))
 
-    # Fisher-Yates shuffle
     for i in range(24, 0, -1):
         j = rng.randint(0, i)
         positions[i], positions[j] = positions[j], positions[i]
@@ -281,38 +261,28 @@ def compute_mines_exact(server_seed: str, client_seed: str, history_id: int, num
 
 
 def select_best_5(safe_set: set, mines_set: set, server_seed: str, client_seed: str, history_id: int):
-    """
-    Safidy 5 positions tsara indrindra avy @ safe positions:
-    """
     scores = {}
 
-    # Hash-based pattern (unique per seed combination)
-    pattern_hash = hashlib.sha256(
-        f"{server_seed}:{client_seed}:{history_id}".encode()
-    ).hexdigest()
+    pattern_hash = hashlib.sha256(f"{server_seed}:{client_seed}:{history_id}".encode()).hexdigest()
     pattern_num = int(pattern_hash[:16], 16)
 
     for pos in safe_set:
         row = pos // 5
         col = pos % 5
 
-        # 1. Distance score: lava avy @ mines tsara
         min_dist = float('inf')
         for m in mines_set:
             mr, mc = m // 5, m % 5
-            dist = abs(row - mr) + abs(col - mc)  # Manhattan distance
+            dist = abs(row - mr) + abs(col - mc)
             if dist < min_dist:
                 min_dist = dist
-        dist_score = min_dist * 20  # lava = avo score
+        dist_score = min_dist * 20
 
-        # 2. Center score: eo afovoan'ny board = stable
         center_dist = abs(row - 2) + abs(col - 2)
         center_score = (4 - center_dist) * 10
 
-        # 3. Hash pattern score (deterministe per seed)
         hash_score = (pattern_num + pos * 7919) % 100
 
-        # 4. Neighbor safety: voisins safe koa = tsara
         neighbor_safe = 0
         for dr in [-1, 0, 1]:
             for dc in [-1, 0, 1]:
@@ -325,23 +295,14 @@ def select_best_5(safe_set: set, mines_set: set, server_seed: str, client_seed: 
                         neighbor_safe += 1
         neighbor_score = neighbor_safe * 8
 
-        # Score final
         scores[pos] = dist_score + center_score + hash_score + neighbor_score
 
-    # Top 5 avy @ score avo indrindra
     top5 = sorted(scores.keys(), key=lambda p: scores[p], reverse=True)[:5]
     return sorted(top5), scores
-
 
 # ===================== GRID HTML =====================
 
 def render_grid(top5: list, safe_set: set, mine_set: set, show_mines: bool) -> str:
-    """
-    💎 = top 5 recommended (bright green)
-    ⭐ = other safe (dim)
-    💣 = mine (red, si show_mines)
-    □  = hidden
-    """
     html = "<div class='mgrid'>"
     for i in range(25):
         if i in mine_set and show_mines:
@@ -354,7 +315,6 @@ def render_grid(top5: list, safe_set: set, mine_set: set, show_mines: bool) -> s
             html += f"<div class='mcell cempty'>{i}</div>"
     html += "</div>"
     return html
-
 
 # ===================== LOGIN =====================
 if not st.session_state.login:
@@ -373,69 +333,6 @@ if not st.session_state.login:
                 st.error("❌ Code incorrect")
         st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("""
-    <div class='glass' style='max-width:800px;margin:28px auto;'>
-        <h2 style='color:#00ffcc;text-align:center;margin-bottom:18px;'>📖 TOROLALANA MALAGASY</h2>
-        <div style='line-height:1.9;font-size:.97rem;'>
-
-        <h3 style='color:#00ffcc;'>🎯 INONA ITY APP ITY?</h3>
-        <p>
-        <b>MINES 5💎 100% ASSURÉ</b><br>
-        → TSY PRÉDICTION = KAJY MARINA EXACT!<br>
-        → Manome <b>5 DIAMANTS TSARA INDRINDRA</b> (💎)<br>
-        → Ireo 5 positions ireo = <b>SAFE 100%</b> raha seeds marina<br>
-        → Provably Fair SHA512 mitovy tanteraka @ casino
-        </p>
-
-        <h3 style='color:#00ffcc;margin-top:18px;'>📥 ZAVATRA ILAINA (4):</h3>
-        <p><b>1. SERVER SEED</b> — "Seed du serveur" @ casino<br>
-        ⚠️ <b>COPY-PASTE tsindrio bouton □ FOANA</b> — TSY MISORATRA TANANA!</p>
-
-        <p><b>2. CLIENT SEED</b> — "Seed du client" anao<br>
-        ⚠️ COPY-PASTE koa!</p>
-
-        <p><b>3. HISTORY ID</b> — "ID: 785239186" @ "Informations sur la partie"<br>
-        Miakatra +1 isaky ny round</p>
-
-        <p><b>4. MINES</b> — "Taille du terrain" @ casino<br>
-        1 = facile / 2 = moyen / 3 = difficile</p>
-
-        <h3 style='color:#00ffcc;margin-top:18px;'>💎 FOMBA FAMPIASANA:</h3>
-        <ol>
-            <li>Casino → Mines game → "Informations sur la partie"</li>
-            <li>COPY <b>Server Seed</b> (bouton □)</li>
-            <li>COPY <b>Client Seed</b> (bouton □)</li>
-            <li>Tadidio <b>History ID</b> (ex: 785239186)</li>
-            <li>Safidio <b>Mines</b> (mitovy @ "Taille du terrain")</li>
-            <li>PASTE daholo @ app</li>
-            <li>Tsindrio <b>"💎 KAJY 5 DIAMANTS"</b></li>
-            <li>Miseho AVY HATRANY:<br>
-                → 5 💎 positions tsara indrindra<br>
-                → Board feno (mines + safe)<br>
-                → Positions mines exacts</li>
-            <li>Milalao <b>ireo 5 💎</b> @ casino</li>
-            <li>Confirm WIN/LOSS</li>
-            <li>Round manaraka: <b>History ID +1</b></li>
-        </ol>
-
-        <h3 style='color:#00ff88;margin-top:18px;'>✅ NAHOANA 100%?</h3>
-        <p>
-        Casino: <code>SHA512(server:client:id) → shuffle → mines</code><br>
-        App: <code>SHA512(server:client:id) → shuffle → mines</code><br>
-        = <b>MITOVY TANTERAKA = KAJY MARINA 100%!</b><br>
-        5💎 = <b>5 positions tsara indrindra VOAFIDY @ safe positions!</b>
-        </p>
-
-        <h3 style='color:#ff6600;margin-top:16px;'>⚠️ LESONA:</h3>
-        <ul>
-            <li><b>COPY-PASTE</b> seeds — TSY MISORATRA TANANA!</li>
-            <li><b>History ID +1</b> isaky ny round</li>
-            <li><b>Mines mitovy</b> @ casino</li>
-            <li>Raha LOSS → seeds tsy marina → Copy indray!</li>
-        </ul>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
     st.stop()
 
 # ===================== SIDEBAR =====================
@@ -522,30 +419,57 @@ with col_in:
         else:
             t0 = time.perf_counter()
 
-            # KAJY EXACT
             mines_set, safe_set = compute_mines_exact(srv, cli, int(history_id), num_mines)
-
-            # Double verification
-            mines2, safe2 = compute_mines_exact(srv, cli, int(history_id), num_mines)
-            verified = (mines_set == mines2) and (safe_set == safe2)
-
-            # Select best 5 from safe
             top5, scores = select_best_5(safe_set, mines_set, srv, cli, int(history_id))
-
             elapsed = round(time.perf_counter() - t0, 4)
 
-            # --- ETO NY NOHITSINA SY NAMPINA NY NANARAKA REHETRA ---
+            # Eto ilay block madio tsara:
             st.session_state.result = {
-                "srv_preview" : srv[:14] + "..." if len(srv) > 14 else srv,
+                "srv_preview" : srv[:14] + "...",
                 "cli_seed"    : cli,
                 "history_id"  : int(history_id),
                 "num_mines"   : num_mines,
                 "mines"       : sorted(list(mines_set)),
                 "safe"        : sorted(list(safe_set)),
                 "top5"        : top5,
-                "verified"    : verified,
                 "elapsed"     : elapsed,
                 "hist_idx"    : len(st.session_state.history)
             }
+            
             st.session_state.history.append(st.session_state.result)
-            save_json(H
+            save_json(HISTORY_FILE, st.session_state.history)
+            st.rerun()
+
+# ── OUTPUT ──
+with col_out:
+    res = st.session_state.result
+    if res:
+        st.markdown("<div class='glass'>", unsafe_allow_html=True)
+        st.markdown("### 💎 TOP 5 DIAMANTS RECOMMANDÉS")
+        st.markdown(f"<div class='d5box'><div class='d5nums'>{', '.join(map(str, res['top5']))}</div><div class='d5label'>MILALAA IREO 5 IREO @ CASINO</div></div>", unsafe_allow_html=True)
+        
+        mode = st.radio("👁️ VIEW:", ["💎 TOP 5", "🗺️ BOARD (Voir Mines)"], horizontal=True)
+        show_m = (mode == "🗺️ BOARD (Voir Mines)")
+        
+        st.markdown(render_grid(res['top5'], set(res['safe']), set(res['mines']), show_mines=show_m), unsafe_allow_html=True)
+        
+        st.markdown(f"<div class='minebox'>💣 Positions des Mines: {', '.join(map(str, res['mines']))}</div>", unsafe_allow_html=True)
+        st.markdown("<div class='nextbox'>▶️ Round manaraka: <b>Aza adino ny manampy +1 ny History ID</b></div>", unsafe_allow_html=True)
+
+        st.markdown("---")
+        cw, cl = st.columns(2)
+        with cw:
+            if st.button("✅ WIN", use_container_width=True, key="btn_win"):
+                st.session_state.stats["total"] += 1
+                st.session_state.stats["wins"] += 1
+                save_json(STATS_FILE, st.session_state.stats)
+                st.rerun()
+        with cl:
+            if st.button("❌ LOSS", use_container_width=True, key="btn_loss"):
+                st.session_state.stats["total"] += 1
+                st.session_state.stats["losses"] += 1
+                save_json(STATS_FILE, st.session_state.stats)
+                st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
+    else:
+        st.info("👈 Ampidiro eo ankavia ny seeds dia tsindrio 'KAJY 5 DIAMANTS'")

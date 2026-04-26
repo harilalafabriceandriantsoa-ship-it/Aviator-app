@@ -551,5 +551,9 @@ with col_in:
     )
     st.session_state.cur_nonce = int(nonce_val)
 
-    num_mines = st.selectbox(
+ num_mines = st.selectbox(
+    "Select number of mines", 
+    options=[1, 3, 5], 
+    index=0
+)  # <--- Make sure this exists
     

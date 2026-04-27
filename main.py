@@ -433,10 +433,12 @@ with st.sidebar:
     st.markdown(f"<div class='sstat'><div class='ssv'>{tot}</div><div style='font-size:.58rem;color:#fff3'>TOTAL</div></div>", unsafe_allow_html=True)
 
     st.markdown("---")
+    
+    cur_n_sidebar = st.session_state.cur_nonce
     st.markdown(f"""
     <div class='nonce-box'>
         <div style='font-size:.7rem;color:#00ffcc77'>NONCE</div>
-        <div class='nonce-val'>{st.session_state.cur_nonce}</div>
+        <div class='nonce-val'>{cur_n_sidebar}</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -457,7 +459,9 @@ with st.sidebar:
             except: pass
         st.success("✅ Reset!")
         st.rerun()
-    st.markdown(f"<p style='font-size:.6rem;color:#fff2;text-align:center'>Rounds:{len(st.session_state.history)}</p>", unsafe_allow_html=True)
+        
+    hist_len = len(st.session_state.history)
+    st.markdown(f"<p style='font-size:.6rem;color:#fff2;text-align:center'>Rounds:{hist_len}</p>", unsafe_allow_html=True)
 
 # ============================================================
 # MAIN
@@ -507,11 +511,14 @@ with col_in:
 
     st.markdown("</div>", unsafe_allow_html=True)
 
+    cur_n = st.session_state.cur_nonce
+    next_n = cur_n + 1
+    
     st.markdown(f"""
     <div class='nonce-box'>
         <div style='font-size:.7rem;color:#00ffcc77'>NONCE ANKEHITRINY</div>
-        <div class='nonce-val'>{st.session_state.cur_nonce}</div>
-        <div style='font-size:.65rem;color:#fff3;margin-top:3px'>Manaraka → {st.session_state.cur_nonce+1}</div>
+        <div class='nonce-val'>{cur_n}</div>
+        <div style='font-size:.65rem;color:#fff3;margin-top:3px'>Manaraka → {next_n}</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -563,10 +570,9 @@ with col_out:
         safe_s  = set(res["safe"])
         top5    = res["top5"]
         mc      = res["match_count"]
-
-        st.markdown("<div class='glass'>", unsafe_allow_html=True)
-
-        # IZAO NO NAMBOARINA: tsy maintsy milahatra amin'ny tsipika iray ny anatin'ny { }
-        st.markdown(f"""
-        <div style='text-align:center;margin-bottom:10px;'>
-         
+        
+        # VARS VOADIO:
+        r_nonce = res['nonce']
+        r_mines = res['num_mines']
+        r_elapsed = res['elapsed']
+        next_r_nonce = r

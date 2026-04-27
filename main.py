@@ -8,16 +8,16 @@ import time
 from pathlib import Path
 
 # ============================================================
-# CONFIG
+# CONFIGURATION GÉNÉRALE
 # ============================================================
 st.set_page_config(
-    page_title="MINES 💎 V9000",
+    page_title="MINES 💎 V9000 PRO",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
 # ============================================================
-# PERSISTENCE
+# FITANTANANA NY DATA (PERSISTENCE)
 # ============================================================
 try:
     DATA_DIR = Path(__file__).parent / "mines_v9000_data"
@@ -45,7 +45,7 @@ def load_json(path, default):
     return default
 
 # ============================================================
-# CSS
+# STYLING (CSS)
 # ============================================================
 st.markdown("""
 <style>
@@ -59,7 +59,7 @@ st.markdown("""
 
 .main-title {
     font-family: 'Orbitron', sans-serif;
-    font-size: clamp(1.6rem, 6.5vw, 3rem);
+    font-size: clamp(1.8rem, 7vw, 3.5rem);
     font-weight: 900;
     text-align: center;
     background: linear-gradient(90deg, #00ffcc, #00ff88, #00ddff, #00ffcc);
@@ -67,177 +67,103 @@ st.markdown("""
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     animation: shine 4s ease infinite;
-    margin-bottom: 2px;
 }
 @keyframes shine { 0%,100%{background-position:0%} 50%{background-position:100%} }
 
 .glass {
-    background: rgba(0,8,18,0.93);
+    background: rgba(0,8,18,0.95);
     border: 2px solid rgba(0,255,204,0.3);
-    border-radius: 18px;
-    padding: clamp(12px,4vw,22px);
-    backdrop-filter: blur(16px);
-    margin-bottom: 16px;
-    box-shadow: 0 0 28px rgba(0,255,204,0.07);
-}
-
-.glass-warn {
-    background: rgba(255,150,0,0.08);
-    border: 2px solid rgba(255,150,0,0.4);
-    border-radius: 14px;
-    padding: 14px;
-    margin: 10px 0;
+    border-radius: 20px;
+    padding: 20px;
+    backdrop-filter: blur(15px);
+    box-shadow: 0 0 30px rgba(0,255,204,0.1);
+    margin-bottom: 20px;
 }
 
 .nonce-box {
-    background: linear-gradient(135deg,rgba(0,255,204,0.12),rgba(0,255,100,0.06));
-    border: 2px solid rgba(0,255,204,0.45);
-    border-radius: 14px;
-    padding: 14px;
+    background: linear-gradient(135deg,rgba(0,255,204,0.15),rgba(0,255,100,0.05));
+    border: 2px solid rgba(0,255,204,0.5);
+    border-radius: 15px;
+    padding: 15px;
     text-align: center;
-    margin: 10px 0;
 }
 .nonce-val {
-    font-size: clamp(2rem,8vw,2.8rem);
+    font-size: 2.5rem;
     font-weight: 900;
     font-family: 'Orbitron';
     color: #00ffcc;
 }
 
+/* GRID SYSTEM */
 .mgrid {
     display: grid;
     grid-template-columns: repeat(5,1fr);
-    gap: clamp(6px,2vw,12px);
-    width: min(450px,93vw);
-    margin: 16px auto;
+    gap: 12px;
+    width: min(450px, 95vw);
+    margin: 20px auto;
 }
 .mcell {
     aspect-ratio: 1/1;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    border-radius: 13px;
+    border-radius: 12px;
     font-weight: 900;
-    transition: transform .18s;
     position: relative;
-    font-size: clamp(1.3rem,4.5vw,2rem);
+    font-size: 1.8rem;
+    transition: 0.3s;
 }
-.mcell:hover{transform:scale(1.07)}
-.cnum {
-    position: absolute;
-    top:3px; left:5px;
-    font-size: clamp(.42rem,1.1vw,.58rem);
-    font-family: 'Orbitron';
-    opacity: .5;
-}
-
-.ctop {
-    background: linear-gradient(135deg,#00ffcc,#00ff66);
-    color: #000;
-    box-shadow: 0 0 22px rgba(0,255,204,.8);
-    animation: glow5 1.8s ease infinite;
-    border: 3px solid #00ffcc;
-}
-@keyframes glow5 {
-    0%,100%{box-shadow:0 0 16px rgba(0,255,204,.7)}
-    50%{box-shadow:0 0 38px rgba(0,255,204,1)}
-}
-
-.csafe {
-    background: rgba(0,255,204,.1);
-    color: #00ffcc;
-    border: 1.5px solid rgba(0,255,204,.25);
-}
-
-.cmine {
-    background: linear-gradient(135deg,#ff0033,#880011);
-    color: #fff;
-    box-shadow: 0 0 16px rgba(255,0,51,.5);
-}
-
-.cempty {
-    background: rgba(10,10,30,.8);
-    border: 1.5px solid rgba(0,255,204,.1);
-    color: rgba(0,255,204,.15);
-    font-size: clamp(.6rem,1.8vw,.8rem);
-}
+.cnum { position: absolute; top:2px; left:5px; font-size: 0.6rem; opacity: 0.4; color: white; }
+.ctop { background: linear-gradient(135deg,#00ffcc,#00ff66); color: #000; box-shadow: 0 0 25px #00ffcc; border: 2px solid #00ffcc; }
+.csafe { background: rgba(0,255,204,0.12); color: #00ffcc; border: 1.5px solid rgba(0,255,204,0.3); }
+.cmine { background: #ff0033; color: #fff; box-shadow: 0 0 15px #ff0033; }
+.cempty { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.1); }
 
 .badge {
     background: linear-gradient(135deg,#00ffcc,#00ff88);
     color: #000;
     font-family: 'Orbitron';
     font-weight: 900;
-    font-size: clamp(.85rem,3vw,1.3rem);
-    padding: 10px 22px;
+    padding: 10px 25px;
     border-radius: 50px;
     display: inline-block;
-    box-shadow: 0 0 28px rgba(0,255,204,.55);
 }
 
 .d5box {
-    background: linear-gradient(135deg,rgba(0,255,204,.12),rgba(0,255,100,.06));
-    border: 2.5px solid rgba(0,255,204,.5);
-    border-radius: 16px;
-    padding: 18px;
+    background: rgba(0,255,204,0.08);
+    border: 2.5px solid #00ffcc;
+    border-radius: 15px;
+    padding: 20px;
     text-align: center;
-    margin: 14px 0;
-    box-shadow: 0 0 28px rgba(0,255,204,.14);
 }
-.d5nums {
-    font-size: clamp(1.4rem,5.5vw,2rem);
-    font-weight: 900;
-    color: #00ffcc;
-    font-family: 'Orbitron';
-    letter-spacing: .06em;
-    margin: 8px 0;
-}
+.d5nums { font-size: 2.2rem; font-weight: 900; color: #00ffcc; font-family: 'Orbitron'; letter-spacing: 5px; }
 
 .minebox {
-    background: rgba(255,0,51,.07);
-    border: 1.5px solid rgba(255,0,51,.3);
-    border-radius: 12px;
-    padding: 13px;
+    background: rgba(255,0,51,0.1);
+    border: 1px solid #ff0033;
+    border-radius: 10px;
+    padding: 10px;
     text-align: center;
-    margin: 10px 0;
+    margin-top: 15px;
 }
 
-.mbox{background:rgba(0,255,204,.06);border:1px solid rgba(0,255,204,.2);border-radius:11px;padding:11px;text-align:center}
-.mval{font-size:clamp(1.3rem,5vw,1.9rem);font-weight:900;font-family:'Orbitron';color:#00ffcc}
-.mlbl{font-size:.62rem;color:rgba(255,255,255,.35);letter-spacing:.12em;text-transform:uppercase;margin-top:3px}
+.sstat { background: rgba(0,255,204,0.06); border: 1px solid rgba(0,255,204,0.2); border-radius: 10px; padding: 12px; text-align: center; margin-bottom: 10px; }
+.ssv { font-size: 1.6rem; font-weight: 900; color: #00ffcc; font-family: 'Orbitron'; }
 
-.sstat{background:rgba(0,255,204,.06);border:1px solid rgba(0,255,204,.18);border-radius:9px;padding:10px;text-align:center;margin:5px 0}
-.ssv{font-size:1.4rem;font-weight:900;font-family:'Orbitron';color:#00ffcc}
-
-.stButton>button{
-    background:linear-gradient(135deg,#00ffcc,#00aa66)!important;
-    color:#000!important;font-weight:900!important;
-    border-radius:11px!important;height:52px!important;
-    font-size:.95rem!important;border:none!important;
-    width:100%!important;transition:all .2s!important;
-}
-.stButton>button:hover{transform:scale(1.02);box-shadow:0 0 22px rgba(0,255,204,.5)!important}
-
-.stTextInput input,.stNumberInput input{
-    background:rgba(0,255,204,.04)!important;
-    border:2px solid rgba(0,255,204,.22)!important;
-    color:#00ffcc!important;border-radius:11px!important;
+.stButton>button {
+    background: linear-gradient(135deg,#00ffcc,#00aa66)!important;
+    color: #000!important;
+    font-weight: 900!important;
+    border-radius: 12px!important;
+    height: 55px!important;
+    font-family: 'Rajdhani'!important;
+    font-size: 1.1rem!important;
 }
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================================
-# SESSION STATE
-# ============================================================
-if "login"     not in st.session_state: st.session_state.login     = False
-if "history"   not in st.session_state: st.session_state.history   = load_json(HISTORY_FILE, [])
-if "stats"     not in st.session_state: st.session_state.stats     = load_json(STATS_FILE, {"total":0,"wins":0,"losses":0})
-if "result"    not in st.session_state: st.session_state.result    = None
-if "calc_key"  not in st.session_state: st.session_state.calc_key  = 0
-if "cur_nonce" not in st.session_state: st.session_state.cur_nonce = 0
-
-# ============================================================
-# CORE LOGIC
+# LOJIKA PROVABLY FAIR (4 FOMBA)
 # ============================================================
 def _fisher_yates(seed_bytes, num_mines):
     seed_int = int.from_bytes(seed_bytes[:16], "big")
@@ -273,21 +199,33 @@ def run_consensus(srv, cli, nonce, nm):
         ("Rev", m4_sha256_rev(srv, cli, nonce, nm))
     ]
     all_mines = [frozenset(m[1][0]) for m in methods]
+    # Mifidy ny valiny miverina betsaka indrindra (Consensus)
     best_mines = max(set(all_mines), key=all_mines.count)
     match_count = all_mines.count(best_mines)
-    safe = set(range(25)) - set(best_mines)
-    detail = [(m[0], sorted(list(m[1][0])), frozenset(m[1][0])==best_mines) for m in methods]
-    return set(best_mines), safe, match_count, detail
+    safe_indices = set(range(25)) - set(best_mines)
+    return set(best_mines), safe_indices, match_count
 
+# ============================================================
+# ALGORITHME SELECTION DIAMANTS
+# ============================================================
 def select_best_5(safe_set, mines_set, srv, cli, nonce):
-    pn = int(hashlib.sha256(f"{srv}:{cli}:{nonce}".encode()).hexdigest()[:8], 16)
+    # Ity no lojika mifidy ny 5 tena azo antoka indrindra
+    pn = int(hashlib.sha256(f"{srv}:{cli}:{nonce}".encode()).hexdigest()[:12], 16)
     scores = {}
     for p in safe_set:
-        r, c = p//5, p%5
-        dist = min((abs(r-m//5)+abs(c-m%5)) for m in mines_set) if mines_set else 2
-        scores[p] = dist * 20 + (pn + p) % 100
+        r, c = p // 5, p % 5
+        # 1. Halavirana amin'ny baomba (Weight 70%)
+        dist = min((abs(r - m // 5) + abs(c - m % 5)) for m in mines_set) if mines_set else 2
+        # 2. "Seed Entropy" (Weight 30%)
+        entropy = (pn + p * 13) % 100
+        scores[p] = (dist * 100) + entropy
+    
+    # Maka ny 5 manana score ambony indrindra
     return sorted(scores, key=scores.get, reverse=True)[:5]
 
+# ============================================================
+# RENDERING GRID
+# ============================================================
 def render_grid(top5, safe_s, mine_s, show_mines):
     html = "<div class='mgrid'>"
     for i in range(25):
@@ -303,7 +241,17 @@ def render_grid(top5, safe_s, mine_s, show_mines):
     return html
 
 # ============================================================
-# LOGIN
+# SESSION STATE & DATA LOAD
+# ============================================================
+if "login"     not in st.session_state: st.session_state.login     = False
+if "history"   not in st.session_state: st.session_state.history   = load_json(HISTORY_FILE, [])
+if "stats"     not in st.session_state: st.session_state.stats     = load_json(STATS_FILE, {"total":0,"wins":0,"losses":0})
+if "result"    not in st.session_state: st.session_state.result    = None
+if "calc_key"  not in st.session_state: st.session_state.calc_key  = 0
+if "cur_nonce" not in st.session_state: st.session_state.cur_nonce = 0
+
+# ============================================================
+# PAGE: LOGIN
 # ============================================================
 if not st.session_state.login:
     st.markdown("<div class='main-title'>💎 MINES V9000</div>", unsafe_allow_html=True)
@@ -315,84 +263,114 @@ if not st.session_state.login:
             if pw == "2026":
                 st.session_state.login = True
                 st.rerun()
-            else: st.error("❌ Diso")
+            else: st.error("❌ Diso ny teny fanalahidy")
         st.markdown("</div>", unsafe_allow_html=True)
     st.stop()
 
 # ============================================================
-# MAIN INTERFACE
+# PAGE: MAIN APP
 # ============================================================
 with st.sidebar:
-    st.markdown("### 📊 STATS")
+    st.markdown("### 📊 STATISTIQUES")
     s = st.session_state.stats
-    wr = round(s['wins']/s['total']*100, 1) if s['total']>0 else 0
+    wr = round(s['wins']/s['total']*100, 1) if s['total'] > 0 else 0
     st.markdown(f"<div class='sstat'><div class='ssv'>{wr}%</div><div>WIN RATE</div></div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='nonce-box'><div>NONCE</div><div class='nonce-val'>{st.session_state.cur_nonce}</div></div>", unsafe_allow_html=True)
-    if st.button("🔄 RESET NONCE"):
+    st.markdown(f"<div class='sstat'><div class='ssv'>{s['wins']}</div><div>WINS</div></div>", unsafe_allow_html=True)
+    
+    st.markdown("---")
+    st.markdown(f"<div class='nonce-box'><div>CURRENT NONCE</div><div class='nonce-val'>{st.session_state.cur_nonce}</div></div>", unsafe_allow_html=True)
+    if st.button("🔄 RESET NONCE TO 0"):
         st.session_state.cur_nonce = 0
         st.rerun()
 
 st.markdown("<div class='main-title'>💎 MINES V9000</div>", unsafe_allow_html=True)
-col_in, col_out = st.columns([1, 1.6], gap="medium")
+
+col_in, col_out = st.columns([1, 1.5], gap="large")
 
 with col_in:
     st.markdown("<div class='glass'>", unsafe_allow_html=True)
-    srv_in = st.text_input("🔐 SERVER SEED SHA256", placeholder="Copy-Paste avy ao @ casino...")
-    cli_in = st.text_input("👤 CLIENT SEED", placeholder="Copy-Paste avy ao @ casino...")
-    non_in = st.number_input("🔢 NONCE", value=st.session_state.cur_nonce, step=1)
-    min_in = st.selectbox("💣 MINES", options=[1,2,3], index=2)
-    st.session_state.cur_nonce = int(non_in)
+    st.subheader("📥 Data avy amin'ny Casino")
     
-    if st.button("💎 KAJY EXACT", use_container_width=True):
-        if srv_in and cli_in:
-            t0 = time.perf_counter()
-            m_s, s_s, mc, det = run_consensus(srv_in.strip(), cli_in.strip(), int(non_in), min_in)
-            t5 = select_best_5(s_s, m_s, srv_in.strip(), cli_in.strip(), int(non_in))
-            st.session_state.result = {
-                "mines": list(m_s), "safe": list(s_s), "top5": t5, "mc": mc,
-                "nonce": int(non_in), "nm": min_in, "elapsed": round(time.perf_counter()-t0, 3)
-            }
-            st.session_state.history.append({"nonce": int(non_in), "top5": t5, "res": "PENDING"})
-            st.session_state.calc_key += 1
-            st.rerun()
+    server_seed = st.text_input("🔐 SERVER SEED SHA256", placeholder="Ampidiro ny Server Seed...")
+    client_seed = st.text_input("👤 CLIENT SEED", placeholder="Ampidiro ny Client Seed...")
+    nonce_input = st.number_input("🔢 NONCE", value=st.session_state.cur_nonce, step=1)
+    mines_count = st.selectbox("💣 ISAN'NY MINES", options=[1, 2, 3], index=2)
+    
+    st.session_state.cur_nonce = int(nonce_input)
+    
+    if st.button("💎 KAJY EXACT (SHA256)", use_container_width=True):
+        if server_seed and client_seed:
+            with st.spinner("Manao consensus SHA256..."):
+                m_s, s_s, mc = run_consensus(server_seed.strip(), client_seed.strip(), int(nonce_input), mines_count)
+                t5 = select_best_5(s_s, m_s, server_seed.strip(), client_seed.strip(), int(nonce_input))
+                
+                st.session_state.result = {
+                    "mines": list(m_s),
+                    "safe": list(s_s),
+                    "top5": t5,
+                    "mc": mc,
+                    "nonce": int(nonce_input),
+                    "num_mines": mines_count
+                }
+                st.session_state.calc_key += 1
+                st.rerun()
+        else:
+            st.error("❌ Fenoy ny Server Seed sy Client Seed")
     st.markdown("</div>", unsafe_allow_html=True)
 
 with col_out:
     res = st.session_state.result
     if res:
         st.markdown("<div class='glass'>", unsafe_allow_html=True)
-        # FIX: The badge part that caused the error is now on one line or properly quoted
-        badge_txt = "✅ 100% CONFIRMED" if res["mc"] >= 3 else "⚠️ CHECK SEEDS"
-        st.markdown(f"<div style='text-align:center;margin-bottom:10px;'><span class='badge'>{badge_txt} — {res['mc']}/4</span></div>", unsafe_allow_html=True)
         
-        mode = st.radio("👁️ JEREHO:", ["💎 5 DIAMANTS", "🗺️ BOARD FENO"], horizontal=True, key=f"v_{st.session_state.calc_key}")
-        st.markdown(render_grid(res["top5"], set(res["safe"]), set(res["mines"]), mode=="🗺️ BOARD FENO"), unsafe_allow_html=True)
+        # Badge Consensus
+        badge_text = "✅ 100% CONFIRMED" if res["mc"] >= 3 else "⚠️ VALIDATING..."
+        st.markdown(f"<div style='text-align:center;'><span class='badge'>{badge_text} ({res['mc']}/4)</span></div>", unsafe_allow_html=True)
         
-        st.markdown(f"<div class='d5box'><div class='d5nums'>{' — '.join(map(str,res['top5']))}</div></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='minebox'>💣 MINES: {' — '.join(map(str,res['mines']))}</div>", unsafe_allow_html=True)
+        # Grid View
+        view_mode = st.radio("👁️ JEREHO:", ["💎 TOP 5 DIAMANTS", "🗺️ BOARD FENO (DEBUG)"], horizontal=True, key=f"mode_{st.session_state.calc_key}")
+        
+        show_all = (view_mode == "🗺️ BOARD FENO (DEBUG)")
+        st.markdown(render_grid(res["top5"], set(res["safe"]), set(res["mines"]), show_all), unsafe_allow_html=True)
+        
+        # Top 5 box
+        st.markdown(f"<div class='d5box'><div style='font-size:0.8rem;opacity:0.6;'>TSINDRIO IREO 5 IREO @ CASINO</div><div class='d5nums'>{' - '.join(map(str, res['top5']))}</div></div>", unsafe_allow_html=True)
+        
+        if show_all:
+            st.markdown(f"<div class='minebox'>💣 BAOMBA: {' , '.join(map(str, res['mines']))}</div>", unsafe_allow_html=True)
 
-        cw, cl = st.columns(2)
-        with cw:
-            if st.button("✅ WIN", use_container_width=True):
+        # Win / Loss Buttons
+        st.markdown("<br>", unsafe_allow_html=True)
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("✅ WIN (+1 Nonce)", use_container_width=True):
                 st.session_state.stats["total"] += 1
                 st.session_state.stats["wins"] += 1
                 st.session_state.cur_nonce += 1
                 save_json(STATS_FILE, st.session_state.stats)
+                # Save to history
+                st.session_state.history.append({"nonce": res["nonce"], "result": "WIN", "mines": res["num_mines"]})
+                save_json(HISTORY_FILE, st.session_state.history)
                 st.rerun()
-        with cl:
-            if st.button("❌ LOSS", use_container_width=True):
+        with c2:
+            if st.button("❌ LOSS (+1 Nonce)", use_container_width=True):
                 st.session_state.stats["total"] += 1
                 st.session_state.stats["losses"] += 1
                 st.session_state.cur_nonce += 1
                 save_json(STATS_FILE, st.session_state.stats)
+                st.session_state.history.append({"nonce": res["nonce"], "result": "LOSS", "mines": res["num_mines"]})
+                save_json(HISTORY_FILE, st.session_state.history)
                 st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
     else:
-        st.markdown("<div class='glass' style='height:350px;display:flex;align-items:center;justify-content:center;opacity:0.3;'>AMPIDIRO SEEDS DIA TSINDRIO KAJY</div>", unsafe_allow_html=True)
+        st.markdown("<div class='glass' style='height:400px; display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.2);'>AMPIDIRO DATA DIA TSINDRIO KAJY...</div>", unsafe_allow_html=True)
 
 # ============================================================
-# HISTORY
+# HISTORY TABLE
 # ============================================================
-st.markdown("### 📜 HISTORIQUE")
 if st.session_state.history:
-    st.dataframe(pd.DataFrame(st.session_state.history).tail(10), use_container_width=True)
+    with st.expander("📜 HISTORIQUE DES ROUNDS"):
+        df = pd.DataFrame(st.session_state.history).tail(15)
+        st.table(df)
+
+st.markdown("<div style='text-align:center; color:rgba(0,255,204,0.2); font-size:0.7rem;'>MINES V9000 - SECURITY PROTOCOL SHA256</div>", unsafe_allow_html=True)

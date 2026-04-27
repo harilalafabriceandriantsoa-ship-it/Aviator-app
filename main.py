@@ -6,7 +6,7 @@ import pandas as pd
 import json
 from pathlib import Path
 
-st.set_page_config(page_title="MINES ANDR V2", layout="wide", initial_sidebar_bar="collapsed")
+st.set_page_config(page_title="MINES ANDR V2", layout="wide", initial_sidebar_state="collapsed")
 
 try:
     DATA_DIR = Path(__file__).parent / "mines_andr_v2"

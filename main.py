@@ -274,29 +274,24 @@ def _fisher_yates(seed_bytes: bytes, num_mines: int):
     safe  = set(pos[num_mines:])
     return mines, safe
 
-
 def m1_hmac_sha256(srv, cli, nonce, nm):
     msg = f"{cli}:{nonce}".encode()
     key = srv.encode()
     h   = hmac.new(key, msg, hashlib.sha256).digest()
     return _fisher_yates(h, nm)
 
-
 def m2_sha256_concat(srv, cli, nonce, nm):
     h = hashlib.sha256(f"{srv}:{cli}:{nonce}".encode()).digest()
     return _fisher_yates(h, nm)
-
 
 def m3_sha256_chain(srv, cli, nonce, nm):
     srv_h = hashlib.sha256(srv.encode()).hexdigest()
     h     = hashlib.sha256(f"{srv_h}:{cli}:{nonce}".encode()).digest()
     return _fisher_yates(h, nm)
 
-
 def m4_sha256_rev(srv, cli, nonce, nm):
     h = hashlib.sha256(f"{nonce}:{cli}:{srv}".encode()).digest()
     return _fisher_yates(h, nm)
-
 
 def run_consensus(srv, cli, nonce, nm):
     methods = [
@@ -313,7 +308,6 @@ def run_consensus(srv, cli, nonce, nm):
                  for name,(r) in methods]
     return set(best), safe, count, detail
 
-
 # ============================================================
 # SELECT BEST 5
 # ============================================================
@@ -329,7 +323,6 @@ def select_best_5(safe_set, mines_set, srv, cli, nonce):
                    and (r+dr)*5+(c+dc) in safe_set)
         sc[p] = md*22 + (4-abs(r-2)-abs(c-2))*10 + (pn+p*7919)%100 + nb*8
     return sorted(sorted(sc, key=sc.__getitem__, reverse=True)[:5])
-
 
 # ============================================================
 # GRID HTML
@@ -348,7 +341,6 @@ def render_grid(top5, safe_s, mine_s, show_mines):
             html += f"<div class='mcell cempty'>{i}</div>"
     html += "</div>"
     return html
-
 
 # ============================================================
 # LOGIN
@@ -574,7 +566,7 @@ with col_out:
 
         st.markdown("<div class='glass'>", unsafe_allow_html=True)
 
-        # Badge
+        # IZAO NO NAMBOARINA: tsy maintsy milahatra amin'ny tsipika iray ny anatin'ny { }
         st.markdown(f"""
         <div style='text-align:center;margin-bottom:10px;'>
-            <span class='badge'>{'✅ 100% CONFIRMED' if mc>=3 else '⚠️ CHECK
+         
